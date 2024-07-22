@@ -1,0 +1,176 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source files">
+      <UniqueIdentifier>{2ef9a3ce-d335-4907-b93e-2331d77df5f6}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header files">
+      <UniqueIdentifier>{fb3a9dbf-3e15-4c95-9225-869a4d293ef6}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource files">
+      <UniqueIdentifier>{d33f8c09-c5e6-467d-be36-e8b2bf577f9a}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="Source files\Device-specific files">
+      <UniqueIdentifier>{2810849d-7573-4306-9292-5f29cef2c6b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="VisualGDB settings">
+      <UniqueIdentifier>{2d535205-6e0a-4de8-89d7-e8e29394a6a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\APP">
+      <UniqueIdentifier>{2fefc63c-4cc4-44e8-9027-66a6d3a725cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\CMSIS">
+      <UniqueIdentifier>{f6c3af40-0b9c-4479-a820-1e5d7d792998}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\FreeRTOS">
+      <UniqueIdentifier>{aa69104a-b618-4d83-b86c-6b103f3433a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\HAL">
+      <UniqueIdentifier>{1defa612-f503-4acb-ae77-cf627ca49550}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\COMMON">
+      <UniqueIdentifier>{186f8e7a-b1dc-4e2e-87a4-1f50199d5421}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\APP">
+      <UniqueIdentifier>{5b5a3443-1c90-417d-9574-d5b759023924}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\FreeRTOS">
+      <UniqueIdentifier>{ce11b0fd-6577-4ef4-a71f-2ea7cb431b27}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\HAL">
+      <UniqueIdentifier>{9078db2d-060e-4c4f-a87b-9f6fa01757ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\COMMON">
+      <UniqueIdentifier>{9647bb4a-5cfc-4602-8063-a2745cb5e3c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files\Device-specific files">
+      <UniqueIdentifier>{38e786b3-7c87-47a3-8fae-2bfb70f59923}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\start">
+      <UniqueIdentifier>{f6bc84b9-6e35-4781-8118-731a05237176}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="stm32.props">
+      <Filter>Source files\Device-specific files</Filter>
+    </None>
+    <None Include="BreadMachine-Debug.vgdbsettings">
+      <Filter>VisualGDB settings</Filter>
+    </None>
+    <None Include="BreadMachine-Release.vgdbsettings">
+      <Filter>VisualGDB settings</Filter>
+    </None>
+    <None Include="stm32.xml">
+      <Filter>VisualGDB settings</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\SRC\SourceProject\AppCore.cpp">
+      <Filter>Source files\APP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\SourceProject\Periphery\GpioDriver.cpp">
+      <Filter>Source files\APP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\SourceProject\initApp.cpp">
+      <Filter>Source files\APP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\STM32F4xxxx\StartupFiles\startup_stm32f407xx.c">
+      <Filter>Source files\start</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\FreeRTOS\Source\croutine.c">
+      <Filter>Source files\FreeRTOS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\FreeRTOS\Source\event_groups.c">
+      <Filter>Source files\FreeRTOS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\FreeRTOS\Source\list.c">
+      <Filter>Source files\FreeRTOS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\FreeRTOS\Source\queue.c">
+      <Filter>Source files\FreeRTOS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\FreeRTOS\Source\stream_buffer.c">
+      <Filter>Source files\FreeRTOS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\FreeRTOS\Source\tasks.c">
+      <Filter>Source files\FreeRTOS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\FreeRTOS\Source\timers.c">
+      <Filter>Source files\FreeRTOS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\STM32F4xxxx\CMSIS_HAL\Device\ST\STM32F4xx\Source\Templates\system_stm32f4xx.c">
+      <Filter>Source files\start</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_gpio.c">
+      <Filter>Source files\HAL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_rcc.c">
+      <Filter>Source files\HAL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\FreeRTOS\Source\portable\MemMang\heap_4.c">
+      <Filter>Source files\FreeRTOS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\FreeRTOS\Source\portable\GCC\ARM_CM3\port.c">
+      <Filter>Source files\FreeRTOS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_exti.c">
+      <Filter>Source files\HAL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\misc.c">
+      <Filter>Source files\HAL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_syscfg.c">
+      <Filter>Source files\HAL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\SourceProject\Periphery\Uart1.cpp">
+      <Filter>Source files\APP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\SourceProject\Periphery\Uart3.cpp">
+      <Filter>Source files\APP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_usart.c">
+      <Filter>Source files\HAL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_dma.c">
+      <Filter>Source files\HAL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\SourceProject\Periphery\Timer3.cpp">
+      <Filter>Source files\APP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_tim.c">
+      <Filter>Source files\HAL</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\SRC\SourceProject\AppCore.h">
+      <Filter>Header files\APP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\initApp.h">
+      <Filter>Header files\APP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\STM\FreeRTOS\Source\portable\GCC\ARM_CM3\portmacro.h">
+      <Filter>Source files\FreeRTOS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\Periphery\GpioDriver.h">
+      <Filter>Header files\APP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\Periphery\Uart1.h">
+      <Filter>Header files\APP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\Periphery\Uart3.h">
+      <Filter>Header files\APP</Filter>
+    </ClInclude>
+    <ClInclude Include="FreeRTOSConfig.h">
+      <Filter>Header files\FreeRTOS</Filter>
+    </ClInclude>
+    <ClInclude Include="stm32f4xx_hal_conf.h">
+      <Filter>Header files\FreeRTOS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\Periphery\Timer3.h">
+      <Filter>Header files\APP</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

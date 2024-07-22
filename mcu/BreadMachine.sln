@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34723.18
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BreadMachine", "BreadMachine\BreadMachine.vcxproj", "{4EE95F62-BCDB-42D6-80E6-97B33159FB48}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|VisualGDB = Debug|VisualGDB
+		Release|VisualGDB = Release|VisualGDB
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4EE95F62-BCDB-42D6-80E6-97B33159FB48}.Debug|VisualGDB.ActiveCfg = Debug|VisualGDB
+		{4EE95F62-BCDB-42D6-80E6-97B33159FB48}.Debug|VisualGDB.Build.0 = Debug|VisualGDB
+		{4EE95F62-BCDB-42D6-80E6-97B33159FB48}.Release|VisualGDB.ActiveCfg = Release|VisualGDB
+		{4EE95F62-BCDB-42D6-80E6-97B33159FB48}.Release|VisualGDB.Build.0 = Release|VisualGDB
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6DF67854-7B35-46F2-B0B4-0529AE89B4A8}
+	EndGlobalSection
+EndGlobal
