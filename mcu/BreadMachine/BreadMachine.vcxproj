@@ -54,6 +54,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\SRC\SourceProject\AppCore.cpp" />
+    <ClCompile Include="..\SRC\SourceProject\DisplayDriver.cpp" />
     <ClCompile Include="..\SRC\SourceProject\initApp.cpp" />
     <ClCompile Include="..\SRC\SourceProject\Periphery\GpioDriver.cpp" />
     <ClCompile Include="..\SRC\SourceProject\Periphery\Timer3.cpp" />
@@ -90,6 +91,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SRC\SourceProject\AppCore.h" />
+    <ClInclude Include="..\SRC\SourceProject\DisplayDriver.h" />
     <ClInclude Include="..\SRC\SourceProject\initApp.h" />
     <ClInclude Include="..\SRC\SourceProject\Periphery\GpioDriver.h" />
     <ClInclude Include="..\SRC\SourceProject\Periphery\Timer3.h" />

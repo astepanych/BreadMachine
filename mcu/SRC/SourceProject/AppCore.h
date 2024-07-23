@@ -5,6 +5,7 @@
 #include <portmacro.h>
 #include <Periphery/Uart1.h>
 #include <Periphery/Uart3.h>
+#include <DisplayDriver.h>
 
 class AppCore
 {
@@ -19,21 +20,17 @@ private:
 	void initOsal();
 	static void taskPeriodic(void *p);
 	
-	//display 
-	static void taskDisplay(void *p);
-	static xQueueHandle xQueueDisplay;
-	static xSemaphoreHandle xSemDisplay;
-	
+
 	
 	static GpioDriver *gpio;
 	
 	static Uart1 *uart1;
-	static Uart3 *uart3;
-	
+
+	static DisplayDriver *display;
 	
 	BaseType_t xReturned;
 	TaskHandle_t xHandle = NULL;
-	TaskHandle_t xHandleDisplay = NULL;
+
 	
 
 	

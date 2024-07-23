@@ -6,7 +6,7 @@
 #include <queue.h>
 #include "semphr.h"
 #include <portmacro.h>
-
+#include <functional>
 class Uart3
 {
 public:
@@ -26,6 +26,9 @@ public:
 	static uint16_t getAvalibleByte();
 	static int getDataRx(uint8_t *buf);
 	static void pushByteRx(uint8_t byte);
+	
+	static std::function<void(const uint8_t)> putByte;
+	
 private:
 	static void initUart();
 	static void initDma();

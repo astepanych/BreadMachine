@@ -24,6 +24,7 @@ xSemaphoreHandle Uart3::xSemWrite;
 int Uart3::indexWriteRx = 0;
 int Uart3::indexReadRx = 0;
 bool Uart3::isRtosRun;
+ std::function<void(uint8_t)> Uart3::putByte;
 
 Uart3::Uart3()
 {
@@ -203,8 +204,8 @@ int Uart3::txDma(const uint8_t *data, const uint8_t len)
 
 void Uart3::pushByteRx(uint8_t byte)
 {
-	gBufferRx[indexWriteRx] = byte;
-	indexWriteRx = (indexWriteRx + 1) % SizeBufferRx;
+	putByte(byte);
+	
 }
 
 int Uart3::getDataRx(uint8_t *buf) {
