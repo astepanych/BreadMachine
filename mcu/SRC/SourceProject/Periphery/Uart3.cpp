@@ -15,6 +15,7 @@ Uart3 *Uart3::m_instance;
 xQueueHandle Uart3::xQueueWrite;
 BaseType_t Uart3::xReturned;
 xTaskHandle Uart3::xHandle;
+xTaskHandle Uart3::xHandleRead;
 
 bool Uart3::mBusyDma; 
 ElementUart Uart3::push;
@@ -42,6 +43,14 @@ void Uart3::init()
 		256,      /* Stack size in words, not bytes. */
 		(void *) 1,    /* Parameter passed into the task. */
 		tskIDLE_PRIORITY,/* Priority at which the task is created. */
+		&xHandle); /* Used to pass out the created task's handle. */
+	
+	xReturned = xTaskCreate(
+		instance()->taskRead,       /* Function that implements the task. */
+		"Uart3Read",          /* Text name for the task. */
+		256,      /* Stack size in words, not bytes. */
+		(void *) 1,    /* Parameter passed into the task. */
+		tskIDLE_PRIORITY+2,/* Priority at which the task is created. */
 		&xHandle); /* Used to pass out the created task's handle. */
 	// Запускаем тактирование
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1, ENABLE);
@@ -85,19 +94,40 @@ void Uart3::initDma()
 
 	DMA_ClearITPendingBit(DMA1_Stream3, DMA_IT_TCIF3);
 	//DMA_Cmd(DMA1_Stream3, ENABLE);
-
 	
+	
+	DMA_DeInit(DMA1_Stream1);
+	DMA_InitStructure.DMA_Channel = DMA_Channel_4;
+	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory; // Receive
+	DMA_InitStructure.DMA_Memory0BaseAddr = (uint32_t)gBufferRx;
+	DMA_InitStructure.DMA_BufferSize = (uint16_t)SizeBufferRx;
+	DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)&USART3->DR;
+	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+	DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
+	DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+	DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+	DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
+	DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+	DMA_InitStructure.DMA_FIFOMode = DMA_FIFOMode_Disable;
+	DMA_InitStructure.DMA_FIFOThreshold = DMA_FIFOThreshold_1QuarterFull;
+	DMA_InitStructure.DMA_MemoryBurst = DMA_MemoryBurst_Single;
+	DMA_InitStructure.DMA_PeripheralBurst = DMA_PeripheralBurst_Single;
+	DMA_Init(DMA1_Stream1, &DMA_InitStructure);
+	USART_DMACmd(USART3, USART_DMAReq_Rx, ENABLE);
+	
+	DMA_Cmd(DMA1_Stream1, ENABLE);
 	
 }
 
 void Uart3::initUart()
 {	
+	/*
 	NVIC_InitTypeDef NVIC_InitStructure;
 	NVIC_InitStructure.NVIC_IRQChannel = USART3_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 9;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 9;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
+	NVIC_Init(&NVIC_InitStructure);*/
 	
 	
 	
@@ -137,6 +167,20 @@ void Uart3::taskWrite(void *p)
 		xQueueReceive(xQueueWrite, &pop, portMAX_DELAY); // Ожидаем элемента в очереди
 		txDma(pop.buf, pop.len);
 		xSemaphoreTake(xSemWrite, portMAX_DELAY);
+	}
+}
+
+void Uart3::taskRead(void *p) {
+	int avalibleBytes = 0, pverBytes = 0;
+	while (true) {
+		vTaskDelay(5 / portTICK_PERIOD_MS);
+		avalibleBytes = SizeBufferRx - DMA_GetCurrDataCounter(DMA1_Stream1);
+		if (avalibleBytes != pverBytes)	{
+			while (pverBytes != avalibleBytes) {
+				putByte(gBufferRx[pverBytes]);
+				pverBytes = (pverBytes + 1) % SizeBufferRx;
+			}
+		}
 	}
 }
 

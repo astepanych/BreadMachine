@@ -21,6 +21,8 @@ uint8_t DisplayDriver::bufParce[SizeBuffer];
 uint8_t DisplayDriver::lenPacket;
 uint8_t DisplayDriver::currentIndex;
 
+int DisplayDriver::cntPutByte;
+
 std::function<void(const uint16_t, uint8_t*)> DisplayDriver::newCmd;
 
 DisplayDriver::DisplayDriver() {
@@ -48,14 +50,22 @@ void DisplayDriver::putByte(const uint8_t byte)
 	switch (statePacket)
 	{ 
 	case DisplayDriver::StateWaitByte1:
-		if (byte == startByte1)
+		if (byte == startByte1) {
 			statePacket = DisplayDriver::StateWaitByte2;
+			cntPutByte = 1;
+		}
 		break;
 	case DisplayDriver::StateWaitByte2:
-		if (byte == startByte2)
+		if (byte == startByte2 && cntPutByte == 1) {
 			statePacket = DisplayDriver::StateWaitLen;
+			cntPutByte++;
+		}
+		else {
+			statePacket = DisplayDriver::StateWaitByte1;	
+		}
 		break;
 	case DisplayDriver::StateWaitLen:
+		cntPutByte++;
 		lenPacket = byte;
 		currentIndex = 0;
 		statePacket = DisplayDriver::StateReadByte;
@@ -67,8 +77,9 @@ void DisplayDriver::putByte(const uint8_t byte)
 			ElementUart el;
 			memcpy(el.buf, bufParce, lenPacket); 
 			el.len = lenPacket;
-			xQueueSendToBack(xQueueDisplay, &el, 0);
+			xQueueSendToBackFromISR(xQueueDisplay, &el, 0);
 			statePacket = DisplayDriver::StateWaitByte1;
+			portYIELD_FROM_ISR(pdTRUE);
 		}
 		break;
 	default:
@@ -83,10 +94,15 @@ void DisplayDriver::initDisplay()
 
 void DisplayDriver::parsePackFromDisplay(uint8_t len, uint8_t *data)
 {
-	uint8_t cmd = data[0]; //команда 
-	uint16_t id; //идентификатор, он же адрес
-	memcpy(&id, &data[1], sizeof(uint16_t));
-	uint8_t realLen = len - 3; //реальная длина данных
+	uint8_t cmd = data[0]; //РєРѕРјР°РЅРґР° 
+	uint16_t id; //РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ, РѕРЅ Р¶Рµ Р°РґСЂРµСЃ
+	id = (data[1] << 8) + data[2];
+	
+	uint8_t realLen = len - 3; //СЂРµР°Р»СЊРЅР°СЏ РґР»РёРЅР° РґР°РЅРЅС‹С…
+	if (cmd == cmdByteWrite && id == CmdCofirm)
+	{
+		return;
+	}
 	
 	switch (id)
 	{
@@ -96,6 +112,38 @@ void DisplayDriver::parsePackFromDisplay(uint8_t len, uint8_t *data)
 	}
 }
 
+void DisplayDriver::sendToDisplay(uint16_t id, std::wstring &str)
+{
+	uint8_t buf[SizeBuffer + 3];
+	memset(buf, 0, SizeBuffer + 3);
+	buf[0] = startByte1;
+	buf[1] = startByte2;
+	buf[2] = str.length()*2 + 3;
+	buf[3] = cmdByteWrite;
+	//Р·Р°РїРѕР»РЅСЏРµРј Р°РґСЂРµСЃ
+	uint8_t *p = (uint8_t*)&id;
+	for (int i = sizeof(uint16_t) - 1; i >= 0; i--) {
+		buf[4 + i] = *p;
+		p++;
+	}
+	p = (uint8_t*)str.data();
+	int len = 6;
+	for (int i = 0; i < str.length(); i++)
+	{
+		buf[6 + 2*i] = *(p + 1);
+		buf[6 + 2*i +1] = *(p);
+		p += 4;
+		len += 2;
+	}
+	uart3->write(buf, len);
+}
+
+void DisplayDriver::reset()
+{
+	uint8_t buf[] = {0x5A, 0xA5, 0x07, 0x82, 0x00, 0x04, 0x55, 0xAA, 0x5A, 0xA5};
+	uart3->write(buf, sizeof(buf));
+}
+
 void DisplayDriver::sendToDisplay(uint16_t id, uint8_t len, uint8_t *data)
 {
 	uint8_t buf[SizeBuffer + 3];
@@ -103,7 +151,7 @@ void DisplayDriver::sendToDisplay(uint16_t id, uint8_t len, uint8_t *data)
 	buf[1] = startByte2;
 	buf[2] = len+3;
 	buf[3] = cmdByteWrite;
-	
+	//Р·Р°РїРѕР»РЅСЏРµРј Р°РґСЂРµСЃ
 	uint8_t *p = (uint8_t*)&id;
 	for (int i = sizeof(uint16_t) - 1; i >= 0; i--)	{
 		buf[4 + i] = *p;
@@ -143,8 +191,8 @@ void DisplayDriver::taskDisplay(void *p)
 	int len; 
 	while (true)
 	{
-		res = xQueueReceive(xQueueDisplay, &pop, portMAX_DELAY); // Ожидаем элемента в очереди
-		//если дождались - значит это команда
+		res = xQueueReceive(xQueueDisplay, &pop, portMAX_DELAY); // РћР¶РёРґР°РµРј СЌР»РµРјРµРЅС‚Р° РІ РѕС‡РµСЂРµРґРё
+		//РµСЃР»Рё РґРѕР¶РґР°Р»РёСЃСЊ - Р·РЅР°С‡РёС‚ СЌС‚Рѕ РєРѕРјР°РЅРґР°
 		if (res == pdPASS)
 		{
 			parsePackFromDisplay(pop.len ,pop.buf);

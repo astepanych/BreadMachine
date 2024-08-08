@@ -10,6 +10,10 @@ CMD0=1000=Key start
 CMD1=1001=cansel settings
 CMD2=1002=aplly settings
 CMD3=1003=stop
+CMD4=1004=Save programs
+CMD5=1005=UpSelectProgram
+CMD6=1006=DownSelectProgram
+CMD7=1007=InMenuListProgramms
 [IMG]
 00=00_main.jpg
 01=01_main.jpg
@@ -20,8 +24,9 @@ CMD3=1003=stop
 06=06_run.jpg
 07=07_run.jpg
 08=08_main.jpg
-1000=1000.jpg
 09=09_event.jpg
 10=10_any.jpg
 11=11_soft_version.jpg
 12=12_settings_date.jpg
+13=13_list_programms.jpg
+14=14_list_programms.jpg

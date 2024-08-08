@@ -13,7 +13,7 @@ struct ElementUart
 	uint8_t len;
 	uint8_t buf[SizeBuffer];
 };
-#define  SizeQueUart  (20)
+#define  SizeQueUart  (32)
 
 
 

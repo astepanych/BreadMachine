@@ -36,10 +36,12 @@ private:
 	static const int speed = 115200;
 
 	static void taskWrite(void *p);
+	static void taskRead(void *p);
 	
 	
 	static BaseType_t xReturned;
 	static xTaskHandle xHandle;
+	static xTaskHandle xHandleRead;
 	static xQueueHandle xQueueWrite;
 	
 	
