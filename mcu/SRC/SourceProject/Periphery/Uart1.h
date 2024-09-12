@@ -6,29 +6,52 @@
 #include "semphr.h"
 #include <portmacro.h>
 #include <Uart.h>
+#include <functional>
 
+#define uart2 Uart1::instance()
 
 class Uart1
 {
 public:
-	Uart1();
+	
 	~Uart1() {};
-	static Uart1 *instance() {return m_instance;};
-	static void init();
+	static Uart1 &instance() {
+		static Uart1 m_instance;
+		return m_instance;
+	};
+	void taskWrite(void *p);
+	void taskRead(void *p);
+	void init();
+	void write(uint8_t *buf, uint8_t len);
+	std::function<void(const uint8_t)> putByte;
+	bool isBusyDma() 
+	{
+		return mBusyDma;
+	};
+	void setBusyDma(const bool f) { mBusyDma = f; };
+	void txEnd();
 
-	static void write(uint8_t *buf, uint8_t len);
+	void pushByteRx(uint8_t byte);
 private:
-	static void initUart();
-	static Uart1 *m_instance;
-	static const int speed = 115200;
-	
-	static void taskWrite(void *p);
+	Uart1();
+	void initUart();
+	void initDma();
+	int txDma(const uint8_t *data, const uint8_t len);
 
-	static BaseType_t xReturned;
-	static xTaskHandle xHandle;
-	static xQueueHandle xQueueWrite;
-	static xSemaphoreHandle xSemWrite;
+
+	BaseType_t xReturned;
+	xTaskHandle xHandle;
+	xTaskHandle xHandleRead;
+	xQueueHandle xQueueWrite;
+	xSemaphoreHandle xSemWrite;
 	
+	int indexWriteRx;
+	int indexReadRx;
+	bool isRtosRun;
+	
+	bool mBusyDma; 
+	ElementUart push;
+	ElementUart pop;
 	
 		
 };

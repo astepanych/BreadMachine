@@ -3,27 +3,127 @@
 #include <misc.h>
 #include <string.h>
 #include <string>
+#include <stm32f4xx_flash.h>
 
-constexpr uint16_t versionSoft = 1002;
+#include "typedef.h"
+#include <time.h>
+#include <math.h>
+
+constexpr uint16_t versionSoft = 1005;
 GpioDriver *AppCore::gpio;
-Uart1 *AppCore::uart1;
+
+AdcDriver *AppCore::adc;
 
 DisplayDriver *AppCore::display;
 
 uint8_t AppCore::helperBuf[256];
 
-Lists AppCore::listMain;
-std::vector<Programs> AppCore::listPrograms;
+WorkModeEdit *AppCore::lstProgramsEdit;
+MyList *AppCore::lstPrograms;
+Widget *AppCore::p_widget;
+WorkMode AppCore::currentWorkMode;
+uint16_t AppCore::stateRun = StateRunIdle;
+uint32_t AppCore::commonDuration;
+uint16_t AppCore::currentStage;
+ uint16_t AppCore::stageDuration;
+ uint16_t AppCore::modeDuration;
+
+
+
+
+std::vector<WorkMode> AppCore::m_programs;
+void AppCore::initDefaultPrograms()
+{
+	m_programs.clear();
+	fillProgram("ХЛЕБ БОРОДИНСКИЙ    ", 3);
+	fillProgram("ХЛЕБ КИРПИЧИК       ", 4);
+	fillProgram("ХЛЕБ СЕРЫЙ          ", 5);
+	fillProgram("БАТОН НАРЕЗНОЙ      ", 2);
+	fillProgram("БАТОН С ПОВИДЛОМ    ", 7);
+	fillProgram("ВАТРУШКА            ", 6);
+	fillProgram("БАТОН С МАКОМ       ", 7);
+	fillProgram("ПЕЧЕНЬЕ ОВСЯНОЕ     ", 4);
+	fillProgram("ПРЯНИК МЕДОВЫЙ      ", 3);
+	
+
+}
+
+void AppCore::fillProgram(const std::string &name, const uint16_t numStages, const uint16_t *stage)
+{
+	WorkMode el;
+	el.lenNameMode = name.length();
+	memset(el.nameMode, 0, MaxLengthNameMode);
+	memcpy(el.nameMode, name.data(), name.length()*sizeof(char));
+	el.numStage = numStages;
+	srand(time(0));
+	for (int i = 0; i < numStages; i++)	{
+		el.stages[i].duration = rand() % 100 * 10;
+		el.stages[i].temperature = 180 + rand() % 20 * 10;
+		el.stages[i].waterVolume = rand() % 30 * 100;
+		el.stages[i].fan = rand() % 2;
+		el.stages[i].damper = rand() % 2;
+	}
+	m_programs.insert(m_programs.end(), el);
+}
+void AppCore::readPrograms()
+{
+	int *p = (int*)FlashAddrPrograms;
+	if (*p != MagicNumber)
+	{
+		initDefaultPrograms();
+		writePrograms();
+	}
+	else
+	{
+		p++;
+		int numProgram = *p;
+		WorkMode mode;
+		m_programs.clear();
+		m_programs.resize(numProgram);
+		uint8_t *pByte = (uint8_t *)(FlashAddrPrograms + OffsetAddrPrograms);
+		uint8_t *pMode;// = (uint8_t*)&mode;
+		for (int i = 0; i < m_programs.size(); i++)
+		{
+			pMode = (uint8_t*)&m_programs[i];
+			for (int j = 0; j < sizeof(WorkMode); j++)
+			{
+				*pMode++ = *pByte++;
+	
+			}
+		
+		}
+	}
+}
+void AppCore::writePrograms()
+{
+	FLASH_Unlock();
+	FLASH_EraseSector(FLASH_Sector_11, VoltageRange_4);
+	FLASH_ProgramWord(FlashAddrPrograms, MagicNumber);
+	FLASH_ProgramWord(FlashAddrPrograms+OffsetAddrNumPrograms, m_programs.size());
+	uint32_t adr = FlashAddrPrograms + OffsetAddrPrograms;
+	uint8_t *p;
+	for (int i = 0; i < m_programs.size(); i++)
+	{
+		p = (uint8_t*)&m_programs[i];
+		for (int j = 0; j < sizeof(WorkMode); j++)
+		{
+			FLASH_ProgramByte(adr, *p);
+			adr++;
+			p++;
+		}
+		
+	}
+	FLASH_Lock();
+}
 
 AppCore::AppCore()
 {
 	initHal();
 	initOsal();
 	initText();
-	
-	
-	
-	
+	p_widget = lstPrograms;
+
+
 	vTaskStartScheduler();
 }
 
@@ -37,12 +137,13 @@ void AppCore::initHal()
 	gpio = new GpioDriver;
 	gpio->initModule();
 	
-	uart1 = new Uart1();
-	
-	uart1->init();
+
 	
 	display = new DisplayDriver();
 	display->newCmd = this->parsePackDisplay;
+	
+	adc = new AdcDriver;
+	adc->init();
 	
 }
 void AppCore::initOsal()
@@ -50,7 +151,7 @@ void AppCore::initOsal()
 	xReturned = xTaskCreate(
 				this->taskPeriodic,       /* Function that implements the task. */
 		"NAME",          /* Text name for the task. */
-		512,      /* Stack size in words, not bytes. */
+		2048,      /* Stack size in words, not bytes. */
 		(void *) 1,    /* Parameter passed into the task. */
 		tskIDLE_PRIORITY,/* Priority at which the task is created. */
 		&xHandle); /* Used to pass out the created task's handle. */
@@ -59,44 +160,58 @@ void AppCore::initOsal()
 
 void AppCore::initText()
 {
-	listMain.list[0].addrColor = 0x6003;
-	listMain.list[0].addrText = 0x6200;
-	for (int i = 1; i < NumItemList; i++)
-	{
-		listMain.list[i].addrColor = listMain.list[i-1].addrColor+0x20;
-		listMain.list[i].addrText =  listMain.list[i-1].addrText+0x40;
+	lstPrograms = new MyList(display, NumItemList);
+	lstPrograms->setWModes(&m_programs);
+	lstPrograms->changeValue = [&](int index) {
+		std::string s = lstPrograms->text(index);
+		display->sendToDisplay(addrMainItem, s);
+		vTaskDelay(10 / portTICK_PERIOD_MS);
+		display->sendToDisplay(addrNameProg, s);
+		currentWorkMode = m_programs.at(index);
+	};
+	lstPrograms->setAddrScrollValue(AddrScrollMainList);
+	
+	ElementList el;
+	el.addrColor = 0x6003;
+	el.addrText = 0x6200;
+	lstPrograms->addItemHard(el);
+	for (int i = 1; i < NumItemList; i++) {
+		el.addrColor = lstPrograms->at(i-1).addrColor + 0x20;
+		el.addrText =  lstPrograms->at(i-1).addrText + 0x40;
+		lstPrograms->addItemHard(el);
 	}
-	Programs el;
 	
-	el.name = L"Программа 1     ";
-	listPrograms.insert(listPrograms.end(), el);
-	el.name = L"Программа 2     ";
-	listPrograms.insert(listPrograms.end(), el);
-	el.name = L"Программа 3     ";
-	listPrograms.insert(listPrograms.end(), el);
-	el.name = L"Программа 4     ";
-	listPrograms.insert(listPrograms.end(), el);
-	el.name = L"Программа 5     ";
-	listPrograms.insert(listPrograms.end(), el);
-	el.name = L"Программа 6     ";
-	listPrograms.insert(listPrograms.end(), el);
-	el.name = L"Программа 7     ";
-	listPrograms.insert(listPrograms.end(), el);
-	el.name = L"Программа 8     ";
-	listPrograms.insert(listPrograms.end(), el);
-	el.name = L"Программа 9     ";
-	listPrograms.insert(listPrograms.end(), el);
+	lstProgramsEdit = new WorkModeEdit(display, NumItemListEdit);
+	lstProgramsEdit->setWModes(&m_programs);
+	lstProgramsEdit->setPrevWidgwt(lstPrograms);
+	lstProgramsEdit->changeValue = [&](int index) {
 	
-	listMain.maxItemDisplay = 6;
-	listMain.maxItem = listPrograms.size();
+	};
+	lstProgramsEdit->setAddrScrollValue(AddrScrolBar);
 	
+	el.addrColor = StartAddrListEditItemsSP+OffsetColorsText;
+	el.addrText = StartAddrListEditItemsVP;
+	lstProgramsEdit->addItemHard(el);
+	for (int i = 1; i < NumItemList; i++) {
+		el.addrColor = lstProgramsEdit->at(i - 1).addrColor + StepListEditSP;
+		el.addrText =  lstProgramsEdit->at(i - 1).addrText + StepListEditVP;
+		lstProgramsEdit->addItemHard(el);
+	}
+	
+
 }
 
-void AppCore::parsePackDisplay(const uint16_t id, uint8_t* data)
+void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data)
 {
 	uint8_t cmd = data[0];
 	switch (id)
 	{
+	case AddrNumDamper:
+		currentWorkMode.stages[currentStage].damper ^= 1;
+		break;
+	case AddrNumFan:
+		currentWorkMode.stages[currentStage].fan ^= 1;
+		break;
 	case CmdDateTime: {
 		helperBuf[0] = 0x5a;
 		helperBuf[1] = 0xa5;
@@ -114,6 +229,9 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t* data)
 		keyEvent(key);
 			break;
 		}
+	default:
+		p_widget->changeParams(id, len, data);
+		break;
 	}
 }
 
@@ -121,130 +239,178 @@ void AppCore::keyEvent(uint16_t key)
 {
 	switch (key)
 	{
-	case ReturnCodeKeyDownSelectProgramm:
-		listMain.indexCommon++;
-		if (listMain.maxItem == listMain.indexCommon)
-		{
-			for (int i = 0; i < NumItemList; i++)
-			{
-				display->sendToDisplay(listMain.list[i].addrText, listPrograms.at(i).name);
-				vTaskDelay(2 / portTICK_PERIOD_MS);
-			}
-			display->sendToDisplay(listMain.list[0].addrColor, 0xf800);
-			display->sendToDisplay(listMain.list[listMain.maxItemDisplay].addrColor, 0x0000);
-			listMain.indexCommon = 0;
-			listMain.indexDisplay = 0;
-			
-		}
-		else {
-			if (listMain.indexDisplay != listMain.maxItemDisplay)
-			{
-				display->sendToDisplay(listMain.list[listMain.indexDisplay].addrColor, 0x0000);
-				listMain.indexDisplay++;
-				display->sendToDisplay(listMain.list[listMain.indexDisplay].addrColor, 0xf800);
-			}
-			else
-			{
-				int index = listMain.indexCommon - listMain.maxItemDisplay;
-				for (int i = 0; i < NumItemList; i++)
-				{
-					display->sendToDisplay(listMain.list[i].addrText, listPrograms.at(index).name);
-					index++;
-					vTaskDelay(2 / portTICK_PERIOD_MS);
-				}
-			}
-		}
+	case ReturnCodeKeyStart:
+		stateRun = StateRunStart;
 		break;
-	case ReturnCodeKeySaveProgramm:
-		listMain.currentIndex = listMain.indexDisplay;
-		listMain.currentPos = listMain.indexCommon;
-		display->sendToDisplay(addrMainItem, listPrograms.at(listMain.currentPos).name);
-
+	case ReturnCodeKeyStop:
+		stateRun = StateRunStop;
 		break;
-	case ReturnCodeKeyInMenuListProgramms:
-		
+	case ReturnCodeKeyInMenuSettingsProgramms:
+		p_widget = lstProgramsEdit;
+		p_widget->resetWidget();
 		break;
-	case ReturnCodeKeyUpSelectProgramm:
-		listMain.indexCommon--;
-		if (listMain.indexCommon == -1)
-		{
-			listMain.indexCommon = listMain.maxItem - 1;
-			listMain.indexDisplay = listMain.maxItemDisplay;
-			int index = listMain.indexCommon - listMain.maxItemDisplay;
-			for (int i = 0; i < NumItemList; i++)
-			{
-				display->sendToDisplay(listMain.list[i].addrText, listPrograms.at(index).name);
-				index++;
-				vTaskDelay(2 / portTICK_PERIOD_MS);
-			}
-			display->sendToDisplay(listMain.list[0].addrColor, 0x0000);
-			display->sendToDisplay(listMain.list[listMain.maxItemDisplay].addrColor, 0xf800);
-
-			
-		}
-		else {
-			if (listMain.indexDisplay != 0)
-			{
-				display->sendToDisplay(listMain.list[listMain.indexDisplay].addrColor, 0x0000);
-				listMain.indexDisplay--;
-				display->sendToDisplay(listMain.list[listMain.indexDisplay].addrColor, 0xf800);
-			}
-			else
-			{
-				int index = listMain.indexCommon;
-				for (int i = 0; i < NumItemList; i++)
-				{
-					display->sendToDisplay(listMain.list[i].addrText, listPrograms.at(index).name);
-					index++;
-					vTaskDelay(2 / portTICK_PERIOD_MS);
-				}
-			}
-		}
-		break;
-
-		
-	default:
+	default: 
+		p_widget = p_widget->keyEvent(key);
 		break;
 	}
+	
 }
 
 
+void AppCore::getSizeWRectangle(const WorkMode &mode, uint16_t *wList)
+{
+	
+	int i;
+	int xStart = xProgresStage, xEnd;
+
+	for ( i = 0; i < mode.numStage; i++)
+	{
+		wList[2*i] = xStart;
+		xEnd = xStart + mode.stages[i].duration * (wProgresStage - mode.numStage * 2) / (commonDuration);
+		wList[2*i + 1] = xEnd;
+		xStart = xEnd + 3;
+	}
+	wList[2*i - 1] = xProgresStage + wProgresStage;
+}
+
+void AppCore::paintStageProgress()
+{
+
+	uint16_t wList[2*MaxStageMode];
+	getSizeWRectangle(currentWorkMode, wList);
+	
+	
+	uint16_t numSpliter = currentWorkMode.numStage - 1;
+	uint16_t *p16;
+	u16be *p = (u16be *)helperBuf;
+	*p = CmdPaintFillRectangle;
+	p++;
+	*p = currentWorkMode.numStage;
+	
+	Rectangle rec;
+	
+	rec.beginY = yProgresStage;
+	
+	rec.endY = yProgresStage+hProgresStage;
+	
+	p16 = (uint16_t *)(helperBuf + 4);
+	for (int i = 0; i < currentWorkMode.numStage; i++)
+	{
+		rec.beginX = wList[2*i];
+		rec.endX = wList[2*i+1];
+		rec.color = i < currentStage ? ColorGreen:ColorGrey;
+		
+		memcpy(p16, &rec, sizeof(Rectangle));
+		p16 += (sizeof(Rectangle) / sizeof(uint16_t));
+	}
+	
+	p = (u16be *)p16;
+	*p = 0xff00;
+	p16++;
+	uint16_t len = p16 - (uint16_t*)helperBuf;
+	display->sendToDisplay(AddrStages, len*sizeof(uint16_t), helperBuf);
+	
+}
+
+void AppCore::updateProgressBar(uint16_t value)
+{
+	display->sendToDisplay(AddrProgressBar, value);
+}
+void AppCore::updateParamStage()
+{
+	display->sendToDisplay(AddrNumStage, currentStage + 1);
+	display->sendToDisplay(AddrNumWater, currentWorkMode.stages[currentStage].waterVolume);
+	display->sendToDisplay(AddrNumTemperature, currentWorkMode.stages[currentStage].temperature);
+	display->sendToDisplay(AddrNumFan, currentWorkMode.stages[currentStage].fan);
+	display->sendToDisplay(AddrNumDamper, currentWorkMode.stages[currentStage].damper);
+	
+}
+
+void AppCore::updateTime(uint16_t sec)
+{
+	uint16_t _min = sec / 60;	
+	uint16_t _sec = sec % 60;
+	char buf[6];
+	uint8_t len = sprintf(buf, "%02d:%02d", _min, _sec);
+	display->sendToDisplay(AddrNumTime, len, (uint8_t*)buf);
+	
+}
 
 void AppCore::taskPeriodic(void *p)
 {
 	int cnt = 0, len;
 	char buf[256];
-	//timer3->start();
-	vTaskDelay(1000 / portTICK_PERIOD_MS);
+	readPrograms();
+
 	display->reset();
 	vTaskDelay(2000 / portTICK_PERIOD_MS);
+
 	
 	display->sendToDisplay(CmdSoftVersion, versionSoft);
-	std::wstring mainItem = L"Выбор программы";
-	
-	display->sendToDisplay(listMain.currentPos, mainItem);
-	
-
-
-	for (int i = 0; i < NumItemList; i++)
-	{
-		display->sendToDisplay(listMain.list[i].addrText, listPrograms.at(i).name);
-		vTaskDelay(2 / portTICK_PERIOD_MS);
-	}
-	display->sendToDisplay(listMain.list[0].addrColor,0xf800);
+	display->sendToDisplay(addrMainItem, "ВЫБОР ПРОГРАММЫ");
+	lstPrograms->resetWidget();	
+	uint16_t per;
 	while (true) {
 		vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+	//	display->sendToDisplay(AddrNumTemperatureMeasure, adc->value1());
+		gpio->togglePin(GpioDriver::PinGreen);
+		gpio->togglePin(GpioDriver::PinYellow);
+		gpio->togglePin(GpioDriver::PinTemperatureUp);
+		switch (stateRun)
+		{
+		case StateRunIdle:
+			break;
+		case StateRunStart:
+			currentStage = 0;
+			stageDuration = 0;
+			modeDuration = 0;
+			for (int i = 0; i < currentWorkMode.numStage; i++)
+			{
+				commonDuration += currentWorkMode.stages[i].duration;
+			}
+			paintStageProgress();
+			stateRun = StateRunWork;
+			updateParamStage();
+			
+			break;
+		case StateRunWork:
+		{
+
+			stageDuration += 10;
+			modeDuration += 10;
+			gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].fan);
+			gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].damper);
+			gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatesPin)(!currentWorkMode.stages[currentStage].damper));
+			
+			
+			
+			updateTime(currentWorkMode.stages[currentStage].duration - stageDuration);
+			if (stageDuration >= currentWorkMode.stages[currentStage].duration)
+			{
+				currentStage++;
+				stageDuration = 0;
+				paintStageProgress();
+				if (currentStage == currentWorkMode.numStage) {
+					updateProgressBar(100);
+					stateRun = StateRunStop;
+					break;
+				}
+				updateParamStage();
+			}
+			per = (uint16_t)(modeDuration * 100.0 / commonDuration);
+			updateProgressBar(per);
+			
+		}	
+			break;
+		case StateRunStop:
+			stateRun = StateRunIdle;
+			break;
+		default:
+			break;
+		}
 		
-		//display->sendToDisplay(0x2600, listPrograms.at(cnt%NumItemList).name);
-		cnt++;
-		//gpio->togglePin(GpioDriver::Led);
-		//cnt++;
-		//len  = sprintf(buf, "cnt = %d\n\r", cnt);
-		//uart1->write((uint8_t*)buf, len);
-		//uart3->write((uint8_t*)buf, len);
-		//len = uart3->getDataRx((uint8_t*)buf);
-		//if(len > 0)
-			//uart3->write((uint8_t*)buf, len);
+		
 	}
 }
 

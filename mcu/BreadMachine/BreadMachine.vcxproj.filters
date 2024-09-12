@@ -146,6 +146,30 @@
     <ClCompile Include="..\SRC\SourceProject\DisplayDriver.cpp">
       <Filter>Source files\APP</Filter>
     </ClCompile>
+    <ClCompile Include="Widget.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyList.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_flash.c">
+      <Filter>Source files\HAL</Filter>
+    </ClCompile>
+    <ClCompile Include="AdcDriver.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_adc.c">
+      <Filter>Source files\HAL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_rtc.c">
+      <Filter>Source files\HAL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\SourceProject\1251\utf8_to_cp1251.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="WorkModeEdit.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SRC\SourceProject\AppCore.h">
@@ -177,6 +201,36 @@
     </ClInclude>
     <ClInclude Include="..\SRC\SourceProject\DisplayDriver.h">
       <Filter>Header files\APP</Filter>
+    </ClInclude>
+    <ClInclude Include="KeyEvent.h">
+      <Filter>Header files\APP</Filter>
+    </ClInclude>
+    <ClInclude Include="Widget.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyList.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\LittleBigEndian.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\typedef.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="AdcDriver.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\1251\bit.h">
+      <Filter>Source files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\1251\utf8_to_cp1251.h">
+      <Filter>Source files</Filter>
+    </ClInclude>
+    <ClInclude Include="WorkMode.h">
+      <Filter>Header files\APP</Filter>
+    </ClInclude>
+    <ClInclude Include="WorkModeEdit.h">
+      <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -7,53 +7,54 @@
 #include "semphr.h"
 #include <portmacro.h>
 #include <functional>
+
+#define uart3 Uart3::instance()
+
 class Uart3
 {
 public:
-	Uart3();
-	~Uart3() {}
-	;
-	static Uart3 *instance() {return m_instance;};
-	static void init();
 
-	static void write(const uint8_t *buf, const uint8_t len);
-	static bool isBusyDma() 
+	~Uart3() {};
+	
+	static Uart3 &instance() {
+		static Uart3 m_instance;
+		return m_instance;
+	};
+	void taskWrite(void *p);
+	void taskRead(void *p);
+	
+	void init();
+
+	 void write(const uint8_t *buf, const uint8_t len);
+	std::function<void(const uint8_t)> putByte;
+	 bool isBusyDma() 
 	{
 		return mBusyDma;
 	};
-	static void setBusyDma(const bool f) { mBusyDma = f;};
-	static void txEnd();
-	static uint16_t getAvalibleByte();
-	static int getDataRx(uint8_t *buf);
-	static void pushByteRx(uint8_t byte);
+	 void setBusyDma(const bool f) { mBusyDma = f;};
+	 void txEnd();
+
+	 void pushByteRx(uint8_t byte);
 	
-	static std::function<void(const uint8_t)> putByte;
+
 	
 private:
-	static void initUart();
-	static void initDma();
-	static Uart3 *m_instance;
-	static const int speed = 115200;
-
-	static void taskWrite(void *p);
-	static void taskRead(void *p);
+	 Uart3();
+	 void initUart();
+	 void initDma();
+	int txDma(const uint8_t *data, const uint8_t len);
 	
+	 BaseType_t xReturned;
+	 xTaskHandle xHandle;
+	 xTaskHandle xHandleRead;
+	 xQueueHandle xQueueWrite;
+	xSemaphoreHandle xSemWrite;
 	
-	static BaseType_t xReturned;
-	static xTaskHandle xHandle;
-	static xTaskHandle xHandleRead;
-	static xQueueHandle xQueueWrite;
-	
-	
-	static int txDma(const uint8_t *data, const uint8_t len);
-	
-	static bool mBusyDma; 
-	static ElementUart push;
-	static ElementUart pop;
-	static xSemaphoreHandle xSemWrite;
-	
-	static int indexWriteRx;
-	static int indexReadRx;
-	static bool isRtosRun;
+    int indexWriteRx;
+    int indexReadRx;
+	 bool isRtosRun;
+	bool mBusyDma; 
+	ElementUart push;
+	ElementUart pop;
 };
 

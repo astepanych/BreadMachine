@@ -15,6 +15,8 @@ struct ElementUart
 };
 #define  SizeQueUart  (32)
 
+constexpr int speedUart = 115200;
+
 
 
 

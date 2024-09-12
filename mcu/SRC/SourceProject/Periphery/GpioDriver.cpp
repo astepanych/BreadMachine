@@ -15,17 +15,18 @@ struct GpioPin
 };
 
 const GpioPin settingsPins[] = { 
-		{GpioDriver::PinVcnt,				GPIOA, GPIO_Pin_0, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinZero},
-		{GpioDriver::PinH2O,				GPIOA, GPIO_Pin_1, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinZero},
-		{GpioDriver::PinTemperatureUp,		GPIOA, GPIO_Pin_2, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinZero},
-		{GpioDriver::PinTemperatureDown,	GPIOA, GPIO_Pin_3, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinZero},
-		{GpioDriver::PinShiberX,			GPIOA, GPIO_Pin_4, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinZero},
-		{GpioDriver::PinShiberO,			GPIOA, GPIO_Pin_5, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinZero},
-		{GpioDriver::PinGreen,				GPIOD, GPIO_Pin_12, RCC_AHB1Periph_GPIOD,GpioDriver::StatePinZero },
-		{GpioDriver::PinYellow,				GPIOD, GPIO_Pin_13, RCC_AHB1Periph_GPIOD,GpioDriver::StatePinZero },
-		{GpioDriver::PinX1,					GPIOD, GPIO_Pin_14, RCC_AHB1Periph_GPIOD,GpioDriver::StatePinZero },
-		{GpioDriver::PinX2,					GPIOD, GPIO_Pin_15, RCC_AHB1Periph_GPIOD,GpioDriver::StatePinZero },
-		{GpioDriver::Led,					GPIOF, GPIO_Pin_8, RCC_AHB1Periph_GPIOF, GpioDriver::StatePinZero }
+		{GpioDriver::PinFan, GPIOA, GPIO_Pin_0, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinOne},
+		{GpioDriver::PinH2O, GPIOA, GPIO_Pin_1, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinOne},
+		{GpioDriver::PinTemperatureUp, GPIOA, GPIO_Pin_2, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinOne},
+		{GpioDriver::PinTemperatureDown, GPIOA, GPIO_Pin_3, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinOne},
+		{GpioDriver::PinShiberX, GPIOA, GPIO_Pin_4, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinOne},
+		{GpioDriver::PinShiberO, GPIOA, GPIO_Pin_5, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinOne},
+		{GpioDriver::PinGreen, GPIOD, GPIO_Pin_12, RCC_AHB1Periph_GPIOD, GpioDriver::StatePinOne },
+		{GpioDriver::PinYellow,				GPIOD, GPIO_Pin_13, RCC_AHB1Periph_GPIOD,GpioDriver::StatePinOne },
+		{GpioDriver::PinX1, GPIOD, GPIO_Pin_14, RCC_AHB1Periph_GPIOD, GpioDriver::StatePinOne },
+		{GpioDriver::PinX2, GPIOD, GPIO_Pin_15, RCC_AHB1Periph_GPIOD, GpioDriver::StatePinOne },
+		{GpioDriver::Led, GPIOF, GPIO_Pin_9, RCC_AHB1Periph_GPIOF, GpioDriver::StatePinOne },
+		{GpioDriver::Led1, GPIOF, GPIO_Pin_10, RCC_AHB1Periph_GPIOF, GpioDriver::StatePinOne }
 };
 const int sizeSettingsPins = sizeof(settingsPins) / sizeof(settingsPins[0]);
 
@@ -38,7 +39,10 @@ GpioDriver::GpioDriver()
 
 void GpioDriver::setPin(PinsGpioOut pin, StatesPin state)
 {
-	GPIO_SetBits(settingsPins[pin].port, settingsPins[pin].pin);
+	if (state == StatePinOne)
+		GPIO_SetBits(settingsPins[pin].port, settingsPins[pin].pin);
+	else
+		GPIO_ResetBits(settingsPins[pin].port, settingsPins[pin].pin);
 }
 void GpioDriver::togglePin(PinsGpioOut pin)
 {
@@ -99,11 +103,11 @@ void GpioDriver::initModule()
 
 	/* Set priority */
 
-	nvic.NVIC_IRQChannelPreemptionPriority = 0x00;
+	nvic.NVIC_IRQChannelPreemptionPriority = 0x09;
 
 	/* Set sub priority */
 
-	nvic.NVIC_IRQChannelSubPriority = 0x01;
+	nvic.NVIC_IRQChannelSubPriority = 0x09;
 
 	/* Enable interrupt */
 

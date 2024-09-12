@@ -3,37 +3,29 @@
 #include <FreeRTOS.h>
 #include <task.h>
 #include <portmacro.h>
-#include <Periphery/Uart1.h>
-#include <Periphery/Uart3.h>
+#include <AdcDriver.h>
 #include <DisplayDriver.h>
 #include <vector>
+#include <WorkModeEdit.h>
+#include "typedef.h"
 
 #define NumItemList  (7)
+#define NumItemListEdit  (5)
 
-struct ElementList
-{
-	uint16_t addrColor;
-	uint16_t addrText;
-};
 
-struct Lists
-{
-	Lists()
-	{
-		indexDisplay = indexCommon = 0;
-	}
-	uint16_t indexDisplay;
-	int16_t indexCommon;
-	uint16_t maxItemDisplay;
-	uint16_t maxItem;
-	uint16_t currentIndex;
-	uint16_t currentPos;
-	ElementList list[NumItemList];
-};
 
-struct Programs
+constexpr uint16_t xProgresStage = 17;
+constexpr uint16_t yProgresStage = 175;
+constexpr uint16_t hProgresStage = 60;
+constexpr uint16_t wProgresStage = 568;
+
+
+enum StateRun
 {
-	std::wstring name;
+	StateRunIdle,       
+	StateRunStart,
+	StateRunWork,
+	StateRunStop
 };
 
 class AppCore
@@ -44,7 +36,7 @@ public:
 
 private:
 	
-	static void parsePackDisplay(const uint16_t id, uint8_t* data);
+	static void parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data);
 	
 	static void keyEvent(uint16_t key);
 	void initHal();
@@ -52,12 +44,11 @@ private:
 	
 	static void initText();
 	static void taskPeriodic(void *p);
-	
 
-	
 	static GpioDriver *gpio;
 	
-	static Uart1 *uart1;
+	
+	static AdcDriver *adc;
 
 	static DisplayDriver *display;
 	
@@ -66,10 +57,33 @@ private:
 
 	static uint8_t helperBuf[256];
 	
-	static Lists listMain;
-	static std::vector<Programs> listPrograms;
+	static MyList *lstPrograms;
+	static WorkModeEdit *lstProgramsEdit;
+	static Widget *p_widget;
 	
-
+	static std::vector<WorkMode> m_programs;
+	static void initDefaultPrograms();
+	static void readPrograms();
+	static void writePrograms();
+	
+	static void fillProgram(const std::string &name, const uint16_t numStages, const uint16_t *stage = nullptr);
+	static void updateProgressBar(uint16_t value);
+	
+	static void paintStageProgress();
+	static WorkMode currentWorkMode;
+	
+	static void getSizeWRectangle(const WorkMode &mode, uint16_t *wList);
+	static void updateParamStage();
+	static void updateTime(uint16_t sec);
+	
+	
+	static uint16_t stateRun;
+	static uint32_t commonDuration;
+	static uint16_t currentStage;
+	static uint16_t stageDuration;
+	static uint16_t modeDuration;
+	
+	
 	
 
 };

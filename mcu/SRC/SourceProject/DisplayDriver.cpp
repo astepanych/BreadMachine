@@ -1,7 +1,10 @@
 #include "DisplayDriver.h"
 #include <string.h>
+#include "1251/utf8_to_cp1251.h"
 
-Uart3 *DisplayDriver::uart3;
+
+#define uart uart2
+
 
 //display
 static const uint8_t cmdTouch[] = { 0x5a, 0xa5, 0x4, 0x83, 0x00, 0x16, 0x03 };
@@ -23,7 +26,7 @@ uint8_t DisplayDriver::currentIndex;
 
 int DisplayDriver::cntPutByte;
 
-std::function<void(const uint16_t, uint8_t*)> DisplayDriver::newCmd;
+std::function<void(const uint16_t, uint8_t, uint8_t*)> DisplayDriver::newCmd;
 
 DisplayDriver::DisplayDriver() {
 	m_instance = this;
@@ -37,12 +40,10 @@ DisplayDriver::DisplayDriver() {
 		tskIDLE_PRIORITY+1,
 		&xHandleDisplay); 
 	
-	uart3 = new Uart3();
-	uart3->init();
-	uart3->putByte = this->putByte;
+	
+	uart.init();
+	uart.putByte = this->putByte;
 	statePacket = DisplayDriver::StateWaitByte1;
-	
-	
 }
 
 void DisplayDriver::putByte(const uint8_t byte)
@@ -107,41 +108,41 @@ void DisplayDriver::parsePackFromDisplay(uint8_t len, uint8_t *data)
 	switch (id)
 	{
 	default:
-		newCmd(id, data + 3);
+		newCmd(id, len,data + 3);
 		break;
 	}
 }
 
-void DisplayDriver::sendToDisplay(uint16_t id, std::wstring &str)
+void DisplayDriver::sendToDisplay(const uint16_t id, const std::string &str)
 {
 	uint8_t buf[SizeBuffer + 3];
 	memset(buf, 0, SizeBuffer + 3);
 	buf[0] = startByte1;
 	buf[1] = startByte2;
-	buf[2] = str.length()*2 + 3;
+	
 	buf[3] = cmdByteWrite;
 	//заполняем адрес
-	uint8_t *p = (uint8_t*)&id;
-	for (int i = sizeof(uint16_t) - 1; i >= 0; i--) {
-		buf[4 + i] = *p;
-		p++;
-	}
-	p = (uint8_t*)str.data();
+	u16be *p1 = (u16be*)&buf[4]; 
+	*p1 = id;
+	uint8_t *p = (uint8_t*)str.data();
 	int len = 6;
-	for (int i = 0; i < str.length(); i++)
-	{
-		buf[6 + 2*i] = *(p + 1);
-		buf[6 + 2*i +1] = *(p);
-		p += 4;
-		len += 2;
-	}
-	uart3->write(buf, len);
+	char *pOut = (char*)(buf + len);
+	char buf1[SizeBuffer + 3];
+	memset(buf1, 0, SizeBuffer + 3);
+	memcpy(buf1, str.data(), str.length());
+	int l = convertUtf8ToCp1251(buf1, pOut);
+	buf[2] = l + 3;
+	if (l == -1)
+		return;
+	len += l;
+	
+	uart.write(buf, len);
 }
 
 void DisplayDriver::reset()
 {
 	uint8_t buf[] = {0x5A, 0xA5, 0x07, 0x82, 0x00, 0x04, 0x55, 0xAA, 0x5A, 0xA5};
-	uart3->write(buf, sizeof(buf));
+	uart.write(buf, sizeof(buf));
 }
 
 void DisplayDriver::sendToDisplay(uint16_t id, uint8_t len, uint8_t *data)
@@ -152,13 +153,28 @@ void DisplayDriver::sendToDisplay(uint16_t id, uint8_t len, uint8_t *data)
 	buf[2] = len+3;
 	buf[3] = cmdByteWrite;
 	//заполняем адрес
+	u16be *p = (u16be*)&buf[4]; 
+	*p = id;
+	memcpy(buf + 6, data, len);
+	uart.write(buf, len + 6);
+	
+}
+
+void DisplayDriver::sendToDisplay1(uint16_t id, uint8_t len, uint8_t *data)
+{
+	uint8_t buf[SizeBuffer + 3];
+	buf[0] = startByte1;
+	buf[1] = startByte2;
+	buf[2] = len + 3;
+	buf[3] = cmdByteWrite;
+	//заполняем адрес
 	uint8_t *p = (uint8_t*)&id;
-	for (int i = sizeof(uint16_t) - 1; i >= 0; i--)	{
+	for (int i = sizeof(uint16_t) - 1; i >= 0; i--) {
 		buf[4 + i] = *p;
 		p++;
 	}
 	memcpy(buf + 6, data, len);
-	uart3->write(buf, len + 6);
+	uart.write(buf, len + 6);
 	
 }
 
@@ -170,17 +186,13 @@ void DisplayDriver::sendToDisplay(uint16_t id, uint16_t data)
 	buf[2] = sizeof(uint16_t) + 3;
 	buf[3] = cmdByteWrite;
 	
-	uint8_t *p = (uint8_t*)&id;
-	for (int i = sizeof(uint16_t) - 1; i >= 0; i--) {
-		buf[4 + i] = *p;
-		p++;
-	}
-	p = (uint8_t*)&data;
-	for (int i = sizeof(uint16_t) - 1; i >= 0; i--) {
-		buf[6 + i] = *p;
-		p++;
-	}
-	uart3->write(buf, 8);
+	u16be *p = (u16be*)&buf[4]; 
+	*p = id;
+	p++;
+	*p = data;
+	
+	
+	uart.write(buf, 8);
 }
 
 void DisplayDriver::taskDisplay(void *p)

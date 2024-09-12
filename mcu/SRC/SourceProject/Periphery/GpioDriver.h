@@ -1,5 +1,6 @@
 #pragma once
 #include "stm32f4xx_gpio.h"
+#include "stm32f4xx_rcc.h"
 
 class GpioDriver
 {
@@ -7,7 +8,7 @@ class GpioDriver
 public:
 	enum PinsGpioOut
 	{
-		PinVcnt = 0,
+		PinFan = 0,
 		PinH2O,
 		PinTemperatureUp,
 		PinTemperatureDown,
@@ -17,7 +18,8 @@ public:
 		PinYellow,
 		PinX1,
 		PinX2, 
-		Led
+		Led, 
+		Led1
 		
 	};
 	enum StatesPin

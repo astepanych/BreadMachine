@@ -11,25 +11,36 @@
 static uint8_t gBufferRx[SizeBufferRx];
 static uint8_t gBufferTx[SizeBuffer];
 
-Uart3 *Uart3::m_instance;
-xQueueHandle Uart3::xQueueWrite;
-BaseType_t Uart3::xReturned;
-xTaskHandle Uart3::xHandle;
-xTaskHandle Uart3::xHandleRead;
+static void tskWrite(void *p)
+{
+	Uart3::instance().taskWrite(p);
+}
 
-bool Uart3::mBusyDma; 
-ElementUart Uart3::push;
-ElementUart Uart3::pop;
-xSemaphoreHandle Uart3::xSemWrite;
+static void tskRead(void *p)
+{
+	Uart3::instance().taskRead(p);
+}
 
-int Uart3::indexWriteRx = 0;
-int Uart3::indexReadRx = 0;
-bool Uart3::isRtosRun;
- std::function<void(uint8_t)> Uart3::putByte;
+extern "C" 
+void DMA1_Stream3_IRQHandler(void)//tx uart
+{
+	/* Test on DMA Stream Transfer Complete interrupt */
+	Uart3::instance().txEnd();
+
+}
+extern "C"
+void USART3_IRQHandler() {
+	
+	if (USART_GetITStatus(USART3, USART_IT_RXNE)) {
+		USART_ClearITPendingBit(USART3, USART_IT_RXNE);
+		uint16_t byte = USART_ReceiveData(USART3);
+		Uart3::instance().pushByteRx((uint8_t)byte);
+	}
+}
+
 
 Uart3::Uart3()
 {
-	m_instance = this;
 	isRtosRun = false;
 }
 
@@ -38,7 +49,7 @@ void Uart3::init()
 	xSemWrite = xSemaphoreCreateBinary();
 	xQueueWrite = xQueueCreate(SizeQueUart, sizeof(ElementUart));
 	xReturned = xTaskCreate(
-				instance()->taskWrite,       /* Function that implements the task. */
+				tskWrite,       /* Function that implements the task. */
 		"Uart3Write",          /* Text name for the task. */
 		256,      /* Stack size in words, not bytes. */
 		(void *) 1,    /* Parameter passed into the task. */
@@ -46,7 +57,7 @@ void Uart3::init()
 		&xHandle); /* Used to pass out the created task's handle. */
 	
 	xReturned = xTaskCreate(
-		instance()->taskRead,       /* Function that implements the task. */
+		tskRead,       /* Function that implements the task. */
 		"Uart3Read",          /* Text name for the task. */
 		256,      /* Stack size in words, not bytes. */
 		(void *) 1,    /* Parameter passed into the task. */
@@ -121,15 +132,6 @@ void Uart3::initDma()
 
 void Uart3::initUart()
 {	
-	/*
-	NVIC_InitTypeDef NVIC_InitStructure;
-	NVIC_InitStructure.NVIC_IRQChannel = USART3_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 9;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 9;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);*/
-	
-	
 	
 	USART_Cmd(USART3, DISABLE);
 
@@ -147,7 +149,7 @@ void Uart3::initUart()
 	
 	USART_InitTypeDef usart;
 	usart.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-	usart.USART_BaudRate = speed;
+	usart.USART_BaudRate = speedUart;
 	usart.USART_Parity = USART_Parity_No;
 	usart.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
 	usart.USART_StopBits = USART_StopBits_1;
@@ -215,22 +217,7 @@ void Uart3::txEnd()
 	}
 }
 
-extern "C" 
-void DMA1_Stream3_IRQHandler(void)//tx uart
-{
-	/* Test on DMA Stream Transfer Complete interrupt */
-	Uart3::instance()->txEnd();
 
-}
-extern "C"
-void USART3_IRQHandler() {
-	
-	if (USART_GetITStatus(USART3, USART_IT_RXNE)) {
-		USART_ClearITPendingBit(USART3, USART_IT_RXNE);
-		uint16_t byte = USART_ReceiveData(USART3);
-		Uart3::instance()->pushByteRx((uint8_t)byte);
-	}
-}
 
 
 int Uart3::txDma(const uint8_t *data, const uint8_t len)
@@ -249,19 +236,6 @@ int Uart3::txDma(const uint8_t *data, const uint8_t len)
 void Uart3::pushByteRx(uint8_t byte)
 {
 	putByte(byte);
-	
 }
 
-int Uart3::getDataRx(uint8_t *buf) {
-	int len = 0;
-	if(buf == nullptr)
-		return -1;
-	if (indexReadRx != indexWriteRx) {
-		while (indexReadRx != indexWriteRx) {
-			buf[len] = gBufferRx[indexReadRx];
-			len++;
-			indexReadRx = (indexReadRx + 1) % SizeBufferRx;
-		}
-	}
-	return len;
-}
+
