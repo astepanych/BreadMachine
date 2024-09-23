@@ -1,6 +1,6 @@
 #include "DisplayDriver.h"
 #include <string.h>
-#include "1251/utf8_to_cp1251.h"
+
 
 
 #define uart uart2
@@ -35,7 +35,7 @@ DisplayDriver::DisplayDriver() {
 	
 	xTaskCreate(this->taskDisplay,
 		"display",
-		512,
+		1024,
 		(void*)2,
 		tskIDLE_PRIORITY+1,
 		&xHandleDisplay); 
@@ -115,7 +115,7 @@ void DisplayDriver::parsePackFromDisplay(uint8_t len, uint8_t *data)
 
 void DisplayDriver::sendToDisplay(const uint16_t id, const std::string &str)
 {
-	uint8_t buf[SizeBuffer + 3];
+	static uint8_t buf[SizeBuffer + 3];
 	memset(buf, 0, SizeBuffer + 3);
 	buf[0] = startByte1;
 	buf[1] = startByte2;
@@ -127,13 +127,21 @@ void DisplayDriver::sendToDisplay(const uint16_t id, const std::string &str)
 	uint8_t *p = (uint8_t*)str.data();
 	int len = 6;
 	char *pOut = (char*)(buf + len);
-	char buf1[SizeBuffer + 3];
+	static char buf1[SizeBuffer + 3];
 	memset(buf1, 0, SizeBuffer + 3);
 	memcpy(buf1, str.data(), str.length());
 	int l = convertUtf8ToCp1251(buf1, pOut);
-	buf[2] = l + 3;
-	if (l == -1)
-		return;
+	if (l != -1)
+	{
+		buf[2] = l + 3;
+	}
+	else
+	{
+		memcpy(pOut, str.data(), str.length());
+		l = str.length();
+		buf[2] = l + 3;
+	}
+
 	len += l;
 	
 	uart.write(buf, len);
@@ -147,7 +155,7 @@ void DisplayDriver::reset()
 
 void DisplayDriver::sendToDisplay(uint16_t id, uint8_t len, uint8_t *data)
 {
-	uint8_t buf[SizeBuffer + 3];
+	static uint8_t buf[SizeBuffer + 3];
 	buf[0] = startByte1;
 	buf[1] = startByte2;
 	buf[2] = len+3;
@@ -160,27 +168,29 @@ void DisplayDriver::sendToDisplay(uint16_t id, uint8_t len, uint8_t *data)
 	
 }
 
-void DisplayDriver::sendToDisplay1(uint16_t id, uint8_t len, uint8_t *data)
+void DisplayDriver::sendToDisplayStr(uint16_t id, uint8_t len, char *data)
 {
-	uint8_t buf[SizeBuffer + 3];
+	static uint8_t buf[SizeBuffer + 3];
+	memset(buf, 0xff, SizeBuffer + 3);
 	buf[0] = startByte1;
 	buf[1] = startByte2;
-	buf[2] = len + 3;
+	buf[2] = len + 5;
 	buf[3] = cmdByteWrite;
 	//заполняем адрес
-	uint8_t *p = (uint8_t*)&id;
-	for (int i = sizeof(uint16_t) - 1; i >= 0; i--) {
-		buf[4 + i] = *p;
-		p++;
-	}
-	memcpy(buf + 6, data, len);
-	uart.write(buf, len + 6);
+	u16be *p = (u16be*)&buf[4]; 
+	*p = id;
+	if(data!=nullptr)
+		memcpy(buf + 6, data, len);
+	uart.write(buf, len + 8);
 	
 }
 
+
+
+
 void DisplayDriver::sendToDisplay(uint16_t id, uint16_t data)
 {
-	uint8_t buf[SizeBuffer + 3];
+	static uint8_t buf[SizeBuffer + 3];
 	buf[0] = startByte1;
 	buf[1] = startByte2;
 	buf[2] = sizeof(uint16_t) + 3;
@@ -193,6 +203,24 @@ void DisplayDriver::sendToDisplay(uint16_t id, uint16_t data)
 	
 	
 	uart.write(buf, 8);
+}
+
+void DisplayDriver::sendToDisplayF(uint16_t id, float &data)
+{
+	static uint8_t buf[SizeBuffer + 3];
+	buf[0] = startByte1;
+	buf[1] = startByte2;
+	buf[2] = sizeof(float) + 3;
+	buf[3] = cmdByteWrite;
+	
+	u16be *p = (u16be*)&buf[4]; 
+	*p = id;
+	u32be *p32 = (u32be*)&buf[6];
+	uint32_t tmp;
+	memcpy(&tmp, &data, sizeof(float));
+	*p32 = (u32be)tmp;
+	
+	uart.write(buf, 10);
 }
 
 void DisplayDriver::taskDisplay(void *p)

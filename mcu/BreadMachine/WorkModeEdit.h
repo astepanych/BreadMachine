@@ -25,6 +25,12 @@
 #define AddrDamperStageE	0x6784
 #define AddrFanStageE		0x6786
 
+typedef enum 
+{
+	StateView = 0,
+	StateEdit,
+	StateNew
+}StateEditWorkMode;
 
 class WorkModeEdit :
     public MyList
@@ -33,11 +39,14 @@ public:
 	WorkModeEdit(DisplayDriver *p, uint16_t maxNumItem);
 	Widget* keyEvent(uint16_t key);
 	void changeParams(const uint16_t id, uint8_t len, uint8_t* data);
+	std::function<void()> saveWorkModes;
 private:
 	void paintNameWorkMode(uint16_t addrItem);
 	void paintSettingsWorkMode(bool isEdited = false);
+	void toMyCodec(uint8_t *buf, const uint16_t len);
+	void to1251(uint8_t *buf, const uint16_t len);
 	WorkMode tempWMode;
 	int16_t currentStage;
-	bool isEdited;
+	StateEditWorkMode stateEdited;
 };
 

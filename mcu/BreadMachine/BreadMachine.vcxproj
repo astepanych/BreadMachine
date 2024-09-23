@@ -43,9 +43,28 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
     <ClCompile>
       <CPPLanguageStandard>CPP14</CPPLanguageStandard>
-      <AdditionalIncludeDirectories>..\SRC;..\SRC\SourceProject;..\SRC\SourceProject\Periphery;..\SRC\STM\STM32F4xxxx\CMSIS_StdPeriph\Device\ST\STM32F4xx\Include;..\SRC\STM\STM32F4xxxx\CMSIS_HAL\Include;..\SRC\STM\STM32F4xxxx\CMSIS_HAL\Device\ST\STM32F4xx\Include;..\SRC\STM\FreeRTOS\Source\include;..\SRC\STM\FreeRTOS\Source\portable\GCC\ARM_CM3;..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\inc;..\SRC\STM\STM32F4xxxx\STM32F4xx_HAL_Driver\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>STM32F407xx;STM32F40_41xxx;HSE_VALUE=20000000;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\SRC;..\SRC\SourceProject;..\SRC\SourceProject\Periphery;..\SRC\STM\STM32F4xxxx\CMSIS_StdPeriph\Device\ST\STM32F4xx\Include;..\SRC\STM\STM32F4xxxx\CMSIS_HAL\Include;..\SRC\STM\STM32F4xxxx\CMSIS_HAL\Device\ST\STM32F4xx\Include;..\SRC\STM\FreeRTOS\Source\include;..\SRC\STM\FreeRTOS\Source\portable\GCC\ARM_CM3;..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\inc;..\SRC\STM\STM32F4xxxx\STM32F4xx_HAL_Driver\Inc;%(ClCompile.AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>STM32F407xx;STM32F40_41xxx;HSE_VALUE=20000000;__FPU_PRESENT=1;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link>
+      <AdditionalLinkerInputs>;%(Link.AdditionalLinkerInputs)</AdditionalLinkerInputs>
+      <LibrarySearchDirectories>;%(Link.LibrarySearchDirectories)</LibrarySearchDirectories>
+      <AdditionalLibraryNames>;%(Link.AdditionalLibraryNames)</AdditionalLibraryNames>
+      <LinkerScript />
+    </Link>
+    <ToolchainSettingsContainer>
+      <InstructionSet>
+      </InstructionSet>
+    </ToolchainSettingsContainer>
+    <ToolchainSettingsContainer>
+      <FloatABI>soft</FloatABI>
+    </ToolchainSettingsContainer>
+    <ToolchainSettingsContainer>
+      <ARMFPU>vfp</ARMFPU>
+    </ToolchainSettingsContainer>
+    <ToolchainSettingsContainer>
+      <ARMCPU>cortex-m4</ARMCPU>
+    </ToolchainSettingsContainer>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
     <ClCompile>

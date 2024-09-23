@@ -8,8 +8,10 @@
 #include "typedef.h"
 #include <time.h>
 #include <math.h>
+float AppCore::U;
+uint16_t AppCore::temperature;
 
-constexpr uint16_t versionSoft = 1005;
+constexpr uint16_t versionSoft = 1006;
 GpioDriver *AppCore::gpio;
 
 AdcDriver *AppCore::adc;
@@ -35,25 +37,29 @@ std::vector<WorkMode> AppCore::m_programs;
 void AppCore::initDefaultPrograms()
 {
 	m_programs.clear();
-	fillProgram("ХЛЕБ БОРОДИНСКИЙ    ", 3);
-	fillProgram("ХЛЕБ КИРПИЧИК       ", 4);
-	fillProgram("ХЛЕБ СЕРЫЙ          ", 5);
-	fillProgram("БАТОН НАРЕЗНОЙ      ", 2);
-	fillProgram("БАТОН С ПОВИДЛОМ    ", 7);
-	fillProgram("ВАТРУШКА            ", 6);
-	fillProgram("БАТОН С МАКОМ       ", 7);
-	fillProgram("ПЕЧЕНЬЕ ОВСЯНОЕ     ", 4);
-	fillProgram("ПРЯНИК МЕДОВЫЙ      ", 3);
+	fillProgram("ХЛЕБ БОРОДИНСКИЙ", 3);
+	fillProgram("ХЛЕБ КИРПИЧИК", 4);
+	fillProgram("ХЛЕБ СЕРЫЙ", 5);
+	fillProgram("БАТОН НАРЕЗНОЙ", 2);
+	fillProgram("БАТОН С ПОВИДЛОМ", 7);
+	fillProgram("ВАТРУШКА", 6);
+	fillProgram("БАТОН С МАКОМ", 7);
+	fillProgram("ПЕЧЕНЬЕ ОВСЯНОЕ", 4);
+	fillProgram("ПРЯНИК МЕДОВЫЙ", 3);
 	
 
 }
 
 void AppCore::fillProgram(const std::string &name, const uint16_t numStages, const uint16_t *stage)
 {
+	
 	WorkMode el;
-	el.lenNameMode = name.length();
-	memset(el.nameMode, 0, MaxLengthNameMode);
-	memcpy(el.nameMode, name.data(), name.length()*sizeof(char));
+	memset(el.nameMode, 0x0, MaxLengthNameMode);
+	char tmpBuf[MaxLengthNameMode];
+	memset(tmpBuf, 0x0, MaxLengthNameMode);
+	memcpy(tmpBuf, name.data(), name.length());
+	el.lenNameMode = convertUtf8ToCp1251(tmpBuf, el.nameMode);
+
 	el.numStage = numStages;
 	srand(time(0));
 	for (int i = 0; i < numStages; i++)	{
@@ -182,10 +188,14 @@ void AppCore::initText()
 	}
 	
 	lstProgramsEdit = new WorkModeEdit(display, NumItemListEdit);
+	
 	lstProgramsEdit->setWModes(&m_programs);
 	lstProgramsEdit->setPrevWidgwt(lstPrograms);
 	lstProgramsEdit->changeValue = [&](int index) {
 	
+	};
+	lstProgramsEdit->saveWorkModes = [=]() {
+		writePrograms();
 	};
 	lstProgramsEdit->setAddrScrollValue(AddrScrolBar);
 	
@@ -336,8 +346,36 @@ void AppCore::updateTime(uint16_t sec)
 	
 }
 
+void AppCore::correctTemperature(float &currentTemp, uint16_t &targetTemp)
+{
+	static uint16_t period = 0;
+	static float target = 1.0*targetTemp;
+	static float current = currentTemp;
+	period++;
+	if (period == 10)
+	{
+		if (target > current)
+		{
+			gpio->setPin(GpioDriver::PinTemperatureUp, GpioDriver::GpioDriver::StatePinOne);
+			
+		}
+		if (target < currentTemp)
+		{
+			gpio->setPin(GpioDriver::PinTemperatureDown, GpioDriver::GpioDriver::StatePinOne);
+			
+		}
+	} 
+	if (period == 11) {
+		period = 0;
+		gpio->setPin(GpioDriver::PinTemperatureUp, GpioDriver::StatePinZero);
+		gpio->setPin(GpioDriver::PinTemperatureDown, GpioDriver::StatePinZero);
+	}
+}
+
 void AppCore::taskPeriodic(void *p)
 {
+	float testF = 1.1;
+	int count = 0;
 	int cnt = 0, len;
 	char buf[256];
 	readPrograms();
@@ -353,10 +391,12 @@ void AppCore::taskPeriodic(void *p)
 	while (true) {
 		vTaskDelay(1000 / portTICK_PERIOD_MS);
 
-	//	display->sendToDisplay(AddrNumTemperatureMeasure, adc->value1());
-		gpio->togglePin(GpioDriver::PinGreen);
-		gpio->togglePin(GpioDriver::PinYellow);
-		gpio->togglePin(GpioDriver::PinTemperatureUp);
+		U = adc->value2() * 3.3 / 4095;
+		float f = (2590.0*U - 330) / (1.2705 - 0.385*U);
+		
+		display->sendToDisplayF(AddrNumTemperatureMeasure, f);
+
+		
 		switch (stateRun)
 		{
 		case StateRunIdle:
@@ -372,25 +412,25 @@ void AppCore::taskPeriodic(void *p)
 			paintStageProgress();
 			stateRun = StateRunWork;
 			updateParamStage();
-			
 			break;
 		case StateRunWork:
 		{
 
-			stageDuration += 10;
-			modeDuration += 10;
+			stageDuration += 1;
+			modeDuration += 1;
+			correctTemperature(f, currentWorkMode.stages[currentStage].temperature);
 			gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].fan);
 			gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].damper);
 			gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatesPin)(!currentWorkMode.stages[currentStage].damper));
 			
 			
-			
+			paintStageProgress();
 			updateTime(currentWorkMode.stages[currentStage].duration - stageDuration);
 			if (stageDuration >= currentWorkMode.stages[currentStage].duration)
 			{
 				currentStage++;
 				stageDuration = 0;
-				paintStageProgress();
+				
 				if (currentStage == currentWorkMode.numStage) {
 					updateProgressBar(100);
 					stateRun = StateRunStop;

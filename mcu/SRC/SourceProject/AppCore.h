@@ -83,6 +83,10 @@ private:
 	static uint16_t stageDuration;
 	static uint16_t modeDuration;
 	
+	static float U;
+	static uint16_t temperature;
+	static void correctTemperature(float &currentTemp, uint16_t &targetTemp);
+	
 	
 	
 

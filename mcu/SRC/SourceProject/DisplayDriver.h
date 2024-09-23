@@ -4,6 +4,7 @@
 #include <Uart1.h>
 #include <string>
 #include "typedef.h"
+#include "1251/utf8_to_cp1251.h"
 
 constexpr uint16_t CmdSoftVersion = 0x2000;	
 
@@ -18,7 +19,7 @@ constexpr uint16_t AddrProgressBar = 0x4004;
 constexpr uint16_t AddrNumStage = 0x4006;
 constexpr uint16_t AddrNumWater = 0x4008;
 constexpr uint16_t AddrNumTemperature = 0x400a;
-constexpr uint16_t AddrNumTemperatureMeasure = 0x400C;
+constexpr uint16_t AddrNumTemperatureMeasure = 0x4020;
 constexpr uint16_t AddrNumDamper = 0x400E;
 constexpr uint16_t AddrNumFan = 0x4010;
 constexpr uint16_t AddrNumTime = 0x4012;
@@ -58,9 +59,11 @@ public:
 	
 	static void putByte(const uint8_t byte); 
 	static void sendToDisplay(uint16_t id, uint8_t len, uint8_t *data);
-	static void sendToDisplay1(uint16_t id, uint8_t len, uint8_t *data);
 	static void sendToDisplay(const uint16_t id, const std::string &str);
+	static void sendToDisplayStr(uint16_t id, uint8_t len, char *data);
+
 	static void sendToDisplay(uint16_t id, uint16_t data);
+	static void sendToDisplayF(uint16_t id, float &data);
 	
 	static std::function<void(const uint16_t, uint8_t, uint8_t*)> newCmd;
 	

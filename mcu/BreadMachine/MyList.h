@@ -40,6 +40,7 @@ protected:
 	std::vector<ElementList> lst;
 	std::vector<WorkMode> *pWModes;
 	uint16_t indexDisplay;
+	int16_t startIndex;
 	int16_t indexCommon;
 	uint16_t maxItemDisplay;
 	uint16_t maxPosItemDisplay;
