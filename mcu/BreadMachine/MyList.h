@@ -36,6 +36,12 @@ public:
 	};
 	
 	std::function<void(int)> changeValue;
+	inline void setIndex(uint16_t newIndex)
+	{
+		currentIndex = newIndex;
+		changeValue(currentIndex);
+	}
+	
 protected:
 	std::vector<ElementList> lst;
 	std::vector<WorkMode> *pWModes;

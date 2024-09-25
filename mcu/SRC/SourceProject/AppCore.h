@@ -11,13 +11,15 @@
 
 #define NumItemList  (7)
 #define NumItemListEdit  (5)
-
+#define DeltaTemperature  (0.5)
 
 
 constexpr uint16_t xProgresStage = 17;
 constexpr uint16_t yProgresStage = 175;
 constexpr uint16_t hProgresStage = 60;
 constexpr uint16_t wProgresStage = 568;
+
+
 
 
 enum StateRun
@@ -85,9 +87,11 @@ private:
 	
 	static float U;
 	static uint16_t temperature;
+	static float prevTemperature;
+
 	static void correctTemperature(float &currentTemp, uint16_t &targetTemp);
 	
-	
+	static xSemaphoreHandle xSemPeriodic;
 	
 
 };

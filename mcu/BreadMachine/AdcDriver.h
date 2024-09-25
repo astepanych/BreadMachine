@@ -5,6 +5,7 @@
 #include <queue.h>
 #include "semphr.h"
 #include <portmacro.h>
+#include <functional>
 class AdcDriver
 {
 public:
@@ -21,7 +22,7 @@ public:
 	{
 		return m_value1;
 	};
-	static uint16_t value2()
+	static float value2()
 	{
 		return m_value2;
 	};
@@ -31,7 +32,7 @@ public:
 private:
 	static AdcDriver *m_instance;
 	static uint16_t m_value1;
-	static uint16_t m_value2;
+	static float m_value2;
 	static xSemaphoreHandle xSem;
 	static uint16_t *pWork;
 	static BaseType_t xReturned;

@@ -8,10 +8,24 @@
 #include "typedef.h"
 #include <time.h>
 #include <math.h>
+
+
+struct StateWork
+{
+	bool isStart;
+	bool isDownTemp;
+	float signedDef;
+	float unsignedDef;
+	float currentTemp;
+	float prevTemp;
+	uint16_t newPeriodCorrect;
+	
+}gRun;
+
 float AppCore::U;
 uint16_t AppCore::temperature;
 
-constexpr uint16_t versionSoft = 1006;
+constexpr uint16_t versionSoft = 1007;
 GpioDriver *AppCore::gpio;
 
 AdcDriver *AppCore::adc;
@@ -29,7 +43,8 @@ uint32_t AppCore::commonDuration;
 uint16_t AppCore::currentStage;
  uint16_t AppCore::stageDuration;
  uint16_t AppCore::modeDuration;
-
+xSemaphoreHandle AppCore::xSemPeriodic;
+float AppCore::prevTemperature;
 
 
 
@@ -154,6 +169,8 @@ void AppCore::initHal()
 }
 void AppCore::initOsal()
 {
+	
+	xSemPeriodic = xSemaphoreCreateBinary();
 	xReturned = xTaskCreate(
 				this->taskPeriodic,       /* Function that implements the task. */
 		"NAME",          /* Text name for the task. */
@@ -251,6 +268,7 @@ void AppCore::keyEvent(uint16_t key)
 	{
 	case ReturnCodeKeyStart:
 		stateRun = StateRunStart;
+		xSemaphoreGive(xSemPeriodic);
 		break;
 	case ReturnCodeKeyStop:
 		stateRun = StateRunStop;
@@ -345,30 +363,83 @@ void AppCore::updateTime(uint16_t sec)
 	display->sendToDisplay(AddrNumTime, len, (uint8_t*)buf);
 	
 }
-
+#define PERIOD_CORRECT 10
+bool isCorect = true;
 void AppCore::correctTemperature(float &currentTemp, uint16_t &targetTemp)
 {
+	static int delta = 1;
+	static bool isFlag = false;
+	if (isCorect == false)
+		return;
 	static uint16_t period = 0;
 	static float target = 1.0*targetTemp;
-	static float current = currentTemp;
+	static uint16_t per = PERIOD_CORRECT;
+	float defCur;
 	period++;
-	if (period == 10)
-	{
-		if (target > current)
+	if (period == per) {
+		
+		
+		delta = 1;
+		gRun.newPeriodCorrect = PERIOD_CORRECT;
+		if (currentTemp - target < 7*DeltaTemperature && currentTemp - target > 0)
 		{
-			gpio->setPin(GpioDriver::PinTemperatureUp, GpioDriver::GpioDriver::StatePinOne);
+			//если мы в районе нужной температуры то ничего не регулируем
+			//return;
+			if (currentTemp - target > 4*DeltaTemperature)
+				gpio->setPin(GpioDriver::PinTemperatureDown, GpioDriver::StatePinOne);
+		}
+		else
+		{
+			gRun.signedDef =  gRun.currentTemp - gRun.prevTemp;
+			gRun.unsignedDef = fabsf(gRun.signedDef);
+			gRun.prevTemp = gRun.currentTemp;
+			
+			if (gRun.isStart) {//выравниваем температуру
+				if (gRun.signedDef < 0)
+					return;
+				gRun.isStart = false;
+				gpio->setPin(GpioDriver::PinTemperatureUp, GpioDriver::StatePinOne);
+				gRun.newPeriodCorrect = PERIOD_CORRECT * 4;
+				delta = 10;
+				return;
+			}
+			
+			if (gRun.currentTemp < target) {
+				if (gRun.unsignedDef < DeltaTemperature) {
+					gpio->setPin(GpioDriver::PinTemperatureUp, GpioDriver::StatePinOne);
+					if (gRun.unsignedDef < DeltaTemperature / 2)
+					{
+						delta = 3;
+						gRun.newPeriodCorrect =  PERIOD_CORRECT * 3 ;
+					}
+					else {
+						delta = gRun.currentTemp / target < 0.75 ? 5 : 1;
+						gRun.newPeriodCorrect = gRun.currentTemp / target < 0.75 ? PERIOD_CORRECT * 5 : PERIOD_CORRECT;
+					}
+				}
+				
+			
+			}
+			else if (gRun.currentTemp > target) {
+					gpio->setPin(GpioDriver::PinTemperatureDown, GpioDriver::StatePinOne);
+				if (gRun.currentTemp - target > 5) {
+					delta = 3;
+					
+				}
+				gRun.newPeriodCorrect = PERIOD_CORRECT * 3;
+					
+					
+			}
 			
 		}
-		if (target < currentTemp)
-		{
-			gpio->setPin(GpioDriver::PinTemperatureDown, GpioDriver::GpioDriver::StatePinOne);
-			
-		}
-	} 
-	if (period == 11) {
+		
+	}
+	else if (period >= per + delta) {
 		period = 0;
 		gpio->setPin(GpioDriver::PinTemperatureUp, GpioDriver::StatePinZero);
 		gpio->setPin(GpioDriver::PinTemperatureDown, GpioDriver::StatePinZero);
+		per = gRun.newPeriodCorrect;
+	gRun.isDownTemp = false;
 	}
 }
 
@@ -386,15 +457,19 @@ void AppCore::taskPeriodic(void *p)
 	
 	display->sendToDisplay(CmdSoftVersion, versionSoft);
 	display->sendToDisplay(addrMainItem, "ВЫБОР ПРОГРАММЫ");
+	lstPrograms->setIndex(0);
 	lstPrograms->resetWidget();	
 	uint16_t per;
+	float uTemp;
 	while (true) {
-		vTaskDelay(1000 / portTICK_PERIOD_MS);
-
-		U = adc->value2() * 3.3 / 4095;
-		float f = (2590.0*U - 330) / (1.2705 - 0.385*U);
 		
-		display->sendToDisplayF(AddrNumTemperatureMeasure, f);
+		xSemaphoreTake(xSemPeriodic, 1000 / portTICK_PERIOD_MS);
+		uTemp = adc->value2();
+		U = uTemp * 3.3 / 4095;
+		gRun.currentTemp = (2590.0*U - 330) / (1.2705 - 0.385*U);
+		
+		display->sendToDisplayF(AddrNumTemperatureMeasure, gRun.currentTemp);
+		display->sendToDisplayF(0x4024, uTemp);
 
 		
 		switch (stateRun)
@@ -404,7 +479,9 @@ void AppCore::taskPeriodic(void *p)
 		case StateRunStart:
 			currentStage = 0;
 			stageDuration = 0;
+			gRun.prevTemp = gRun.currentTemp;
 			modeDuration = 0;
+			gRun.isStart = true;
 			for (int i = 0; i < currentWorkMode.numStage; i++)
 			{
 				commonDuration += currentWorkMode.stages[i].duration;
@@ -418,7 +495,7 @@ void AppCore::taskPeriodic(void *p)
 
 			stageDuration += 1;
 			modeDuration += 1;
-			correctTemperature(f, currentWorkMode.stages[currentStage].temperature);
+			correctTemperature(gRun.currentTemp, currentWorkMode.stages[currentStage].temperature);
 			gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].fan);
 			gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].damper);
 			gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatesPin)(!currentWorkMode.stages[currentStage].damper));
@@ -438,7 +515,7 @@ void AppCore::taskPeriodic(void *p)
 				}
 				updateParamStage();
 			}
-			per = (uint16_t)(modeDuration * 100.0 / commonDuration);
+			per = (uint16_t)(stageDuration * 100.0 / currentWorkMode.stages[currentStage].duration);
 			updateProgressBar(per);
 			
 		}	

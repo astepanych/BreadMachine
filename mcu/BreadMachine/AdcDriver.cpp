@@ -8,7 +8,7 @@
 #include "stm32f4xx_tim.h"
 
 
-#define ELFR_CFFT_LENGTH 200
+#define ELFR_CFFT_LENGTH 256
 #define AIN_CHANNELS 2
 
 uint16_t AdcBuffer[ELFR_CFFT_LENGTH * AIN_CHANNELS];
@@ -17,7 +17,7 @@ BaseType_t AdcDriver::xReturned;
 xTaskHandle AdcDriver::xHandle;
 xSemaphoreHandle AdcDriver::xSem;
 uint16_t AdcDriver::m_value1;
-uint16_t AdcDriver::m_value2;
+float AdcDriver::m_value2;
 
 AdcDriver *AdcDriver::m_instance;
 uint16_t *AdcDriver::pWork;
@@ -40,7 +40,7 @@ void AdcDriver::init()
 		&xHandle); /* Used to pass out the created task's handle. */
 	pWork = AdcBuffer;
 	
-	initTimer(1000);
+	initTimer(500);
 	ADC_InitTypeDef        ADC_InitStructure;
 	ADC_CommonInitTypeDef  ADC_CommonInitStructure;
 	DMA_InitTypeDef        DMA_InitStructure;
@@ -155,10 +155,11 @@ void  AdcDriver::initTimer(uint16_t smplperiod)
 #include "GpioDriver.h"
 void AdcDriver::rx()
 {
+	
 	if (DMA_GetITStatus(DMA2_Stream2, DMA_IT_TCIF2)) {
 		/* Clear DMA Stream Transfer Complete interrupt pending bit */
 		DMA_ClearITPendingBit(DMA2_Stream2, DMA_IT_TCIF2);
-		
+		GpioDriver::instace()->togglePin(GpioDriver::PinGreen);
 		if (DMA_GetCurrentMemoryTarget(DMA2_Stream2) == DMA_Memory_0)
 			pWork = AdcBuffer1;
 		else 
@@ -181,22 +182,31 @@ void AdcDriver::rx()
 
 	
 }
+#include <vector>
+std::vector<uint16_t> workBuf;
 
 void AdcDriver::thread(void *p)
 {
 	uint32_t v1, v2;
+	const uint32_t lenWork = ELFR_CFFT_LENGTH * 3;
+	workBuf.reserve(2*lenWork);
 	while (true)
 	{
 		xSemaphoreTake(xSem, portMAX_DELAY);
 
+		workBuf.insert(workBuf.end(), pWork, pWork + ELFR_CFFT_LENGTH*2);
+		uint32_t curLen = workBuf.size();
+		if (curLen < 2*lenWork)
+			continue;
 		v1 = v2 = 0;
-		for (int i = 0; i < ELFR_CFFT_LENGTH; i++)
+		for (int i = 0; i < lenWork; i++)
 		{
-			v1 += pWork[2*i];
-			v2 += pWork[2*i + 1];
+			v2 += workBuf[2*i + 1];
 		}
-		m_value1 = v1 / ELFR_CFFT_LENGTH;
-		m_value2 = v2 / ELFR_CFFT_LENGTH;
+		workBuf.erase(workBuf.begin(), workBuf.begin() + ELFR_CFFT_LENGTH * 2);
+		m_value2 = (v2 * 1.0) / lenWork;
+		//m_value1 = v1 / ELFR_CFFT_LENGTH;
+		
 	}
 		
 }
