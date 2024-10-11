@@ -247,6 +247,10 @@ void AppCore::initHal()
 	adc = new AdcDriver;
 	adc->init();
 	
+	uart5.init();
+	uart5.putByte = [](const uint8_t byte) {
+	};
+	
 }
 
 
@@ -619,6 +623,8 @@ void AppCore::taskPeriodic(void *p)
 	display->sendToDisplay(addrMainItem, "ВЫБОР ПРОГРАММЫ");
 	lstPrograms->setIndex(0);
 	lstPrograms->resetWidget();	
+	uint32_t v = 0x12345678;
+	uart5.write((uint8_t*)&v, sizeof(v));
 	uint16_t per;
 	float uTemp;
 	while (true) {

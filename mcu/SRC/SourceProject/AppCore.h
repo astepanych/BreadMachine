@@ -9,6 +9,7 @@
 #include <WorkModeEdit.h>
 #include "typedef.h"
 #include "timers.h"
+#include "Uart5.h"
 
 #define NumItemList  (7)
 #define NumItemListEdit  (5)
