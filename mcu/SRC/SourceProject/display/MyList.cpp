@@ -60,8 +60,6 @@ Widget* MyList::keyEvent(uint16_t key)
 		currentIndex = indexDisplay;
 		currentPos = indexCommon;
 		changeValue(currentPos);
-		
-
 		break;
 	case ReturnCodeKeyInMenuListProgramms:
 		

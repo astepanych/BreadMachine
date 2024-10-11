@@ -168,6 +168,24 @@ void DisplayDriver::sendToDisplay(uint16_t id, uint8_t len, uint8_t *data)
 	
 }
 
+void DisplayDriver::switchPage(uint16_t page)
+{
+	static uint8_t buf[10];
+	buf[0] = startByte1;
+	buf[1] = startByte2;
+	buf[2] = 7;
+	buf[3] = cmdByteWrite;
+	buf[4] = 0;
+	buf[5] = 0x84;
+	buf[6] = 0x5a;
+	buf[7] = 0x01;
+	u16be *p = (u16be*)&buf[8]; 
+	*p = page;
+
+	uart.write(buf, 10);
+	
+}
+
 void DisplayDriver::sendToDisplayStr(uint16_t id, uint8_t len, char *data)
 {
 	static uint8_t buf[SizeBuffer + 3];

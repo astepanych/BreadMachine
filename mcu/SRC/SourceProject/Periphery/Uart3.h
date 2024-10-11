@@ -25,34 +25,34 @@ public:
 	
 	void init();
 
-	 void write(const uint8_t *buf, const uint8_t len);
+	void write(const uint8_t *buf, const uint8_t len);
 	std::function<void(const uint8_t)> putByte;
-	 bool isBusyDma() 
+	bool isBusyDma() 
 	{
 		return mBusyDma;
 	};
-	 void setBusyDma(const bool f) { mBusyDma = f;};
-	 void txEnd();
+	void setBusyDma(const bool f) { mBusyDma = f; };
+	void txEnd();
 
-	 void pushByteRx(uint8_t byte);
+	void pushByteRx(uint8_t byte);
 	
 
 	
 private:
-	 Uart3();
-	 void initUart();
-	 void initDma();
+	Uart3();
+	void initUart();
+	void initDma();
 	int txDma(const uint8_t *data, const uint8_t len);
 	
-	 BaseType_t xReturned;
-	 xTaskHandle xHandle;
-	 xTaskHandle xHandleRead;
-	 xQueueHandle xQueueWrite;
+	BaseType_t xReturned;
+	xTaskHandle xHandle;
+	xTaskHandle xHandleRead;
+	xQueueHandle xQueueWrite;
 	xSemaphoreHandle xSemWrite;
 	
-    int indexWriteRx;
-    int indexReadRx;
-	 bool isRtosRun;
+	int indexWriteRx;
+	int indexReadRx;
+	bool isRtosRun;
 	bool mBusyDma; 
 	ElementUart push;
 	ElementUart pop;

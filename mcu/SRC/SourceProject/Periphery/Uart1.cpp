@@ -109,12 +109,7 @@ void Uart1::init()
 
 void Uart1::initUart()
 {
-	
-	
 	USART_Cmd(USART2, DISABLE);
-
-	
-	
 	GPIO_InitTypeDef pins;
 	GPIO_StructInit(&pins);
 	pins.GPIO_Mode = GPIO_Mode_AF;

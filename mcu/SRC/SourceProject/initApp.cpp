@@ -34,6 +34,7 @@ int main()
 {
 	SystemClock_Config();
 //	initRtc();
-	AppCore *pApp = new AppCore;
+	AppCore::instance();
+	vTaskStartScheduler();
 	return 0;
 }

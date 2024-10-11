@@ -89,7 +89,7 @@ void GpioDriver::initModule()
 
 	/* Triggers on rising and falling edge */
 
-	exti.EXTI_Trigger = EXTI_Trigger_Falling;
+	exti.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
 
 	/* Add to EXTI */
 
@@ -123,8 +123,15 @@ GpioDriver::~GpioDriver()
 {
 }
 
+
+uint16_t cntInt = 0;
 extern "C" void EXTI15_10_IRQHandler()
 {
+	cntInt++;
+	uint16_t delay = 10000;
+	while (delay--) ;       
+	
+	GpioDriver::instace()->pinEvent(GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_13));
 	EXTI_ClearITPendingBit(EXTI_Line13);
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "stm32f4xx_gpio.h"
 #include "stm32f4xx_rcc.h"
+#include "functional"
 
 class GpioDriver
 {
@@ -34,7 +35,7 @@ public:
 	void togglePin(PinsGpioOut pin);
 
 	static GpioDriver *instace() {return ins;};
-	
+	std::function<void(bool)> pinEvent; 
 	
 
 private:

@@ -144,6 +144,7 @@ void WorkModeEdit::changeParams(const uint16_t id, uint8_t len, uint8_t* data)
 	break;
 	case AddrFanStageE: 
 		tempWMode.stages[currentStage].fan = val;
+		
 	break;	
 	}
 }

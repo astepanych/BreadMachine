@@ -41,6 +41,10 @@ public:
 		currentIndex = newIndex;
 		changeValue(currentIndex);
 	}
+	inline uint16_t currentIndexValue()
+	{
+		return currentIndex;
+	}; 
 	
 protected:
 	std::vector<ElementList> lst;

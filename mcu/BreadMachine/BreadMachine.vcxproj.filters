@@ -52,6 +52,9 @@
     <Filter Include="Source files\start">
       <UniqueIdentifier>{f6bc84b9-6e35-4781-8118-731a05237176}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source files\display">
+      <UniqueIdentifier>{18f7e608-5455-4c46-9d46-1ff103ddcecd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="stm32.props">
@@ -146,17 +149,8 @@
     <ClCompile Include="..\SRC\SourceProject\DisplayDriver.cpp">
       <Filter>Source files\APP</Filter>
     </ClCompile>
-    <ClCompile Include="Widget.cpp">
-      <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="MyList.cpp">
-      <Filter>Source files</Filter>
-    </ClCompile>
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_flash.c">
       <Filter>Source files\HAL</Filter>
-    </ClCompile>
-    <ClCompile Include="AdcDriver.cpp">
-      <Filter>Source files</Filter>
     </ClCompile>
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_adc.c">
       <Filter>Source files\HAL</Filter>
@@ -167,8 +161,20 @@
     <ClCompile Include="..\SRC\SourceProject\1251\utf8_to_cp1251.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
-    <ClCompile Include="WorkModeEdit.cpp">
-      <Filter>Source files</Filter>
+    <ClCompile Include="..\SRC\SourceProject\Periphery\Uart5.cpp">
+      <Filter>Source files\APP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\SourceProject\display\MyList.cpp">
+      <Filter>Source files\display</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\SourceProject\display\Widget.cpp">
+      <Filter>Source files\display</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\SourceProject\display\WorkModeEdit.cpp">
+      <Filter>Source files\display</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\SourceProject\Periphery\AdcDriver.cpp">
+      <Filter>Source files\APP</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -231,6 +237,33 @@
     </ClInclude>
     <ClInclude Include="WorkModeEdit.h">
       <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Uart5.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\display\KeyEvent.h">
+      <Filter>Source files\display</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\display\MyList.h">
+      <Filter>Source files\display</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\display\Widget.h">
+      <Filter>Source files\display</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\display\WorkMode.h">
+      <Filter>Source files\display</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\display\WorkModeEdit.h">
+      <Filter>Source files\display</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\Periphery\AdcDriver.h">
+      <Filter>Source files\APP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\Periphery\Uart.h">
+      <Filter>Source files\APP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\Periphery\Uart5.h">
+      <Filter>Source files\APP</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

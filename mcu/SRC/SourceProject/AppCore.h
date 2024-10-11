@@ -8,6 +8,7 @@
 #include <vector>
 #include <WorkModeEdit.h>
 #include "typedef.h"
+#include "timers.h"
 
 #define NumItemList  (7)
 #define NumItemListEdit  (5)
@@ -19,7 +20,7 @@ constexpr uint16_t yProgresStage = 175;
 constexpr uint16_t hProgresStage = 60;
 constexpr uint16_t wProgresStage = 568;
 
-
+constexpr uint16_t password = 2024;
 
 
 enum StateRun
@@ -35,63 +36,80 @@ class AppCore
 public:
 	AppCore();
 	~AppCore();
+	static AppCore &instance();
 
-private:
+	void taskPeriodic(void *p = 0);
+
+	void init();
+
+	void eventTimeoutLeds(TimerHandle_t timer);
+
 	
-	static void parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data);
+	void parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data);
 	
-	static void keyEvent(uint16_t key);
+	void keyEvent(uint16_t key);
 	void initHal();
 	void initOsal();
 	
-	static void initText();
-	static void taskPeriodic(void *p);
+	void initText();
+	
+	void fan();
 
-	static GpioDriver *gpio;
+	
+	 void initDefaultPrograms();
+	 void readPrograms();
+	 void writePrograms();
+	
+	void fillProgram(const std::string &name, const uint16_t numStages, const uint16_t *stage = nullptr);
+	void updateProgressBar(uint16_t value);
+	
+	void paintStageProgress();
+	WorkMode currentWorkMode;
+	
+	void getSizeWRectangle(const WorkMode &mode, uint16_t *wList);
+	void updateParamStage();
+	void updateTime(uint16_t sec);
+	void toggleYellow()
+	{GpioDriver::instace()->togglePin(GpioDriver::GpioDriver::PinYellow); };
+	void toggleGreen()
+	{GpioDriver::instace()->togglePin(GpioDriver::GpioDriver::PinGreen); };
+	
+private:
+	
+	TimerHandle_t timerYellow;
+	TimerHandle_t timerGreen;
+	uint16_t countGreenLeds{0};
+	uint16_t countYellowLeds{0};
+	uint16_t stateRun;
+	uint32_t commonDuration;
+	uint16_t currentStage;
+	uint16_t stageDuration;
+	uint16_t modeDuration;
+	
+	float U;
+	uint16_t temperature;
+	float prevTemperature;
+
+	void correctTemperature(float &currentTemp, uint16_t &targetTemp);
+	
+	xSemaphoreHandle xSemPeriodic;
+	GpioDriver *gpio;
 	
 	
-	static AdcDriver *adc;
+	AdcDriver *adc;
 
-	static DisplayDriver *display;
+	DisplayDriver *display;
 	
 	BaseType_t xReturned;
 	TaskHandle_t xHandle = NULL;
 
-	static uint8_t helperBuf[256];
+	uint8_t helperBuf[256];
 	
-	static MyList *lstPrograms;
-	static WorkModeEdit *lstProgramsEdit;
-	static Widget *p_widget;
+	MyList *lstPrograms;
+	WorkModeEdit *lstProgramsEdit;
+	Widget *p_widget;
 	
-	static std::vector<WorkMode> m_programs;
-	static void initDefaultPrograms();
-	static void readPrograms();
-	static void writePrograms();
-	
-	static void fillProgram(const std::string &name, const uint16_t numStages, const uint16_t *stage = nullptr);
-	static void updateProgressBar(uint16_t value);
-	
-	static void paintStageProgress();
-	static WorkMode currentWorkMode;
-	
-	static void getSizeWRectangle(const WorkMode &mode, uint16_t *wList);
-	static void updateParamStage();
-	static void updateTime(uint16_t sec);
-	
-	
-	static uint16_t stateRun;
-	static uint32_t commonDuration;
-	static uint16_t currentStage;
-	static uint16_t stageDuration;
-	static uint16_t modeDuration;
-	
-	static float U;
-	static uint16_t temperature;
-	static float prevTemperature;
-
-	static void correctTemperature(float &currentTemp, uint16_t &targetTemp);
-	
-	static xSemaphoreHandle xSemPeriodic;
+	std::vector<WorkMode> m_programs;
 	
 
 };

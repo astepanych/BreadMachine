@@ -43,7 +43,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
     <ClCompile>
       <CPPLanguageStandard>CPP14</CPPLanguageStandard>
-      <AdditionalIncludeDirectories>..\SRC;..\SRC\SourceProject;..\SRC\SourceProject\Periphery;..\SRC\STM\STM32F4xxxx\CMSIS_StdPeriph\Device\ST\STM32F4xx\Include;..\SRC\STM\STM32F4xxxx\CMSIS_HAL\Include;..\SRC\STM\STM32F4xxxx\CMSIS_HAL\Device\ST\STM32F4xx\Include;..\SRC\STM\FreeRTOS\Source\include;..\SRC\STM\FreeRTOS\Source\portable\GCC\ARM_CM3;..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\inc;..\SRC\STM\STM32F4xxxx\STM32F4xx_HAL_Driver\Inc;%(ClCompile.AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\SRC;..\SRC\SourceProject;..\SRC\SourceProject\display;..\SRC\SourceProject\Periphery;..\SRC\STM\STM32F4xxxx\CMSIS_StdPeriph\Device\ST\STM32F4xx\Include;..\SRC\STM\STM32F4xxxx\CMSIS_HAL\Include;..\SRC\STM\STM32F4xxxx\CMSIS_HAL\Device\ST\STM32F4xx\Include;..\SRC\STM\FreeRTOS\Source\include;..\SRC\STM\FreeRTOS\Source\portable\GCC\ARM_CM3;..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\inc;..\SRC\STM\STM32F4xxxx\STM32F4xx_HAL_Driver\Inc;%(ClCompile.AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>STM32F407xx;STM32F40_41xxx;HSE_VALUE=20000000;__FPU_PRESENT=1;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -51,6 +51,7 @@
       <LibrarySearchDirectories>;%(Link.LibrarySearchDirectories)</LibrarySearchDirectories>
       <AdditionalLibraryNames>;%(Link.AdditionalLibraryNames)</AdditionalLibraryNames>
       <LinkerScript />
+      <GenerateMapFile>true</GenerateMapFile>
     </Link>
     <ToolchainSettingsContainer>
       <InstructionSet>
@@ -75,11 +76,16 @@
     <ClCompile Include="..\SRC\SourceProject\1251\utf8_to_cp1251.cpp" />
     <ClCompile Include="..\SRC\SourceProject\AppCore.cpp" />
     <ClCompile Include="..\SRC\SourceProject\DisplayDriver.cpp" />
+    <ClCompile Include="..\SRC\SourceProject\display\MyList.cpp" />
+    <ClCompile Include="..\SRC\SourceProject\display\Widget.cpp" />
+    <ClCompile Include="..\SRC\SourceProject\display\WorkModeEdit.cpp" />
     <ClCompile Include="..\SRC\SourceProject\initApp.cpp" />
+    <ClCompile Include="..\SRC\SourceProject\Periphery\AdcDriver.cpp" />
     <ClCompile Include="..\SRC\SourceProject\Periphery\GpioDriver.cpp" />
     <ClCompile Include="..\SRC\SourceProject\Periphery\Timer3.cpp" />
     <ClCompile Include="..\SRC\SourceProject\Periphery\Uart1.cpp" />
     <ClCompile Include="..\SRC\SourceProject\Periphery\Uart3.cpp" />
+    <ClCompile Include="..\SRC\SourceProject\Periphery\Uart5.cpp" />
     <ClCompile Include="..\SRC\STM\FreeRTOS\Source\croutine.c" />
     <ClCompile Include="..\SRC\STM\FreeRTOS\Source\event_groups.c" />
     <ClCompile Include="..\SRC\STM\FreeRTOS\Source\list.c" />
@@ -102,10 +108,6 @@
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_syscfg.c" />
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_tim.c" />
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_usart.c" />
-    <ClCompile Include="AdcDriver.cpp" />
-    <ClCompile Include="MyList.cpp" />
-    <ClCompile Include="Widget.cpp" />
-    <ClCompile Include="WorkModeEdit.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
@@ -121,12 +123,20 @@
     <ClInclude Include="..\SRC\SourceProject\1251\utf8_to_cp1251.h" />
     <ClInclude Include="..\SRC\SourceProject\AppCore.h" />
     <ClInclude Include="..\SRC\SourceProject\DisplayDriver.h" />
+    <ClInclude Include="..\SRC\SourceProject\display\KeyEvent.h" />
+    <ClInclude Include="..\SRC\SourceProject\display\MyList.h" />
+    <ClInclude Include="..\SRC\SourceProject\display\Widget.h" />
+    <ClInclude Include="..\SRC\SourceProject\display\WorkMode.h" />
+    <ClInclude Include="..\SRC\SourceProject\display\WorkModeEdit.h" />
     <ClInclude Include="..\SRC\SourceProject\initApp.h" />
     <ClInclude Include="..\SRC\SourceProject\LittleBigEndian.h" />
+    <ClInclude Include="..\SRC\SourceProject\Periphery\AdcDriver.h" />
     <ClInclude Include="..\SRC\SourceProject\Periphery\GpioDriver.h" />
     <ClInclude Include="..\SRC\SourceProject\Periphery\Timer3.h" />
+    <ClInclude Include="..\SRC\SourceProject\Periphery\Uart.h" />
     <ClInclude Include="..\SRC\SourceProject\Periphery\Uart1.h" />
     <ClInclude Include="..\SRC\SourceProject\Periphery\Uart3.h" />
+    <ClInclude Include="..\SRC\SourceProject\Periphery\Uart5.h" />
     <ClInclude Include="..\SRC\SourceProject\typedef.h" />
     <ClInclude Include="..\SRC\STM\FreeRTOS\Source\portable\GCC\ARM_CM3\portmacro.h" />
     <ClInclude Include="AdcDriver.h" />
@@ -134,6 +144,7 @@
     <ClInclude Include="KeyEvent.h" />
     <ClInclude Include="MyList.h" />
     <ClInclude Include="stm32f4xx_hal_conf.h" />
+    <ClInclude Include="Uart5.h" />
     <ClInclude Include="Widget.h" />
     <ClInclude Include="WorkMode.h" />
     <ClInclude Include="WorkModeEdit.h" />
