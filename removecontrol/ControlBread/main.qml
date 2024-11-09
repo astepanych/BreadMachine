@@ -11,25 +11,11 @@ ApplicationWindow {
     SwipeView {
         id: swipeView
         anchors.fill: parent
-        currentIndex: tabBar.currentIndex
+        currentIndex: 0
 
         StartPage {
             id: startPage
         }
-
-
-
     }
-    footer: TabBar {
-        id: tabBar
-        currentIndex: swipeView.currentIndex
 
-        TabButton {
-            text: qsTr("Подключение")
-        }
-        TabButton {
-            text: qsTr("Прошивка")
-        }
-
-    }
 }

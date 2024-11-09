@@ -57,9 +57,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="stm32.props">
-      <Filter>Source files\Device-specific files</Filter>
-    </None>
     <None Include="BreadMachine-Debug.vgdbsettings">
       <Filter>VisualGDB settings</Filter>
     </None>
@@ -176,6 +173,12 @@
     <ClCompile Include="..\SRC\SourceProject\Periphery\AdcDriver.cpp">
       <Filter>Source files\APP</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\common\dataexchenge.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\SourceProject\AppCoreExchenge.cpp">
+      <Filter>Source files\APP</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SRC\SourceProject\AppCore.h">
@@ -263,6 +266,18 @@
       <Filter>Source files\APP</Filter>
     </ClInclude>
     <ClInclude Include="..\SRC\SourceProject\Periphery\Uart5.h">
+      <Filter>Source files\APP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\common_project.h">
+      <Filter>Source files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\dataexchenge.h">
+      <Filter>Source files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\version.h">
+      <Filter>Source files\APP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\globals.h">
       <Filter>Source files\APP</Filter>
     </ClInclude>
   </ItemGroup>

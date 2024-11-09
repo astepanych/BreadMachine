@@ -8,6 +8,8 @@
 #include "string.h"
 #include "driver/gpio.h"
 
+static const char *TAG = "uart";
+
 #define RX_BUF_SIZE_UART0 380 //размер буфера приема
 
 #define BIT_RATE_UART0 115200 //скорость уарта0
@@ -31,6 +33,9 @@ static fnxProcessRxData processReadedData0;
 int  sendDataToUart(const uint8_t* data, const uint8_t len) {
 	
 	const int txBytes = uart_write_bytes(UARTNUM, data, len);
+#ifndef STM32F407xx
+	ESP_LOGI(TAG, "txBytes = %d", txBytes);
+#endif
 	return txBytes;
 }
 /*!
@@ -65,7 +70,7 @@ static void rx_task0(void *arg) {
 		.flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
 		.source_clk = UART_SCLK_APB,
 	};
-	const uint16_t sizeThresholdRx = 10; //размер очереди приема уарта  
+	const uint16_t sizeThresholdRx = 7; //размер очереди приема уарта  
 	//инициализация драйвера перенесена в таск чтобы прерывания уарта обрабатывались на ядре 1, т.к. на 0 ядре не удавалось разместить прерывания
 	//данный таск выполняется на втором ядре и прерывания так же будут обрабатыватся на этом же ядре
 	//https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/system/intr_alloc.html#_CPPv413esp_intr_dumpP4FILE
@@ -77,16 +82,20 @@ static void rx_task0(void *arg) {
 	uart_set_rx_full_threshold(UARTNUM, sizeThresholdRx);
 	size_t availibleBytes; //количество доступных байт для чтения
 	uart_event_t ev; //событие
+
 	while (1) {
 		//ожидаем событие
 		xQueueReceive(uart0Queue, &ev, portMAX_DELAY);
 		if (ev.type == UART_DATA) { //событие о принятии данных
+			
 			uart_get_buffered_data_len(UARTNUM, &availibleBytes); //получаем количество доступных данных для чтения
 			if (availibleBytes != 0) { //если есть данные
 				const uint8_t rxBytes = uart_read_bytes(UARTNUM, gBufRxUart0, availibleBytes, 0); //читаем данные
+				//ESP_LOGI(TAG, "%d ", rxBytes);
 				if (rxBytes > 0) { // если прочитли данные приняты
 					processReadedData0(gBufRxUart0, rxBytes); //отправляем их на обработку
 				}
+				
 			} 
 		}
 	}
@@ -104,5 +113,6 @@ void initUart(fnxProcessRxData cbFunc) {
 	uart0Queue = xQueueCreate(sizeQueue, sizeof(uart_event_t)); //создаем очередь
 	//запускаем таск на ядре 1, т.к. на ядре 0 не получалось разместить прерывания
 	//и в связи с тем, что перерывания размещаются на том ядре, на котором происходит инициализация драйвера - поток rx_task0 перенесен на ядро 1
-	xTaskCreatePinnedToCore(rx_task0, "uart_rx_task", sizeStackTask, NULL, 9, NULL, 1);
+	xTaskCreatePinnedToCore(rx_task0, "uart_rx_task", sizeStackTask, NULL, 10, NULL, 0);
+
 }

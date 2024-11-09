@@ -3,5 +3,6 @@
         <file>main.qml</file>
         <file>StartPage.qml</file>
         <file>StartPageForm.ui.qml</file>
+        <file>MyDialog.qml</file>
     </qresource>
 </RCC>

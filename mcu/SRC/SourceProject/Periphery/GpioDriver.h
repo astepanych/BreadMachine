@@ -33,6 +33,8 @@ public:
 	void initModule();
 	void setPin(PinsGpioOut pin, StatesPin state);
 	void togglePin(PinsGpioOut pin);
+	void enableYellowLed();
+	void disableYellowLed();
 
 	static GpioDriver *instace() {return ins;};
 	std::function<void(bool)> pinEvent; 

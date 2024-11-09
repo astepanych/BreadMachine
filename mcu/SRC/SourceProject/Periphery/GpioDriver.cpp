@@ -4,6 +4,8 @@
 #include <stm32f4xx_syscfg.h>
 #include <stm32f4xx_exti.h>
 #include <misc.h>
+#include "stm32f4xx_rcc.h"
+#include "stm32f4xx_tim.h"
 
 struct GpioPin
 {
@@ -21,8 +23,10 @@ const GpioPin settingsPins[] = {
 		{GpioDriver::PinTemperatureDown, GPIOA, GPIO_Pin_3, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinOne},
 		{GpioDriver::PinShiberX, GPIOA, GPIO_Pin_4, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinOne},
 		{GpioDriver::PinShiberO, GPIOA, GPIO_Pin_5, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinOne},
+		
 		{GpioDriver::PinGreen, GPIOD, GPIO_Pin_12, RCC_AHB1Periph_GPIOD, GpioDriver::StatePinOne },
-		{GpioDriver::PinYellow,				GPIOD, GPIO_Pin_13, RCC_AHB1Periph_GPIOD,GpioDriver::StatePinOne },
+		{GpioDriver::PinYellow,	GPIOD, GPIO_Pin_13, RCC_AHB1Periph_GPIOD,GpioDriver::StatePinOne },
+		
 		{GpioDriver::PinX1, GPIOD, GPIO_Pin_14, RCC_AHB1Periph_GPIOD, GpioDriver::StatePinOne },
 		{GpioDriver::PinX2, GPIOD, GPIO_Pin_15, RCC_AHB1Periph_GPIOD, GpioDriver::StatePinOne },
 		{GpioDriver::Led, GPIOF, GPIO_Pin_9, RCC_AHB1Periph_GPIOF, GpioDriver::StatePinOne },
@@ -56,12 +60,43 @@ void GpioDriver::initModule()
 	{
 		RCC_AHB1PeriphClockCmd(settingsPins[i].clock, ENABLE);	
 		ini.GPIO_Pin = settingsPins[i].pin;
-		ini.GPIO_Mode = GPIO_Mode_OUT;
+		
+		ini.GPIO_Mode = GPIO_Mode_OUT;	
 		ini.GPIO_OType = GPIO_OType_PP;
 		ini.GPIO_Speed = GPIO_Speed_50MHz;
 		ini.GPIO_PuPd = GPIO_PuPd_UP;
+		if (settingsPins[i].indexPin == GpioDriver::PinGreen || settingsPins[i].indexPin == GpioDriver::PinYellow) {
+			ini.GPIO_Mode = GPIO_Mode_AF;
+			ini.GPIO_Speed = GPIO_Speed_2MHz;
+		}
 		GPIO_Init(settingsPins[i].port, &ini);
 	}
+	GPIO_PinAFConfig(GPIOD, GPIO_PinSource12, GPIO_AF_TIM4);
+	GPIO_PinAFConfig(GPIOD, GPIO_PinSource13, GPIO_AF_TIM4);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
+	TIM_TimeBaseInitTypeDef timer;
+
+	TIM_TimeBaseStructInit(&timer);
+	timer.TIM_ClockDivision = TIM_CKD_DIV1;
+	timer.TIM_CounterMode = TIM_CounterMode_Up;
+	timer.TIM_Prescaler = 839;
+	timer.TIM_Period = 10;
+	TIM_TimeBaseInit(TIM4, &timer);
+	
+	TIM_OCInitTypeDef timerPWM;
+	TIM_OCStructInit(&timerPWM);
+	timerPWM.TIM_Pulse = 0;
+	timerPWM.TIM_OCMode = TIM_OCMode_PWM1;
+	timerPWM.TIM_OutputState = TIM_OutputState_Enable;
+	timerPWM.TIM_OCPolarity = TIM_OCPolarity_High; 
+	TIM_OC1Init(TIM4, &timerPWM);
+	timerPWM.TIM_Pulse = 1;
+	TIM_OC2Init(TIM4, &timerPWM);
+	
+	TIM_SetCounter(TIM4, 10);
+	TIM_Cmd(TIM4, ENABLE);
+
+	
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC , ENABLE);	
 	ini.GPIO_Pin = GPIO_Pin_13;
 	ini.GPIO_OType = GPIO_OType_PP;
@@ -117,6 +152,15 @@ void GpioDriver::initModule()
 
 	NVIC_Init(&nvic);
 	
+}
+
+void GpioDriver::enableYellowLed()
+{
+	TIM4->CCR1 = 1;
+}
+void GpioDriver::disableYellowLed()
+{
+	TIM4->CCR1 = 0;
 }
 
 GpioDriver::~GpioDriver()

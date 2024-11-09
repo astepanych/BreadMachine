@@ -959,7 +959,7 @@ void * g_pfnVectors[0x62] __attribute__ ((section (".isr_vector"), used)) =
 	&HASH_RNG_IRQHandler,
 	&FPU_IRQHandler,
 };
-#include <initApp.h>
+//#include <initApp.h>
 
 void SystemInit();
 void __libc_init_array();

@@ -56,7 +56,7 @@
 #define configUSE_PREEMPTION              1
 #define configUSE_IDLE_HOOK               0
 #define configUSE_TICK_HOOK               0
-#define configMAX_PRIORITIES              (4)
+#define configMAX_PRIORITIES              (25)
 #define configSUPPORT_STATIC_ALLOCATION   0
 #define configCPU_CLOCK_HZ                (SystemCoreClock)
 #define configTICK_RATE_HZ                ((TickType_t)1000)
@@ -81,8 +81,8 @@
 
 /* Software timer definitions. */
 #define configUSE_TIMERS             1
-#define configTIMER_TASK_PRIORITY    (2)
-#define configTIMER_QUEUE_LENGTH     10
+#define configTIMER_TASK_PRIORITY    (20)
+#define configTIMER_QUEUE_LENGTH     16
 #define configTIMER_TASK_STACK_DEPTH (configMINIMAL_STACK_SIZE * 2)
 
 /* Set the following definitions to 1 to include the API function, or zero
@@ -95,6 +95,7 @@ to exclude the API function. */
 #define INCLUDE_vTaskDelayUntil        0
 #define INCLUDE_vTaskDelay             1
 #define INCLUDE_xTaskGetSchedulerState 1
+
 
 /*------------- CMSIS-RTOS V2 specific defines -----------*/
 /* When using CMSIS-RTOSv2 set configSUPPORT_STATIC_ALLOCATION to 1

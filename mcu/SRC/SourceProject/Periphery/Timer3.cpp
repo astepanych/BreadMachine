@@ -36,6 +36,9 @@ void Timer3::init()
 	TIM_Cmd(TIM2, DISABLE);
 	TIM_SetAutoreload(TIM2, TimeoutTim3);
 	TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
+	
+	
+	
 }
 	
 void Timer3::start()
@@ -57,7 +60,8 @@ void TIM2_IRQHandler()
 		TIM_ClearITPendingBit(TIM2, TIM_IT_Update);   
 		
 		Timer3::handlerTimeout();
-		
-                 
+           
 	}
 }
+
+

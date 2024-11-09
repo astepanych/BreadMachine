@@ -18,7 +18,8 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
-#include "tcp_server.h"
+
+#include "proto.h"
 
 /* The examples use WiFi configuration that you can set via project configuration menu.
 
@@ -50,7 +51,7 @@ void wifi_init_softap(void)
 {
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    esp_netif_create_default_wifi_ap();
+	esp_netif_t *wifi_netif = esp_netif_create_default_wifi_ap();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -58,33 +59,43 @@ void wifi_init_softap(void)
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
                                                         ESP_EVENT_ANY_ID,
                                                         &wifi_event_handler,
-                                                        NULL,
+	                                                    wifi_netif,
                                                         NULL));
 
-    wifi_config_t wifi_config = {
-        .ap = {
-            .ssid = EXAMPLE_ESP_WIFI_SSID,
-            .ssid_len = strlen(EXAMPLE_ESP_WIFI_SSID),
-            .channel = EXAMPLE_ESP_WIFI_CHANNEL,
-            .password = EXAMPLE_ESP_WIFI_PASS,
-            .max_connection = EXAMPLE_MAX_STA_CONN,
-            .authmode = WIFI_AUTH_WPA_WPA2_PSK
-        },
-    };
+	wifi_config_t wifi_config;
+	
+	const char *pSsid = EXAMPLE_ESP_WIFI_SSID;
+	
+	memcpy(wifi_config.ap.ssid, pSsid, strlen(EXAMPLE_ESP_WIFI_SSID));
+	wifi_config.ap.ssid_len = strlen(EXAMPLE_ESP_WIFI_SSID);
+	wifi_config.ap.channel = EXAMPLE_ESP_WIFI_CHANNEL;
+	
+	const char *pPassword = EXAMPLE_ESP_WIFI_PASS;
+	memset(wifi_config.ap.password,0,64);
+	int len = strlen(pPassword);
+	memcpy(wifi_config.ap.password, pPassword, len);
+	
+	wifi_config.ap.max_connection = 10;
+	wifi_config.ap.authmode = WIFI_AUTH_WPA_WPA2_PSK;
+	
     if (strlen(EXAMPLE_ESP_WIFI_PASS) == 0) {
         wifi_config.ap.authmode = WIFI_AUTH_OPEN;
     }
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
-    ESP_ERROR_CHECK(esp_wifi_start());
+    
+	ESP_ERROR_CHECK(esp_wifi_start());
+	
 
     ESP_LOGI(TAG, "wifi_init_softap finished. SSID:%s password:%s channel:%d",
              EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS, EXAMPLE_ESP_WIFI_CHANNEL);
 }
 
-void app_main(void)
+
+extern "C" void app_main(void)
 {
+	
     //Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -93,7 +104,9 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    ESP_LOGI(TAG, "ESP_WIFI_MODE_AP");
+    ESP_LOGI(TAG, "ESP_WIFI_MODE_AP ");
     wifi_init_softap();
-	initTcpServer();
+	initProto();
+	
+
 }

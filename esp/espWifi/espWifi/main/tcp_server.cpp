@@ -31,11 +31,14 @@
 #define KEEPALIVE_COUNT             3
 
 static const char *TAG = "example";
+static int sock;
 
+static fnxProcessRxData processReadedDataNetwork;
+char rx_buffer[sizeof(PackageNetworkFormat)*10];
 static void do_retransmit(const int sock)
 {
     int len;
-    char rx_buffer[128];
+    
 
     do {
         len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
@@ -44,7 +47,10 @@ static void do_retransmit(const int sock)
         } else if (len == 0) {
             ESP_LOGW(TAG, "Connection closed");
         } else {
-            rx_buffer[len] = 0; // Null-terminate whatever is received and treat it like a string
+           
+	        processReadedDataNetwork((uint8_t*)rx_buffer, len);
+	        /*
+	        rx_buffer[len] = 0; // Null-terminate whatever is received and treat it like a string
             ESP_LOGI(TAG, "Received %d bytes: %s", len, rx_buffer);
 
             // send() can return less bytes than supplied length.
@@ -56,7 +62,7 @@ static void do_retransmit(const int sock)
                     ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
                 }
                 to_write -= written;
-            }
+            }*/
         }
     } while (len > 0);
 }
@@ -69,7 +75,8 @@ static void tcp_server_task(void *pvParameters)
     int keepAlive = 1;
     int keepIdle = KEEPALIVE_IDLE;
     int keepInterval = KEEPALIVE_INTERVAL;
-    int keepCount = KEEPALIVE_COUNT;
+	int keepCount = KEEPALIVE_COUNT;
+    int noDelay = 1;
     struct sockaddr_storage dest_addr;
 
     if (addr_family == AF_INET) {
@@ -125,7 +132,7 @@ static void tcp_server_task(void *pvParameters)
 
         struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
         socklen_t addr_len = sizeof(source_addr);
-        int sock = accept(listen_sock, (struct sockaddr *)&source_addr, &addr_len);
+        sock = accept(listen_sock, (struct sockaddr *)&source_addr, &addr_len);
         if (sock < 0) {
             ESP_LOGE(TAG, "Unable to accept connection: errno %d", errno);
             break;
@@ -136,6 +143,8 @@ static void tcp_server_task(void *pvParameters)
         setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &keepIdle, sizeof(int));
         setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &keepInterval, sizeof(int));
         setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &keepCount, sizeof(int));
+	    setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &noDelay, sizeof(int));
+	    
         // Convert ip address to string
         if (source_addr.ss_family == PF_INET) {
             inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr, addr_str, sizeof(addr_str) - 1);
@@ -158,9 +167,14 @@ CLEAN_UP:
     vTaskDelete(NULL);
 }
 
+int sendDataNetwork(const uint8_t* data, const uint8_t len)
+{
+	int l = send(sock, data, len, 0);
+	ESP_LOGE(TAG, "sendDataNetwork: len %d", len);
+	return l;
+}
 
-
-void initTcpServer(void)
+void initTcpServer(fnxProcessRxData cbFunc)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
@@ -172,7 +186,7 @@ void initTcpServer(void)
      */
    // ESP_ERROR_CHECK(example_connect());
 
-
+	processReadedDataNetwork = cbFunc;
     xTaskCreate(tcp_server_task, "tcp_server", 4096, (void*)AF_INET, 5, NULL);
 
 #ifdef CONFIG_EXAMPLE_IPV6

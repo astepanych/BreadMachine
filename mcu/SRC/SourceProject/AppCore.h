@@ -10,6 +10,8 @@
 #include "typedef.h"
 #include "timers.h"
 #include "Uart5.h"
+#include <../../../common/dataexchenge.h>
+#include <globals.h>
 
 #define NumItemList  (7)
 #define NumItemListEdit  (5)
@@ -40,6 +42,7 @@ public:
 	static AppCore &instance();
 
 	void taskPeriodic(void *p = 0);
+	void taskExchange(void *p = 0);
 
 	void init();
 
@@ -54,12 +57,9 @@ public:
 	
 	void initText();
 	
-	void fan();
-
-	
 	 void initDefaultPrograms();
 	 void readPrograms();
-	 void writePrograms();
+	 void writeGlobalParams();
 	
 	void fillProgram(const std::string &name, const uint16_t numStages, const uint16_t *stage = nullptr);
 	void updateProgressBar(uint16_t value);
@@ -74,9 +74,11 @@ public:
 	{GpioDriver::instace()->togglePin(GpioDriver::GpioDriver::PinYellow); };
 	void toggleGreen()
 	{GpioDriver::instace()->togglePin(GpioDriver::GpioDriver::PinGreen); };
+	static unsigned int CRC32_function(unsigned char *buf, unsigned long len);
 	
 private:
-	
+	void procUartData(const PackageNetworkFormat&p);
+	void initExchange();
 	TimerHandle_t timerYellow;
 	TimerHandle_t timerGreen;
 	uint16_t countGreenLeds{0};
@@ -94,6 +96,7 @@ private:
 	void correctTemperature(float &currentTemp, uint16_t &targetTemp);
 	
 	xSemaphoreHandle xSemPeriodic;
+	xQueueHandle queExchange;
 	GpioDriver *gpio;
 	
 	
@@ -103,6 +106,7 @@ private:
 	
 	BaseType_t xReturned;
 	TaskHandle_t xHandle = NULL;
+	TaskHandle_t xHandleExchange = NULL;
 
 	uint8_t helperBuf[256];
 	
@@ -111,6 +115,8 @@ private:
 	Widget *p_widget;
 	
 	std::vector<WorkMode> m_programs;
+	
+	RomParams gParams;
 	
 
 };

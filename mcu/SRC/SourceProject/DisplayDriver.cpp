@@ -3,7 +3,7 @@
 
 
 
-#define uart uart2
+#define uart uart3
 
 
 //display

@@ -8,8 +8,13 @@
 #include "typedef.h"
 #include <time.h>
 #include <math.h>
+#include <version.h>
 
-constexpr uint16_t versionSoft = 1009;
+
+
+
+const char defaultSSIDName[] = "BreadMachine";
+const char defaultSSIDPassword[] = "12345678";
 
 
 struct StateWork
@@ -28,17 +33,7 @@ struct StateWork
 	
 }gRun;
 
-struct CalcParam
-{
-	CalcParam()
-	{ k1 = 0.1;
-		k2 = 5;
-		period = 10;
-	};
-	float k1;
-	float k2;
-	uint16_t period;
-}gParams;
+
 
 struct FanState
 {
@@ -72,19 +67,21 @@ void AppCore::eventTimeoutLeds(TimerHandle_t timer)
 {
 	uint16_t *id = (uint16_t*)pvTimerGetTimerID(timer);
 	if (id == 0) {
+		
 		countYellowLeds++;
-		if (countYellowLeds == 10)
+		if (countYellowLeds == 1)
 		{
-			GpioDriver::instace()->setPin(GpioDriver::GpioDriver::PinYellow, GpioDriver::StatePinOne);
+			GpioDriver::instace()->disableYellowLed();
 			countYellowLeds = 0;
 		}
 		else
 		{
-			GpioDriver::instace()->setPin(GpioDriver::GpioDriver::PinYellow, GpioDriver::StatePinZero);
+			GpioDriver::instace()->enableYellowLed();
 		}
 	}
 	else {
 		countGreenLeds++;
+		//GpioDriver::instace()->togglePin(GpioDriver::GpioDriver::PinYellow);
 		if (countGreenLeds == 10 )
 		{
 			GpioDriver::instace()->setPin(GpioDriver::GpioDriver::PinGreen, GpioDriver::StatePinOne);
@@ -94,7 +91,6 @@ void AppCore::eventTimeoutLeds(TimerHandle_t timer)
 		{
 			GpioDriver::instace()->setPin(GpioDriver::GpioDriver::PinGreen, GpioDriver::StatePinZero);
 		}
-		
 	}
 }
 
@@ -103,12 +99,13 @@ AppCore::AppCore()
 	initHal();
 	initOsal();
 	initText();
+	initExchange();
 	p_widget = lstPrograms;
 
-	timerYellow = xTimerCreate("timerYellow", 1 / portTICK_PERIOD_MS, pdTRUE, (void*)0, vTimerCallback);
+	timerYellow = xTimerCreate("timerYellow", 1000 / portTICK_PERIOD_MS, pdTRUE, (void*)0, vTimerCallback);
 	timerGreen = xTimerCreate("timerGreen", 1 / portTICK_PERIOD_MS, pdTRUE, (void*)1, vTimerCallback);
-	xTimerStart(timerGreen, 0);
-	xTimerStart(timerYellow, 0);
+	//xTimerStart(timerGreen, 0);
+	//xTimerStart(timerYellow, 0);
 }
 
 void AppCore::initOsal()
@@ -118,7 +115,7 @@ void AppCore::initOsal()
 	xReturned = xTaskCreate(
 				tskPeriodic,       /* Function that implements the task. */
 		"NAME",          /* Text name for the task. */
-		2048,      /* Stack size in words, not bytes. */
+		1024,      /* Stack size in words, not bytes. */
 		(void *) 1,    /* Parameter passed into the task. */
 		tskIDLE_PRIORITY,/* Priority at which the task is created. */
 		&xHandle); /* Used to pass out the created task's handle. */
@@ -167,14 +164,14 @@ void AppCore::fillProgram(const std::string &name, const uint16_t numStages, con
 }
 void AppCore::readPrograms()
 {
+	bool isFlag = true;
 	int *p = (int*)FlashAddrPrograms;
 	if (*p != MagicNumber)
 	{
+		isFlag = false;
 		initDefaultPrograms();
-		writePrograms();
-	}
-	else
-	{
+		//writePrograms();
+	} else	{
 		p++;
 		int numProgram = *p;
 		WorkMode mode;
@@ -191,30 +188,57 @@ void AppCore::readPrograms()
 		
 		}
 	}
-}
-void AppCore::writePrograms()
-{
-	FLASH_Unlock();
-	FLASH_EraseSector(FLASH_Sector_11, VoltageRange_4);
-	FLASH_ProgramWord(FlashAddrPrograms, MagicNumber);
-	FLASH_ProgramWord(FlashAddrPrograms+OffsetAddrNumPrograms, m_programs.size());
-	uint32_t adr = FlashAddrPrograms + OffsetAddrPrograms;
-	uint8_t *p;
-	for (int i = 0; i < m_programs.size(); i++)
+	
+	memcpy(&gParams, (void*)FlashAddrGlobalParams, sizeof(gParams));
+	if (gParams.crc32 != CRC32_function((uint8_t*)&gParams.k1, sizeof(gParams) - sizeof(gParams.crc32)))
 	{
+		gParams.k1 = 0.1;
+		gParams.k2 = 5;
+		gParams.period = 10;
+		gParams.timeoutAddWater = 60;
+		memset(gParams.wifiPassword, 0 , LenWifiPassword);
+		memcpy(gParams.wifiPassword, defaultSSIDPassword, strlen(defaultSSIDPassword));
+		memset(gParams.wifiSSID, 0, LenWifiSSID);
+		memcpy(gParams.wifiSSID, defaultSSIDName, strlen(defaultSSIDName));
+		isFlag = false;
+		//writeGlobalParams();
+	}
+	if(isFlag == false)
+		writeGlobalParams();
+	
+}
+
+
+void AppCore::writeGlobalParams()
+{
+	gParams.crc32 = CRC32_function((uint8_t*)&gParams.k1, sizeof(gParams) - sizeof(gParams.crc32));
+	FLASH_Unlock();
+	FLASH_EraseSector(FLASH_Sector_7, VoltageRange_4);
+	uint32_t adr = FlashAddrGlobalParams;
+	uint8_t *p;
+	p = (uint8_t*)&gParams;
+	for (int j = 0; j < sizeof(gParams); j++) {
+		FLASH_ProgramByte(adr, *p);
+		adr++;
+		p++;
+	}
+	
+	FLASH_ProgramWord(FlashAddrPrograms, MagicNumber);
+	FLASH_ProgramWord(FlashAddrPrograms + OffsetAddrNumPrograms, m_programs.size());
+	adr = FlashAddrPrograms + OffsetAddrPrograms;
+	
+	for (int i = 0; i < m_programs.size(); i++) {
 		p = (uint8_t*)&m_programs[i];
-		for (int j = 0; j < sizeof(WorkMode); j++)
-		{
+		for (int j = 0; j < sizeof(WorkMode); j++) {
 			FLASH_ProgramByte(adr, *p);
 			adr++;
 			p++;
 		}
 		
 	}
+		
 	FLASH_Lock();
 }
-
-
 
 AppCore::~AppCore()
 {
@@ -228,13 +252,21 @@ void AppCore::initHal()
 	
 	
 	gpio->pinEvent = [=](bool flag) {
+		static uint16_t cntInt = 0;
+		if (gRun.cntH2O == 0)
+			cntInt = 0;
+		cntInt++;
+		if (cntInt % 2 == 0) {
+			currentWorkMode.stages[currentStage].waterVolume -= 100;
+			//обновляем воду на дисплее
+			display->sendToDisplay(AddrNumWater, currentWorkMode.stages[currentStage].waterVolume);
+		}
 		
 		
-		if (flag)
-			gRun.cntH2O+=100;
-		if (gRun.cntH2O >= currentWorkMode.stages[currentStage].waterVolume) {
-			gRun.cntH2O = 0;
+		if (currentWorkMode.stages[currentStage].waterVolume <= 0) {
+		
 			gpio->setPin(GpioDriver::GpioDriver::PinH2O, GpioDriver::StatePinZero);
+			gRun.isWaterStart = false;
 		}
 		
 	};
@@ -246,11 +278,6 @@ void AppCore::initHal()
 	
 	adc = new AdcDriver;
 	adc->init();
-	
-	uart5.init();
-	uart5.putByte = [](const uint8_t byte) {
-	};
-	
 }
 
 
@@ -286,7 +313,7 @@ void AppCore::initText()
 		
 	};
 	lstProgramsEdit->saveWorkModes = [=]() {
-		writePrograms();
+		writeGlobalParams();
 		currentWorkMode = m_programs.at(gRun.currentIndex);
 	};
 	lstProgramsEdit->setAddrScrollValue(AddrScrolBar);
@@ -474,55 +501,22 @@ void AppCore::updateTime(uint16_t sec)
 }
 
 
-void AppCore::fan()
-{
-	if (gRun.currentTemp / (currentWorkMode.stages[currentStage].temperature * 1.0) >= 1.07 && gFan.isEnable == false)
-	{
-		gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatePinOne));
-		gFan.isEnable = true;
-		gFan.cnt = 0;
-		return;
-	}
-	if (gFan.isEnable)
-	{
-		gFan.cnt++;
-		if (gFan.cnt >= 5)
-		{
-			gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatePinZero));
-			gFan.isEnable = false;
-		}
-	}
-		
-}
-
 #define PERIOD_CORRECT (gParams.period)
-bool isCorect = true;
 float_t k1 = 0.1;
 float_t k2 = 10;
 void AppCore::correctTemperature(float &currentTemp, uint16_t &targetTemp)
 {
 	static int delta = 1;
-	static bool isFlag = false;
-	if (isCorect == false)
-		return;
 	static uint16_t period = 0;
-	static uint16_t periodFan = 0;
 
-	static float target = 1.0*targetTemp;
+
+	float target = 1.0*targetTemp;
 	static uint16_t per = PERIOD_CORRECT;
-	float defCur;
+
 	period++;
-	
-	if (gRun.currentTemp / target >= 1.05) {
-		gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatePinOne));
-	}
-	else if (gRun.currentTemp / target <= 1.01)
-		gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatePinZero));
 	
 	if (period == per) {
 		
-		
-		//delta = 1;
 		gRun.newPeriodCorrect = PERIOD_CORRECT;
 		
 		float T = (target - gRun.currentTemp)*gParams.k1 - (gRun.currentTemp - gRun.prevTemp) * gParams.k2 / (PERIOD_CORRECT + delta);
@@ -537,66 +531,7 @@ void AppCore::correctTemperature(float &currentTemp, uint16_t &targetTemp)
 		{
 			gpio->setPin(GpioDriver::PinTemperatureUp, GpioDriver::StatePinOne);
 		}
-		
-		
 		delta = ceil(fabs(T));
-		return;
-		if (currentTemp - target < 7*DeltaTemperature && currentTemp - target > 0)
-		{
-			//если мы в районе нужной температуры то ничего не регулируем
-			//return;
-			if (currentTemp - target > 4*DeltaTemperature)
-				gpio->setPin(GpioDriver::PinTemperatureDown, GpioDriver::StatePinOne);
-		}
-		else
-		{
-			gRun.signedDef =  gRun.currentTemp - gRun.prevTemp;
-			gRun.unsignedDef = fabsf(gRun.signedDef);
-			gRun.prevTemp = gRun.currentTemp;
-			display->sendToDisplayF(0x4024, gRun.signedDef);
-			
-//			if (gRun.isStart) {//выравниваем температуру
-//				if (gRun.signedDef < 0)
-//					return;
-//				gRun.isStart = false;
-//				gpio->setPin(GpioDriver::PinTemperatureUp, GpioDriver::StatePinOne);
-//				gRun.newPeriodCorrect = PERIOD_CORRECT * 4;
-//				delta = 10;
-//				return;
-//			}
-			
-			if (gRun.currentTemp < target) {
-				if  (gRun.signedDef < 0) {
-					gpio->setPin(GpioDriver::PinTemperatureUp, GpioDriver::StatePinOne);
-					delta = 3;
-					gRun.newPeriodCorrect =  PERIOD_CORRECT;
-				}
-				else  if(gRun.signedDef < DeltaTemperature){
-					gpio->setPin(GpioDriver::PinTemperatureUp, GpioDriver::StatePinOne);
-					if (gRun.signedDef < DeltaTemperature / 2 && gRun.currentTemp / target < 0.85) {
-						delta = 3;
-						gRun.newPeriodCorrect =  PERIOD_CORRECT * 3;
-					}
-					else {
-						delta = gRun.currentTemp / target < 0.75 ? 5 : 1;
-						gRun.newPeriodCorrect = gRun.currentTemp / target < 0.75 ? PERIOD_CORRECT * 5 : PERIOD_CORRECT;
-					}
-				} else if (gRun.signedDef > 4*DeltaTemperature && gRun.currentTemp / target > 0.85) {
-					gpio->setPin(GpioDriver::PinTemperatureDown, GpioDriver::StatePinOne);
-					delta = 3;
-					gRun.newPeriodCorrect = PERIOD_CORRECT * 3;
-				}
-			}
-			else if (gRun.currentTemp > target) {
-					gpio->setPin(GpioDriver::PinTemperatureDown, GpioDriver::StatePinOne);
-				if (gRun.currentTemp - target > 5) {
-					delta = 3;
-				}
-				gRun.newPeriodCorrect = PERIOD_CORRECT * 3;
-			}
-			
-		}
-		
 	}
 	else if (period >= per + delta) {
 		period = 0;
@@ -609,27 +544,28 @@ void AppCore::correctTemperature(float &currentTemp, uint16_t &targetTemp)
 
 void AppCore::taskPeriodic(void *p)
 {
-	float testF = 1.1;
+	const uint16_t timeoutAddWater = 30;
+	const uint16_t timeoutCheckWater = 32;
 	int count = 0;
 	int cnt = 0, len;
-	char buf[256];
+
+	
 	readPrograms();
 
 	display->reset();
 	vTaskDelay(2000 / portTICK_PERIOD_MS);
 
-	
+	objDataExchenge.sendPackage(IdBootHost, 1, 0, nullptr);
 	display->sendToDisplay(CmdSoftVersion, versionSoft);
 	display->sendToDisplay(addrMainItem, "ВЫБОР ПРОГРАММЫ");
 	lstPrograms->setIndex(0);
 	lstPrograms->resetWidget();	
-	uint32_t v = 0x12345678;
-	uart5.write((uint8_t*)&v, sizeof(v));
 	uint16_t per;
 	float uTemp;
 	while (true) {
 		
 		xSemaphoreTake(xSemPeriodic, 1000 / portTICK_PERIOD_MS);
+		gpio->togglePin(GpioDriver::Led);
 		uTemp = adc->value2();
 		U = uTemp * 3.3 / 4095;
 		gRun.currentTemp = (2590.0*U - 330) / (1.2705 - 0.385*U);
@@ -648,6 +584,7 @@ void AppCore::taskPeriodic(void *p)
 			modeDuration = 0;
 			commonDuration = 0;
 			gRun.isStart = true;
+			gRun.isWaterStart  = false;
 			for (int i = 0; i < currentWorkMode.numStage; i++)
 			{
 				commonDuration += currentWorkMode.stages[i].duration;
@@ -655,27 +592,34 @@ void AppCore::taskPeriodic(void *p)
 			paintStageProgress();
 			stateRun = StateRunWork;
 			updateParamStage();
+			gpio->enableYellowLed();
+			
 			break;
 		case StateRunWork:
 		{
 
 			stageDuration += 1;
 			modeDuration += 1;
-			//fan();
-			
+						
 			correctTemperature(gRun.currentTemp, currentWorkMode.stages[currentStage].temperature);
-			//gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].fan);
+			gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].fan);
 			gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].damper);
 			gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatesPin)(!currentWorkMode.stages[currentStage].damper));
-//			
-//			if (modeDuration % 4 == 0)
-//				gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatePinOne));
-//			else
-//				gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatePinZero));
-			if (stageDuration == 30 && currentWorkMode.stages[currentStage].waterVolume != 0) {
-				gRun.cntH2O = 0;
+
+			//Добавляем воду если она должна быть добавлена
+			if (stageDuration == gParams.timeoutAddWater && currentWorkMode.stages[currentStage].waterVolume != 0) {
+				gRun.cntH2O = currentWorkMode.stages[currentStage].waterVolume;
 				gpio->setPin(GpioDriver::GpioDriver::PinH2O, GpioDriver::StatePinOne);
-				gRun.isWaterStart = false;
+				gRun.isWaterStart = true;
+			}
+		
+			if (gRun.isWaterStart == true) {
+				
+				//проверяем что вода пошла
+				if ((stageDuration == gParams.timeoutAddWater + 5) && (gRun.cntH2O ==  currentWorkMode.stages[currentStage].waterVolume)) {
+					gpio->setPin(GpioDriver::GpioDriver::PinH2O, GpioDriver::StatePinZero);
+					gRun.isWaterStart = false;
+				}
 			}
 			
 			paintStageProgress();
@@ -684,7 +628,7 @@ void AppCore::taskPeriodic(void *p)
 			{
 				currentStage++;
 				stageDuration = 0;
-				
+				gRun.cntH2O = currentWorkMode.stages[currentStage].waterVolume;
 				if (currentStage == currentWorkMode.numStage) {
 					updateProgressBar(100);
 					stateRun = StateRunStop;
@@ -698,13 +642,34 @@ void AppCore::taskPeriodic(void *p)
 		}	
 			break;
 		case StateRunStop:
-			stateRun = StateRunIdle;
+				stateRun = StateRunIdle;
+				paintStageProgress();
+				gpio->setPin(GpioDriver::PinFan, GpioDriver::StatePinZero);
+				gpio->setPin(GpioDriver::PinTemperatureDown, GpioDriver::StatePinZero);
+				gpio->setPin(GpioDriver::PinTemperatureUp, GpioDriver::StatePinZero);
+				gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
+				gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
+				xTimerStart(timerYellow, 0);
 			break;
-		default:
+			default:
 			break;
 		}
-		
-		
 	}
+}
+
+unsigned int AppCore::CRC32_function(unsigned char *buf, unsigned long len) {
+	unsigned long crc_table[256];
+	unsigned long crc;
+	for (int i = 0; i < 256; i++) {
+		crc = i;
+		for (int j = 0; j < 8; j++)
+			crc = crc & 1 ? (crc >> 1) ^ 0xEDB88320UL : crc >> 1;
+		crc_table[i] = crc;
+	}
+	;
+	crc = 0xFFFFFFFFUL;
+	while (len--)
+		crc = crc_table[(crc ^ *buf++) & 0xFF] ^ (crc >> 8);
+	return crc ^ 0xFFFFFFFFUL;
 }
 

@@ -8,7 +8,7 @@
   </ToolchainVersion>
   <BspID>com.sysprogs.arm.stm32</BspID>
   <BspVersion>2024.07</BspVersion>
-  <McuID>STM32F407ZG</McuID>
+  <McuID>STM32F407VG</McuID>
   <MCUDefinitionFile>STM32F4xxxx/DeviceDefinitions/stm32f407xx.xml</MCUDefinitionFile>
   <MCUProperties>
     <Entries>
