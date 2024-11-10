@@ -236,7 +236,6 @@ void AppCore::writeGlobalParams()
 		}
 		
 	}
-		
 	FLASH_Lock();
 }
 
@@ -328,98 +327,7 @@ void AppCore::initText()
 	}
 }
 
-void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data)
-{
-	uint8_t cmd = data[0];
-	switch (id)
-	{
-	case addrUpT:
-		gpio->setPin(GpioDriver::PinTemperatureUp, (GpioDriver::StatesPin)data[2]);
-		break;
-	case addrDownT:
-		gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatesPin)data[2]);
-		break;
-	case addrEnFan:
-		gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatesPin)data[2]);
-		break;
-	case AddrNumDamper:
-		currentWorkMode.stages[currentStage].damper ^= 1;
-		break;
-	case AddrNumFan:
-		currentWorkMode.stages[currentStage].fan ^= 1;
-		gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].fan);
-		break;
-	case addrPassword: {
-		uint16_t pwd = data[2] | (data[1] << 8);
-		if (pwd == password) {
-			display->switchPage(23);
-			display->sendToDisplayF(addrK1, gParams.k1);
-			display->sendToDisplayF(addrK2, gParams.k2);
-			display->sendToDisplay(addrPeriod, gParams.period);
-		}
-			break;
-		}
-	case addrK1: {
-		
-		uint32_t t = data[4] | (data[3] << 8) | (data[2] << 16) | (data[1] << 24);
-		memcpy(&gParams.k1, &t, sizeof(uint32_t));
-			break;
-		}
-	case addrK2: {
-		
-		uint32_t t= data[4] | (data[3] << 8) | (data[2] << 16) | (data[1] << 24);
-		memcpy(&gParams.k2, &t, sizeof(uint32_t));
-			break;
-		}
-	case addrPeriod: {
-		
-		gParams.period = data[2] | (data[1] << 8);
-			break;
-		}
-	case CmdDateTime: {
-		helperBuf[0] = 0x5a;
-		helperBuf[1] = 0xa5;
-		helperBuf[2] = data[1];
-		helperBuf[3] = data[2];
-		helperBuf[4] = data[3];
-		helperBuf[5] = data[5];
-		helperBuf[6] = data[6];
-		helperBuf[7] = data[7];
-		display->sendToDisplay(CmdSetDateTime, 8, helperBuf);
-			break;
-		}
-	case CmdNumProgramm: {
-		uint16_t key = data[2] | (data[1] << 8);
-		keyEvent(key);
-			break;
-		}
-	default:
-		p_widget->changeParams(id, len, data);
-		break;
-	}
-}
 
-void AppCore::keyEvent(uint16_t key)
-{
-	switch (key)
-	{
-	case ReturnCodeKeyStart:
-		stateRun = StateRunStart;
-		xSemaphoreGive(xSemPeriodic);
-		break;
-	case ReturnCodeKeyStop:
-		stateRun = StateRunStop;
-		break;
-	case ReturnCodeKeyInMenuSettingsProgramms:
-		p_widget = lstProgramsEdit;
-		p_widget->resetWidget();
-		break;
-	default: 
-		p_widget = p_widget->keyEvent(key);
-		break;
-	}
-	
-}
 
 
 void AppCore::getSizeWRectangle(const WorkMode &mode, uint16_t *wList)
@@ -502,8 +410,7 @@ void AppCore::updateTime(uint16_t sec)
 
 
 #define PERIOD_CORRECT (gParams.period)
-float_t k1 = 0.1;
-float_t k2 = 10;
+
 void AppCore::correctTemperature(float &currentTemp, uint16_t &targetTemp)
 {
 	static int delta = 1;
@@ -521,7 +428,7 @@ void AppCore::correctTemperature(float &currentTemp, uint16_t &targetTemp)
 		
 		float T = (target - gRun.currentTemp)*gParams.k1 - (gRun.currentTemp - gRun.prevTemp) * gParams.k2 / (PERIOD_CORRECT + delta);
 		gRun.signedDef =  gRun.currentTemp - gRun.prevTemp;
-		display->sendToDisplayF(0x4024, gRun.signedDef);
+		//display->sendToDisplayF(0x4024, gRun.signedDef);
 		gRun.prevTemp = gRun.currentTemp;
 		if (T <= 0)
 		{
@@ -565,7 +472,7 @@ void AppCore::taskPeriodic(void *p)
 	while (true) {
 		
 		xSemaphoreTake(xSemPeriodic, 1000 / portTICK_PERIOD_MS);
-		gpio->togglePin(GpioDriver::Led);
+		
 		uTemp = adc->value2();
 		U = uTemp * 3.3 / 4095;
 		gRun.currentTemp = (2590.0*U - 330) / (1.2705 - 0.385*U);

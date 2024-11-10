@@ -75,6 +75,8 @@ public:
 	void toggleGreen()
 	{GpioDriver::instace()->togglePin(GpioDriver::GpioDriver::PinGreen); };
 	static unsigned int CRC32_function(unsigned char *buf, unsigned long len);
+	void checkTemperatureSensors();
+	void checkWater();
 	
 private:
 	void procUartData(const PackageNetworkFormat&p);
@@ -118,6 +120,8 @@ private:
 	
 	RomParams gParams;
 	
+	bool isErrorSensor1{false};
+	bool isErrorSensor2 {false};
 
 };
 

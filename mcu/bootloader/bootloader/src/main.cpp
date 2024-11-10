@@ -10,12 +10,12 @@
 #define MAIN_ADDRESS 0x08000000
 
 void mainApp(void) {
-	//установка адреса прыжка
+	//СѓСЃС‚Р°РЅРѕРІРєР° Р°РґСЂРµСЃР° РїСЂС‹Р¶РєР°
 	__set_MSP(*(__IO uint32_t*) MAIN_ADDRESS);    
-	__set_PRIMASK(1); //запрещаем прерывания
-	SCB->VTOR = MAIN_ADDRESS; //переносим начало вектора прерываний по указанному адресу
-	__set_PRIMASK(0); //разрешаем прерывания
-	//прыжок 
+	__set_PRIMASK(1); //Р·Р°РїСЂРµС‰Р°РµРј РїСЂРµСЂС‹РІР°РЅРёСЏ
+	SCB->VTOR = MAIN_ADDRESS; //РїРµСЂРµРЅРѕСЃРёРј РЅР°С‡Р°Р»Рѕ РІРµРєС‚РѕСЂР° РїСЂРµСЂС‹РІР°РЅРёР№ РїРѕ СѓРєР°Р·Р°РЅРЅРѕРјСѓ Р°РґСЂРµСЃСѓ
+	__set_PRIMASK(0); //СЂР°Р·СЂРµС€Р°РµРј РїСЂРµСЂС‹РІР°РЅРёСЏ
+	//РїСЂС‹Р¶РѕРє 
 	NVIC_SystemReset();
 }
 
@@ -25,7 +25,7 @@ GpioDriver gpio;
 xQueueHandle queExchange;
 TaskHandle_t xHandleExchange = NULL;
 
-#define BOOT_ADDRESS    0x08040000//адрес начала программы
+#define BOOT_ADDRESS    0x08040000//Р°РґСЂРµСЃ РЅР°С‡Р°Р»Р° РїСЂРѕРіСЂР°РјРјС‹
 
 uint8_t bufFirmware[1100];
 uint32_t indexBuf;
@@ -44,14 +44,14 @@ void procUartData(PackageNetworkFormat &p)
 		case IdFirmwareStart:
 			commonIndex = 0;
 			indexBuf = 0;
-		/*	FLASH_Unlock();
+			FLASH_Unlock();
 			FLASH_EraseSector(FLASH_Sector_0, VoltageRange_3);
 			FLASH_EraseSector(FLASH_Sector_1, VoltageRange_3);
 			FLASH_EraseSector(FLASH_Sector_2, VoltageRange_3);
 			FLASH_EraseSector(FLASH_Sector_3, VoltageRange_3);
 			FLASH_EraseSector(FLASH_Sector_4, VoltageRange_3);
 			FLASH_EraseSector(FLASH_Sector_5, VoltageRange_3);
-			FLASH_Lock();*/
+			FLASH_Lock();
 			
 			break;
 		case IdFirmwareData:
@@ -67,13 +67,13 @@ void procUartData(PackageNetworkFormat &p)
 			crcCalc = DataExchenge::CRC_Calc_s16_CCITT((uint16_t*)bufFirmware, indexBuf / sizeof(uint16_t));
 			if (crcCalc == p.data[0]) {
 				crcCalc = StateCrcOk;
-				/*FLASH_Unlock();
+				FLASH_Unlock();
 				for (int i = 0; i < indexBuf; i++)
 				{
 					FLASH_ProgramByte(commonIndex, bufFirmware[i]);
 					commonIndex++;
 				}
-				FLASH_Lock();*/
+				FLASH_Lock();
 				
 			}
 			else
@@ -107,8 +107,8 @@ static void tskExchange(void *p) {
 int main() {
 
 	__set_CONTROL(0); 
-	NVIC_SetVectorTable(BOOT_ADDRESS, 0); //перекидываем вектора
-	__enable_irq(); //разрешаем прерывания
+	NVIC_SetVectorTable(BOOT_ADDRESS, 0); //РїРµСЂРµРєРёРґС‹РІР°РµРј РІРµРєС‚РѕСЂР°
+	__enable_irq(); //СЂР°Р·СЂРµС€Р°РµРј РїСЂРµСЂС‹РІР°РЅРёСЏ
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
 	uart5;
 	uart5.init();

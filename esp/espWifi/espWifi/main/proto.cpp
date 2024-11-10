@@ -9,8 +9,7 @@
 std::vector<uint8_t> tcpBuf;
 const static char *TAG = "TCP";
 
-void putDataFromNetwork(const uint8_t* data, const uint8_t length) {
-	uint16_t *p16 = (uint16_t *)data;
+void putDataFromNetwork(const uint8_t* data, const int length) {
 	
 	tcpBuf.insert(tcpBuf.end(), data, data + length);
 	
@@ -18,7 +17,7 @@ void putDataFromNetwork(const uint8_t* data, const uint8_t length) {
 	while (tcpBuf.size() >= sizeof(PackageNetworkFormat))
 	{
 		p = (PackageNetworkFormat*)tcpBuf.data();
-		ESP_LOGI(TAG, "len = %d,ID = 0x%04x", length, p->cmdId);
+	//	ESP_LOGI(TAG, "len = %d,ID = 0x%04x, %d", p->dataSize, p->cmdId, tcpBuf.size());
 		if (p->cmdId >= ID_HOST_EXTERN) {
 			objDataExchenge.sendPackage(p->cmdId, p->msgType, p->dataSize, (uint8_t*)p->data);
 		}
@@ -28,12 +27,12 @@ void putDataFromNetwork(const uint8_t* data, const uint8_t length) {
 }
 
 
-void putDataFromUart(const uint8_t* data, const uint8_t length) {
+void putDataFromUart(const uint8_t* data, const int length) {
 	objDataExchenge.putByte(data, length);
 }
 
 void procUartData(const PackageNetworkFormat&p) {
-	ESP_LOGI(TAG, "uart ID = 0x%04x", p.cmdId);
+	//ESP_LOGI(TAG, "uart ID = 0x%04x", p.cmdId);
 	if (p.cmdId >= ID_HOST_EXTERN) {
 		sendDataNetwork((uint8_t*)&p, sizeof(PackageNetworkFormat));
 		return;

@@ -4,7 +4,7 @@
 /*!
  * тип описывающий указатель на функцию для обработки принятых данных по уарту
  */
-typedef void(*fnxProcessRxData)(const uint8_t* data, const uint8_t length);
+typedef void(*fnxProcessRxData)(const uint8_t* data, const int length);
 
 #define BODY_WORD_COUNT  16
 //структура, описывающая пакет обмена по сети с радиостнцией

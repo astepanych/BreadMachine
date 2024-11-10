@@ -34,7 +34,7 @@ int  sendDataToUart(const uint8_t* data, const uint8_t len) {
 	
 	const int txBytes = uart_write_bytes(UARTNUM, data, len);
 #ifndef STM32F407xx
-	ESP_LOGI(TAG, "txBytes = %d", txBytes);
+	//ESP_LOGI(TAG, "txBytes = %d", txBytes);
 #endif
 	return txBytes;
 }

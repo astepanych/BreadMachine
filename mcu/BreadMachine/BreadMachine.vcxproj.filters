@@ -179,6 +179,9 @@
     <ClCompile Include="..\SRC\SourceProject\AppCoreExchenge.cpp">
       <Filter>Source files\APP</Filter>
     </ClCompile>
+    <ClCompile Include="..\SRC\SourceProject\AppCoreChecks.cpp">
+      <Filter>Source files\APP</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SRC\SourceProject\AppCore.h">

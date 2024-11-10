@@ -41,13 +41,13 @@ static void do_retransmit(const int sock)
     
 
     do {
-        len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
+        len = recv(sock, rx_buffer, sizeof(rx_buffer), 0);
         if (len < 0) {
             ESP_LOGE(TAG, "Error occurred during receiving: errno %d", errno);
         } else if (len == 0) {
             ESP_LOGW(TAG, "Connection closed");
         } else {
-           
+	        //ESP_LOGI(TAG, "Received %d bytes", len);
 	        processReadedDataNetwork((uint8_t*)rx_buffer, len);
 	        /*
 	        rx_buffer[len] = 0; // Null-terminate whatever is received and treat it like a string
@@ -187,7 +187,7 @@ void initTcpServer(fnxProcessRxData cbFunc)
    // ESP_ERROR_CHECK(example_connect());
 
 	processReadedDataNetwork = cbFunc;
-    xTaskCreate(tcp_server_task, "tcp_server", 4096, (void*)AF_INET, 5, NULL);
+    xTaskCreate(tcp_server_task, "tcp_server", 4096, (void*)AF_INET, 10, NULL);
 
 #ifdef CONFIG_EXAMPLE_IPV6
     xTaskCreate(tcp_server_task, "tcp_server", 4096, (void*)AF_INET6, 5, NULL);

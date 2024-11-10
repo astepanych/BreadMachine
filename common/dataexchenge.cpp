@@ -111,7 +111,7 @@ void DataExchenge::statisticTask()
 	
 	vTaskGetInfo(xHandle, &pxTaskStatus, pdTRUE, eInvalid);
 
-	ESP_LOGI(TAG, "s = %d", pxTaskStatus.usStackHighWaterMark);
+	//ESP_LOGI(TAG, "s = %d", pxTaskStatus.usStackHighWaterMark);
 #endif
 }
 
@@ -188,7 +188,7 @@ void DataExchenge::sendPacket() {
 	res = xTimerStart(timerProtocol, 2 / portTICK_PERIOD_MS);
 	
 #ifndef STM32F407xx
-	ESP_LOGI(TAG, "sendPacket");
+//	ESP_LOGI(TAG, "sendPacket");
 #endif
 	
 }
@@ -258,7 +258,7 @@ void DataExchenge::protocol() {
 						//если совпали - отправляем подтверждение, что все хорошо
 						sendByte(BYTE_CRC_OK);
 #ifndef STM32F407xx
-						ESP_LOGI(TAG, "BYTE_CRC_OK");
+						//ESP_LOGI(TAG, "BYTE_CRC_OK");
 #endif
 						//парсим пакет дальше
 						parsePackage();
@@ -296,7 +296,7 @@ void DataExchenge::protocol() {
 						//если приняли данные
 						confirm = bufRx[indexWork]; //достаем байт подтверждеия
 #ifndef STM32F407xx
-						ESP_LOGI(TAG, "0x%x", confirm);
+		//				ESP_LOGI(TAG, "0x%x", confirm);
 #endif
 						indexWork = (indexWork + 1) % SIZE_BUF_RX;
 						//получили подтверждение успешной отправки пакета
