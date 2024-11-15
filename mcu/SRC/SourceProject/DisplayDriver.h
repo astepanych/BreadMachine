@@ -6,6 +6,8 @@
 #include "typedef.h"
 #include "1251/utf8_to_cp1251.h"
 
+constexpr uint16_t AddrCurrentPage = 0x0014;
+
 constexpr uint16_t CmdSoftVersion = 0x2000;	
 
 constexpr uint16_t AddrDamper = 0x1200;
@@ -38,6 +40,16 @@ constexpr uint16_t addrPeriod = 0x6868;
 constexpr uint16_t addrUpT = 0x6890;
 constexpr uint16_t addrDownT = 0x6892;
 constexpr uint16_t addrEnFan = 0x6894;
+constexpr uint16_t addrWater = 0x6896;
+constexpr uint16_t addrDamperOpen = 0x6898;
+constexpr uint16_t addrDamperClose = 0x689a;
+constexpr uint16_t addrGreenLed = 0x689C;
+constexpr uint16_t addrYellowLed = 0x689E;
+
+constexpr uint16_t addrStateWifi = 0x68E0;
+constexpr uint16_t addrStateWifiIcon = 0x68E2;
+constexpr uint16_t addrStateWifiSSID = 0x68A0;
+constexpr uint16_t addrStateWifiPassword = 0x68c0;
 
 constexpr uint16_t CmdCofirm = 0x4f4b;
 
@@ -73,6 +85,7 @@ public:
 	static void sendToDisplayStr(uint16_t id, uint8_t len, char *data);
 
 	static void sendToDisplay(uint16_t id, uint16_t data);
+	static void getDataFromDisplay(uint16_t id, uint16_t data, uint8_t len);
 	static void sendToDisplayF(uint16_t id, float &data);
 	static void switchPage(uint16_t page);
 	

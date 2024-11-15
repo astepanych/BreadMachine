@@ -5,9 +5,12 @@
 
 #include "esp_log.h"
 #include "vector"
+#include "proto.h"
 
 std::vector<uint8_t> tcpBuf;
 const static char *TAG = "TCP";
+
+WifiState gWifiState;
 
 void putDataFromNetwork(const uint8_t* data, const int length) {
 	
@@ -30,12 +33,29 @@ void putDataFromNetwork(const uint8_t* data, const int length) {
 void putDataFromUart(const uint8_t* data, const int length) {
 	objDataExchenge.putByte(data, length);
 }
-
+extern void updateStateWifi();
 void procUartData(const PackageNetworkFormat&p) {
 	//ESP_LOGI(TAG, "uart ID = 0x%04x", p.cmdId);
 	if (p.cmdId >= ID_HOST_EXTERN) {
 		sendDataNetwork((uint8_t*)&p, sizeof(PackageNetworkFormat));
 		return;
+	}
+	switch (p.cmdId) {
+		case IdWifiPassword:
+			memcpy(gWifiState.wifiPassword, p.data, p.dataSize);
+			updateStateWifi();
+			break;
+		case IdWifiSSID:
+			memcpy(gWifiState.wifiSSID, p.data, p.dataSize);
+			break;
+		case IdWifiState:
+			
+			memcpy(&gWifiState.state, p.data, sizeof(uint32_t));
+			updateStateWifi();
+			
+			break;
+		default:
+			break;
 	}
 }
 

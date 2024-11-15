@@ -45,7 +45,3 @@ void AppCore::checkTemperatureSensors()
 	}
 }
 
-void AppCore::checkWater()
-{
-	
-}

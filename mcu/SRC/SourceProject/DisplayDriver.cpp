@@ -223,6 +223,20 @@ void DisplayDriver::sendToDisplay(uint16_t id, uint16_t data)
 	uart.write(buf, 8);
 }
 
+
+void DisplayDriver::getDataFromDisplay(uint16_t id, uint16_t data, uint8_t len) {
+	static uint8_t buf[10];
+	buf[0] = startByte1;
+	buf[1] = startByte2;
+	buf[2] = 4;
+	buf[3] = cmdByteRead;
+	
+	u16be *p = (u16be*)&buf[4]; 
+	*p = id;
+	buf[6] = len;
+	uart.write(buf, 7);
+}
+
 void DisplayDriver::sendToDisplayF(uint16_t id, float &data)
 {
 	static uint8_t buf[SizeBuffer + 3];
@@ -240,6 +254,9 @@ void DisplayDriver::sendToDisplayF(uint16_t id, float &data)
 	
 	uart.write(buf, 10);
 }
+
+
+
 
 void DisplayDriver::taskDisplay(void *p)
 {

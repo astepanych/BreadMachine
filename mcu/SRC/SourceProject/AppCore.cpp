@@ -200,6 +200,7 @@ void AppCore::readPrograms()
 		memcpy(gParams.wifiPassword, defaultSSIDPassword, strlen(defaultSSIDPassword));
 		memset(gParams.wifiSSID, 0, LenWifiSSID);
 		memcpy(gParams.wifiSSID, defaultSSIDName, strlen(defaultSSIDName));
+		gParams.stateWifi = WifiOff;
 		isFlag = false;
 		//writeGlobalParams();
 	}
@@ -463,8 +464,12 @@ void AppCore::taskPeriodic(void *p)
 	vTaskDelay(2000 / portTICK_PERIOD_MS);
 
 	objDataExchenge.sendPackage(IdBootHost, 1, 0, nullptr);
+	objDataExchenge.sendPackage(IdWifiSSID, 1, strlen(gParams.wifiSSID), (uint8_t*)gParams.wifiSSID);
+	objDataExchenge.sendPackage(IdWifiPassword, 1, strlen(gParams.wifiPassword), (uint8_t*)gParams.wifiPassword);
+	objDataExchenge.sendPackage(IdWifiState, 1, sizeof(gParams.stateWifi), (uint8_t*)&gParams.stateWifi);
+	
 	display->sendToDisplay(CmdSoftVersion, versionSoft);
-	display->sendToDisplay(addrMainItem, "ВЫБОР ПРОГРАММЫ");
+	display->sendToDisplay(addrStateWifiIcon, iconIndexWifi[gParams.stateWifi]);
 	lstPrograms->setIndex(0);
 	lstPrograms->resetWidget();	
 	uint16_t per;
@@ -477,7 +482,7 @@ void AppCore::taskPeriodic(void *p)
 		U = uTemp * 3.3 / 4095;
 		gRun.currentTemp = (2590.0*U - 330) / (1.2705 - 0.385*U);
 		
-		display->sendToDisplayF(AddrNumTemperatureMeasure, gRun.currentTemp);
+		//display->sendToDisplayF(AddrNumTemperatureMeasure, gRun.currentTemp);
 
 		
 		switch (stateRun)

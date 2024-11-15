@@ -163,6 +163,13 @@ void GpioDriver::disableYellowLed()
 	TIM4->CCR1 = 0;
 }
 
+void GpioDriver::enableGreenLed() {
+	TIM4->CCR2 = 1;
+}
+void GpioDriver::disableGreenLed() {
+	TIM4->CCR2 = 0;
+}
+
 GpioDriver::~GpioDriver()
 {
 }

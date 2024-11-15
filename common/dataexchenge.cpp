@@ -134,10 +134,10 @@ void DataExchenge::resetRxIndex() {
 	stateProtocol = StateIdle;
 	cntBytes = 0;
 }
-
+PackageNetworkFormat pack;
 void DataExchenge::sendPackage(int16_t Id, int8_t cmd, int16_t len, uint8_t *data)
 {
-	PackageNetworkFormat pack;
+	
 	
 	buildPackage(Id, cmd, len, data, pack);
 	//кладем собранный пакет в очередь

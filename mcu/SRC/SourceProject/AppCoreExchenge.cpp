@@ -10,7 +10,7 @@
 #include <math.h>
 #include <version.h>
 
-#define BOOT_ADDRESS    0x08040000//àäðåñ íà÷àëà ïðîãðàììû
+#define BOOT_ADDRESS    0x08040000//Ð°Ð´Ñ€ÐµÑ Ð½Ð°Ñ‡Ð°Ð»Ð° Ð¿Ñ€Ð¾Ð³Ñ€Ð°Ð¼Ð¼Ñ‹
 
 
 static void tskExchange(void *p) {
@@ -112,6 +112,47 @@ void AppCore::procUartData(const PackageNetworkFormat&p) {
 void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 	uint8_t cmd = data[0];
 	switch (id) {
+		case addrStateWifiSSID: {
+				int l = 0;
+				uint8_t *pName = data + 1;
+				while (1) {
+					if (*pName == 0xff || *pName == 0) {
+						break;
+					}
+					pName++;
+					l++;
+				}
+				memset(gParams.wifiSSID, 0, LenWifiSSID);
+				memcpy(gParams.wifiSSID, data + 1, l);
+				break;
+			}
+		case addrStateWifiPassword: {
+				int l = 0;
+				uint8_t *pName = data + 1;
+				while (1) {
+					if (*pName == 0xff || *pName == 0) {
+						break;
+					}
+					pName++;
+					l++;
+				}
+				memset(gParams.wifiPassword, 0, LenWifiPassword);
+				memcpy(gParams.wifiPassword, data + 1, l);
+				display->switchPage(currentPage);
+			objDataExchenge.sendPackage(IdWifiSSID, 1, strlen(gParams.wifiSSID), (uint8_t*)gParams.wifiSSID);
+			objDataExchenge.sendPackage(IdWifiPassword, 1, strlen(gParams.wifiPassword), (uint8_t*)gParams.wifiPassword);
+			writeGlobalParams();
+				break;
+			}
+		case AddrCurrentPage:
+			currentPage = (data[1] << 8) | data[2];
+			if (newPage == PageWifiMenu) {
+				display->switchPage(PageWifiMenu);
+				display->sendToDisplay(addrStateWifi, gParams.stateWifi);
+				display->sendToDisplay(addrStateWifiSSID, strlen(gParams.wifiSSID), (uint8_t*)gParams.wifiSSID);
+				display->sendToDisplay(addrStateWifiPassword, strlen(gParams.wifiPassword), (uint8_t*)gParams.wifiPassword);
+			}
+			break;
 		case addrUpT:
 			gpio->setPin(GpioDriver::PinTemperatureUp, (GpioDriver::StatesPin)data[2]);
 			break;
@@ -120,6 +161,33 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 			break;
 		case addrEnFan:
 			gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatesPin)data[2]);
+			break;
+		case addrWater:
+			gpio->setPin(GpioDriver::GpioDriver::PinH2O, (GpioDriver::StatesPin)data[2]);
+			break;
+		case addrDamperOpen:
+			gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatesPin)data[2]);
+			break;
+		case addrDamperClose:
+			gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatesPin)data[2]);
+			break;
+		case addrGreenLed:
+			if (data[2])
+				gpio->enableGreenLed();
+			else 
+				gpio->disableGreenLed();
+			break;
+		case addrYellowLed:
+			if (data[2])
+				gpio->enableYellowLed();
+			else 
+				gpio->disableYellowLed();
+			break;
+		case AddrNumWater:
+			currentWorkMode.stages[currentStage].waterVolume = data[2] | (data[1] << 8);
+			break;
+		case AddrNumTemperature:
+			currentWorkMode.stages[currentStage].temperature = data[2] | (data[1] << 8);
 			break;
 		case AddrNumDamper:
 			currentWorkMode.stages[currentStage].damper ^= 1;
@@ -131,7 +199,7 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 		case addrPassword: {
 				uint16_t pwd = data[2] | (data[1] << 8);
 				if (pwd == password) {
-					display->switchPage(23);
+					display->switchPage(PageExternSettings);
 					display->sendToDisplayF(addrK1, gParams.k1);
 					display->sendToDisplayF(addrK2, gParams.k2);
 					display->sendToDisplay(addrPeriod, gParams.period);
@@ -172,6 +240,13 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 				keyEvent(key);
 				break;
 			}
+		case addrStateWifi: {
+	
+			gParams.stateWifi = data[2] | (data[1] << 8);
+			display->sendToDisplay(addrStateWifiIcon, iconIndexWifi[gParams.stateWifi]);
+			objDataExchenge.sendPackage(IdWifiState, 1, sizeof(gParams.stateWifi), (uint8_t*)&gParams.stateWifi);
+			writeGlobalParams();
+		}
 		default:
 			p_widget->changeParams(id, len, data);
 			break;
@@ -192,6 +267,16 @@ void AppCore::keyEvent(uint16_t key) {
 		case ReturnCodeKeyInMenuSettingsProgramms:
 			p_widget = lstProgramsEdit;
 			p_widget->resetWidget();
+			break;
+		case ReturnCodeKeyWifiMenu:
+			newPage = PageWifiMenu;
+			display->getDataFromDisplay(AddrCurrentPage,0, 2); 
+			//display->switchPage(PageWifiMenu);
+			//display->sendToDisplay(addrStateWifi, gParams.stateWifi);
+			break;
+		case ReturnCodeKeyWifiMenuExit:
+			display->switchPage(currentPage);
+			
 			break;
 		default: 
 			p_widget = p_widget->keyEvent(key);

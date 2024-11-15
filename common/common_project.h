@@ -23,6 +23,8 @@ typedef struct {
 #define ID_HOST_EXTERN      256
 
 
+
+
 enum StateCrc{
     StateCrcOk,
     StateCrcBad,
@@ -32,6 +34,9 @@ enum StateCrc{
 enum IdHostEsp
 {
 	IdBootHost = ID_HOST_ESP,
+	IdWifiState,
+	IdWifiSSID,
+	IdWifiPassword
 };
 
 enum IdHostExtern{
@@ -45,3 +50,7 @@ enum IdHostExtern{
 	IdResetMcu,
 	IdConnectExternSoft
 };
+
+
+constexpr uint16_t LenWifiSSID = 32;
+constexpr uint16_t LenWifiPassword = 64;

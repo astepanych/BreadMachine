@@ -25,6 +25,8 @@ CMD15=100D=DeleteWorkMode
 CMD16=8003=SaveWorkMode
 CMD17=8004=AddStageWorkMode
 CMD18=8005=DeleteStageWorkMode
+CMD19=1010=WifiMenu
+CMD20=1011=WifiMenuExit
 [IMG]
 00=00_main.jpg
 01=01_main.jpg
@@ -51,3 +53,7 @@ CMD18=8005=DeleteStageWorkMode
 22=22.jpg
 23=23_extended_settings.jpg
 24=24_password.jpg
+25=25_tests.jpg
+26=26_buttons_active.jpg
+27=27_wifi.jpg
+28=28_en_key_board.jpg

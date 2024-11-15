@@ -23,6 +23,18 @@ constexpr uint16_t yProgresStage = 175;
 constexpr uint16_t hProgresStage = 60;
 constexpr uint16_t wProgresStage = 568;
 
+enum ePages
+{
+	PageExternSettings = 23,
+	PageWifiMenu = 27
+};
+
+enum eStateWifi
+{
+	WifiOff = 0,
+	WifiOn 
+};
+
 constexpr uint16_t password = 2024;
 
 
@@ -76,7 +88,6 @@ public:
 	{GpioDriver::instace()->togglePin(GpioDriver::GpioDriver::PinGreen); };
 	static unsigned int CRC32_function(unsigned char *buf, unsigned long len);
 	void checkTemperatureSensors();
-	void checkWater();
 	
 private:
 	void procUartData(const PackageNetworkFormat&p);
@@ -90,6 +101,8 @@ private:
 	uint16_t currentStage;
 	uint16_t stageDuration;
 	uint16_t modeDuration;
+	uint16_t currentPage;
+	uint16_t newPage;
 	
 	float U;
 	uint16_t temperature;
@@ -122,6 +135,8 @@ private:
 	
 	bool isErrorSensor1{false};
 	bool isErrorSensor2 {false};
+	const uint16_t iconIndexWifi[2] = {3 ,2};
+	
 
 };
 

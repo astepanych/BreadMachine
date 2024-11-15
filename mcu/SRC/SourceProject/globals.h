@@ -6,8 +6,6 @@
 #define FlashAddrFlagBootloader 0x0806f000
 
 
-constexpr uint16_t LenWifiSSID = 32;
-constexpr uint16_t LenWifiPassword = 64;
 #define IsStartBootloader  0xaaaaaaaa
 
 #pragma pack(push,1)
@@ -19,6 +17,7 @@ struct RomParams {
 	uint32_t timeoutAddWater;
 	char wifiSSID[LenWifiSSID];
 	char wifiPassword[LenWifiPassword];
+	uint32_t stateWifi;
 	
 };
 #pragma pack(pop)

@@ -35,6 +35,8 @@ public:
 	void togglePin(PinsGpioOut pin);
 	void enableYellowLed();
 	void disableYellowLed();
+	void enableGreenLed();
+	void disableGreenLed();
 
 	static GpioDriver *instace() {return ins;};
 	std::function<void(bool)> pinEvent; 
