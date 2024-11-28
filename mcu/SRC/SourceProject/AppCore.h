@@ -12,6 +12,8 @@
 #include "Uart5.h"
 #include <../../../common/dataexchenge.h>
 #include <globals.h>
+#include <Rtc.h>
+#include <log.h>
 
 #define NumItemList  (7)
 #define NumItemListEdit  (5)
@@ -25,6 +27,10 @@ constexpr uint16_t wProgresStage = 568;
 
 enum ePages
 {
+	PageMain = 0,
+	PageRun = 6,
+	PageSettings = 2,
+	PageMessage = 8,
 	PageExternSettings = 23,
 	PageWifiMenu = 27
 };
@@ -43,7 +49,8 @@ enum StateRun
 	StateRunIdle,       
 	StateRunStart,
 	StateRunWork,
-	StateRunStop
+	StateRunStop,
+	StateRunError,
 };
 
 class AppCore
@@ -68,6 +75,7 @@ public:
 	void initOsal();
 	
 	void initText();
+	void updateTimeDisplay();
 	
 	 void initDefaultPrograms();
 	 void readPrograms();
@@ -87,7 +95,7 @@ public:
 	void toggleGreen()
 	{GpioDriver::instace()->togglePin(GpioDriver::GpioDriver::PinGreen); };
 	static unsigned int CRC32_function(unsigned char *buf, unsigned long len);
-	void checkTemperatureSensors();
+	uint16_t checkTemperatureSensors();
 	
 private:
 	void procUartData(const PackageNetworkFormat&p);
@@ -133,10 +141,13 @@ private:
 	
 	RomParams gParams;
 	
-	bool isErrorSensor1{false};
-	bool isErrorSensor2 {false};
+	uint16_t stateTemperatureSensor{0};
 	const uint16_t iconIndexWifi[2] = {3 ,2};
 	
+	Rtc *m_rtc;
+	
+	uint16_t m_pageSettings{PageSettings};
+	uint16_t m_pageExitSettings;
 
 };
 

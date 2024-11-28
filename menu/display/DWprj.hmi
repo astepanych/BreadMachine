@@ -27,6 +27,8 @@ CMD17=8004=AddStageWorkMode
 CMD18=8005=DeleteStageWorkMode
 CMD19=1010=WifiMenu
 CMD20=1011=WifiMenuExit
+CMD21=100E=MainSettings
+CMD22=100F=RunSettings
 [IMG]
 00=00_main.jpg
 01=01_main.jpg

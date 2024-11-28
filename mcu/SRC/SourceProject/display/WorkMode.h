@@ -7,7 +7,7 @@
 
 #define OffsetAddrNumPrograms 4
 #define OffsetAddrPrograms 8
-constexpr int MagicNumber = 0x09abcdf7;
+constexpr int MagicNumber = 0x09abcdf1;
 
 struct StageWorkMode
 {

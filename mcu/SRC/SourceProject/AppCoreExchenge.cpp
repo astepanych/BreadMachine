@@ -10,7 +10,7 @@
 #include <math.h>
 #include <version.h>
 
-#define BOOT_ADDRESS    0x08040000//адрес начала программы
+#define BOOT_ADDRESS    0x08040000//адрес начала программы загрузчика
 
 
 static void tskExchange(void *p) {
@@ -23,7 +23,7 @@ void AppCore::initExchange()
 	xReturned = xTaskCreate(
 	                        tskExchange,       /* Function that implements the task. */
 	                        "exch",          /* Text name for the task. */
-	                        512,      /* Stack size in words, not bytes. */
+	                        256,      /* Stack size in words, not bytes. */
 	                        (void *) 1,    /* Parameter passed into the task. */
 	                        tskIDLE_PRIORITY,/* Priority at which the task is created. */
 							&xHandleExchange); /* Used to pass out the created task's handle. */
@@ -60,12 +60,26 @@ void AppCore::taskExchange(void *p)
 void AppCore::procUartData(const PackageNetworkFormat&p) {
 	
 	switch (p.cmdId) {
+		case IdGetLog: {
+				uint32_t current = FlashAddLog;
+				uint8_t data[32];
+				while (current < FlashAddLog+LOG::instance().getLogBufLength()) {
+					memcpy(data, (void*)current,32);
+					int len =  (FlashAddLog + LOG::instance().getLogBufLength() - current) > 32 ? 32 : FlashAddLog + LOG::instance().getLogBufLength() - current; 
+					objDataExchenge.sendPackage(IdDataLog, 1, 32, data);
+					current+=32;
+					vTaskDelay(20 / portTICK_PERIOD_MS);
+				}
+				objDataExchenge.sendPackage(IdEndLog, 1, 0, nullptr);
+				LOG::instance().eraseLog();
+				break;
+			}
 		case IdSoftVersion:
 			objDataExchenge.sendPackage(IdSoftVersion, p.msgType, sizeof(versionSoft), (uint8_t*)&versionSoft);
 			break;
 		case IdStartBootloader: {
-			typedef void(*fnc_ptr)(void);
-			/* Function pointer to the address of the user application. */
+				typedef void(*fnc_ptr)(void);
+				/* Function pointer to the address of the user application. */
 			fnc_ptr jump_to_app;
  
 			jump_to_app = (fnc_ptr)(*(volatile uint32_t*)(BOOT_ADDRESS + 4u));
@@ -199,10 +213,13 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 		case addrPassword: {
 				uint16_t pwd = data[2] | (data[1] << 8);
 				if (pwd == password) {
+					m_pageSettings = PageExternSettings;
 					display->switchPage(PageExternSettings);
 					display->sendToDisplayF(addrK1, gParams.k1);
 					display->sendToDisplayF(addrK2, gParams.k2);
 					display->sendToDisplay(addrPeriod, gParams.period);
+					display->sendToDisplay(addrAddWater, gParams.timeoutAddWater);
+
 				}
 				break;
 			}
@@ -223,6 +240,9 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 				gParams.period = data[2] | (data[1] << 8);
 				break;
 			}
+		case addrAddWater:
+			gParams.timeoutAddWater = data[2] | (data[1] << 8);
+			break;
 		case CmdDateTime: {
 				helperBuf[0] = 0x5a;
 				helperBuf[1] = 0xa5;
@@ -232,6 +252,8 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 				helperBuf[5] = data[5];
 				helperBuf[6] = data[6];
 				helperBuf[7] = data[7];
+				m_rtc->setDate(data[1], data[2], data[3]);
+				m_rtc->setTime(data[5], data[6], data[7]);
 				display->sendToDisplay(CmdSetDateTime, 8, helperBuf);
 				break;
 			}
@@ -246,7 +268,13 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 			display->sendToDisplay(addrStateWifiIcon, iconIndexWifi[gParams.stateWifi]);
 			objDataExchenge.sendPackage(IdWifiState, 1, sizeof(gParams.stateWifi), (uint8_t*)&gParams.stateWifi);
 			writeGlobalParams();
+			break;
 		}
+		case AddrRtc:
+			
+			m_rtc->setDate(data[1], data[2], data[3]);
+			m_rtc->setTime(data[5], data[6], data[7]);
+			break;
 		default:
 			p_widget->changeParams(id, len, data);
 			break;
@@ -263,6 +291,7 @@ void AppCore::keyEvent(uint16_t key) {
 			break;
 		case ReturnCodeKeyStop:
 			stateRun = StateRunStop;
+			LOG::instance().log("stop");
 			break;
 		case ReturnCodeKeyInMenuSettingsProgramms:
 			p_widget = lstProgramsEdit;
@@ -278,6 +307,26 @@ void AppCore::keyEvent(uint16_t key) {
 			display->switchPage(currentPage);
 			
 			break;
+		case ReturnCodeKeyExitFromMenu :
+			display->hideMessage();
+			break;
+		case ReturnCodeKeyMainSettings:
+			m_pageExitSettings = PageMain;
+			display->switchPage(m_pageSettings);
+			break;
+		case ReturnCodeKeyRunSettings:
+			m_pageExitSettings = PageRun;
+			display->switchPage(m_pageSettings);
+			break;
+		case ReturnCodeKeyApplySettings:
+			display->switchPage(m_pageExitSettings);
+			break;
+		case ReturnCodeKeyExtendedSettings:
+			{
+				if (memcmp((void*)FlashAddrGlobalParams, &gParams, sizeof(RomParams)) != 0)
+					writeGlobalParams();
+				break;
+			}
 		default: 
 			p_widget = p_widget->keyEvent(key);
 			break;

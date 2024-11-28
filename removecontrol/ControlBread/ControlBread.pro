@@ -6,7 +6,8 @@ QT += quick qml network
 
 SOURCES += \
         appcore.cpp \
-        main.cpp
+        main.cpp \
+        modellogdatatransfer.cpp
 
 RESOURCES += qml.qrc
 
@@ -23,7 +24,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     ../../common/common_project.h \
-    appcore.h
+    appcore.h \
+    modellogdatatransfer.h
 
 INCLUDEPATH += \
     ../../common/

@@ -7,9 +7,11 @@
 #include "1251/utf8_to_cp1251.h"
 
 constexpr uint16_t AddrCurrentPage = 0x0014;
+constexpr uint16_t AddrOverlay = 0x00e8;
 
 constexpr uint16_t CmdSoftVersion = 0x2000;	
 
+constexpr uint16_t AddrRtc = 0x0010;
 constexpr uint16_t AddrDamper = 0x1200;
 constexpr uint16_t AddrFan = 0x1202;
 
@@ -21,10 +23,11 @@ constexpr uint16_t AddrProgressBar = 0x4004;
 constexpr uint16_t AddrNumStage = 0x4006;
 constexpr uint16_t AddrNumWater = 0x4008;
 constexpr uint16_t AddrNumTemperature = 0x400a;
-constexpr uint16_t AddrNumTemperatureMeasure = 0x4020;
 constexpr uint16_t AddrNumDamper = 0x400E;
 constexpr uint16_t AddrNumFan = 0x4010;
 constexpr uint16_t AddrNumTime = 0x4012;
+constexpr uint16_t AddrNumTemperatureMeasure = 0x4020;
+constexpr uint16_t AddrMessage = 0x4040;
 
 constexpr uint16_t AddrStages = 0x7000;
 constexpr uint16_t CmdPaintFillRectangle = 0x0004;	
@@ -35,6 +38,7 @@ constexpr uint16_t addrPassword = 0x6870;
 constexpr uint16_t addrK1 = 0x6860;
 constexpr uint16_t addrK2 = 0x6864;
 constexpr uint16_t addrPeriod = 0x6868;
+constexpr uint16_t addrAddWater = 0x686a;
 
 
 constexpr uint16_t addrUpT = 0x6890;
@@ -88,6 +92,8 @@ public:
 	static void getDataFromDisplay(uint16_t id, uint16_t data, uint8_t len);
 	static void sendToDisplayF(uint16_t id, float &data);
 	static void switchPage(uint16_t page);
+	static void showMessage(uint16_t idPage, uint16_t ipMessage);
+	static void hideMessage();
 	
 	static std::function<void(const uint16_t, uint8_t, uint8_t*)> newCmd;
 	

@@ -84,8 +84,10 @@
     <ClCompile Include="..\SRC\SourceProject\display\Widget.cpp" />
     <ClCompile Include="..\SRC\SourceProject\display\WorkModeEdit.cpp" />
     <ClCompile Include="..\SRC\SourceProject\initApp.cpp" />
+    <ClCompile Include="..\SRC\SourceProject\log.cpp" />
     <ClCompile Include="..\SRC\SourceProject\Periphery\AdcDriver.cpp" />
     <ClCompile Include="..\SRC\SourceProject\Periphery\GpioDriver.cpp" />
+    <ClCompile Include="..\SRC\SourceProject\Periphery\Rtc.cpp" />
     <ClCompile Include="..\SRC\SourceProject\Periphery\Timer3.cpp" />
     <ClCompile Include="..\SRC\SourceProject\Periphery\Uart1.cpp" />
     <ClCompile Include="..\SRC\SourceProject\Periphery\Uart3.cpp" />
@@ -107,6 +109,7 @@
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_exti.c" />
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_flash.c" />
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_gpio.c" />
+    <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_pwr.c" />
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_rcc.c" />
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_rtc.c" />
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_syscfg.c" />
@@ -136,8 +139,10 @@
     <ClInclude Include="..\SRC\SourceProject\globals.h" />
     <ClInclude Include="..\SRC\SourceProject\initApp.h" />
     <ClInclude Include="..\SRC\SourceProject\LittleBigEndian.h" />
+    <ClInclude Include="..\SRC\SourceProject\log.h" />
     <ClInclude Include="..\SRC\SourceProject\Periphery\AdcDriver.h" />
     <ClInclude Include="..\SRC\SourceProject\Periphery\GpioDriver.h" />
+    <ClInclude Include="..\SRC\SourceProject\Periphery\Rtc.h" />
     <ClInclude Include="..\SRC\SourceProject\Periphery\Timer3.h" />
     <ClInclude Include="..\SRC\SourceProject\Periphery\Uart.h" />
     <ClInclude Include="..\SRC\SourceProject\Periphery\Uart1.h" />

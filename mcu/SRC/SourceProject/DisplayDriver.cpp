@@ -35,7 +35,7 @@ DisplayDriver::DisplayDriver() {
 	
 	xTaskCreate(this->taskDisplay,
 		"display",
-		1024,
+		512,
 		(void*)2,
 		tskIDLE_PRIORITY+1,
 		&xHandleDisplay); 
@@ -253,6 +253,22 @@ void DisplayDriver::sendToDisplayF(uint16_t id, float &data)
 	*p32 = (u32be)tmp;
 	
 	uart.write(buf, 10);
+}
+
+void DisplayDriver::showMessage(uint16_t idPage, uint16_t ipMessage)
+{
+	
+	uint8_t buff[4] = {0x5a, 0x01, 0,0 };
+	u16be *p = (u16be*)&buff[2]; 
+	*p = idPage;
+	sendToDisplay(AddrOverlay, sizeof(buff), buff);
+	
+	sendToDisplay(AddrMessage, ipMessage);
+}
+
+void DisplayDriver::hideMessage()
+{
+	sendToDisplay(AddrOverlay, 0);
 }
 
 

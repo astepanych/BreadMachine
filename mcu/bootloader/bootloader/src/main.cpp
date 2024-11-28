@@ -50,9 +50,8 @@ void procUartData(PackageNetworkFormat &p)
 			FLASH_EraseSector(FLASH_Sector_2, VoltageRange_3);
 			FLASH_EraseSector(FLASH_Sector_3, VoltageRange_3);
 			FLASH_EraseSector(FLASH_Sector_4, VoltageRange_3);
-			FLASH_EraseSector(FLASH_Sector_5, VoltageRange_3);
 			FLASH_Lock();
-			
+		
 			break;
 		case IdFirmwareData:
 			if (p.dataSize > 0x20)

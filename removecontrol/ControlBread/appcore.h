@@ -6,7 +6,7 @@
 #include <QTcpSocket>
 #include <qstringlist.h>
 #include <QTimer>
-
+#include <modellogdatatransfer.h>
 
 class AppCore : public QObject
 {
@@ -27,6 +27,16 @@ public:
     Q_INVOKABLE void startFirmware(const QString &nameFirmware);
     void taskFirmware(const QString &nameFirmware);
     Q_INVOKABLE void stopFirmware();
+    Q_INVOKABLE ModelList *logModel() const;
+
+    Q_INVOKABLE void getLog();
+    Q_INVOKABLE void saveLog(const QString &nameFileSave);
+    Q_INVOKABLE void clearLog();
+
+
+    void setLogModel(ModelList *newLogModel);
+    void resetLogModel();
+
 public slots:
     void readData();
     void sendPacket(const uint16_t id, const uint8_t *data, const uint16_t len);
@@ -38,6 +48,8 @@ signals:
     void addStringLog(const QString &s);
     void progressFirmware(int val);
     void signalRcvCrc();
+
+    void logModelChanged();
 
 private:
     QTcpSocket client;
@@ -51,6 +63,9 @@ private:
     QString m_nameFirmware;
     QTimer timerWaitBootloader;
     void startThreadFirmware();
+    ModelList *m_logModel;
+    Q_PROPERTY(ModelList *logModel READ logModel WRITE setLogModel RESET resetLogModel NOTIFY logModelChanged)
+    QByteArray bufLog;
 };
 
 #endif // APPCORE_H

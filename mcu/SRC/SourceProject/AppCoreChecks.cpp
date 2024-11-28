@@ -9,39 +9,37 @@
 #include <time.h>
 #include <math.h>
 
-void AppCore::checkTemperatureSensors()
+uint16_t AppCore::checkTemperatureSensors()
 {
-
+	uint16_t curState = 0;
 	const float thresholdErrorTemperature = 4085;
 	if (adc->value2() > thresholdErrorTemperature)
 	{
-		if (!isErrorSensor2) {
-			isErrorSensor2 = true;
-			//TODO output error
-		}
-		
+		curState = 2;
+		LOG::instance().log("err temp sen2"); 
 	}
 	else
 	{
-		if (isErrorSensor2) {
-			isErrorSensor2 = false;
-			//TODO output no error
-		}
-		
+		curState = 0;		
 	}
 	if (adc->value1() > thresholdErrorTemperature) {
-		if (!isErrorSensor1)
-		{
-			isErrorSensor1 = true;
-			//TODO output error
-		}
+		curState |= 1;
+		LOG::instance().log("err temp sen1"); 
 	}
 	else
-	{	if (isErrorSensor1) {
-			isErrorSensor1 = false;
-		//TODO output no error
-		}
-		
+	{	
+		curState &= (~1);
 	}
+	
+	if (stateTemperatureSensor != curState)
+	{
+		if (curState != 0)
+			display->showMessage(PageMessage, curState);
+		else
+			display->hideMessage();
+		stateTemperatureSensor = curState;
+	}
+	return stateTemperatureSensor;
+	
 }
 

@@ -88,6 +88,7 @@ StartPageForm {
         }
 
     }
+
     listView.model: modelLog
 
 

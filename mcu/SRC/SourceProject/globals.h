@@ -3,10 +3,6 @@
 
 #define FlashAddrGlobalParams 0x08060000
 #define FlashAddrPrograms 0x08068000
-#define FlashAddrFlagBootloader 0x0806f000
-
-
-#define IsStartBootloader  0xaaaaaaaa
 
 #pragma pack(push,1)
 struct RomParams {

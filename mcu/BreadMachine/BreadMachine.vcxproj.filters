@@ -182,6 +182,15 @@
     <ClCompile Include="..\SRC\SourceProject\AppCoreChecks.cpp">
       <Filter>Source files\APP</Filter>
     </ClCompile>
+    <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_pwr.c">
+      <Filter>Source files\HAL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\SourceProject\Periphery\Rtc.cpp">
+      <Filter>Source files\APP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\SourceProject\log.cpp">
+      <Filter>Source files\APP</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SRC\SourceProject\AppCore.h">
@@ -281,6 +290,12 @@
       <Filter>Source files\APP</Filter>
     </ClInclude>
     <ClInclude Include="..\SRC\SourceProject\globals.h">
+      <Filter>Source files\APP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\Periphery\Rtc.h">
+      <Filter>Source files\APP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\log.h">
       <Filter>Source files\APP</Filter>
     </ClInclude>
   </ItemGroup>

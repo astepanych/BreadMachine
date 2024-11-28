@@ -48,7 +48,10 @@ enum IdHostExtern{
 	IdFirmwareCrc,
 	IdFirmwareResult,
 	IdResetMcu,
-	IdConnectExternSoft
+	IdConnectExternSoft,
+	IdGetLog,
+	IdDataLog,
+    IdEndLog
 };
 
 

@@ -3,7 +3,7 @@
 enum ReturnCodeKey
 {
 	ReturnCodeKeyStart               = 0x1000,
-	ReturnCodeKeyCancelSettings,
+	ReturnCodeKeyExtendedSettings,
 	ReturnCodeKeyApplySettings,
 	ReturnCodeKeyStop,
 	ReturnCodeKeySaveProgramm,
@@ -16,6 +16,8 @@ enum ReturnCodeKey
 	ReturnCodeKeyEditWorkMode,
 	ReturnCodeKeyAddWorkMode,
 	ReturnCodeKeyDeleteWorkMode,
+	ReturnCodeKeyMainSettings,
+	ReturnCodeKeyRunSettings,
 	
 	ReturnCodeKeyWifiMenu = 0x1010,
 	ReturnCodeKeyWifiMenuExit,

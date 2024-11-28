@@ -29,7 +29,7 @@ AppCore::AppCore(QObject *parent) : QObject(parent),
     connect(&timerWaitBootloader, &QTimer::timeout, this, [=](){
         emit addStringLog("Нет события от загрузчика");
     });
-
+    m_logModel = new ModelList();
 
 }
 
@@ -164,6 +164,54 @@ void AppCore::startThreadFirmware()
     QtConcurrent::run(QThreadPool::globalInstance(),this,&AppCore::taskFirmware, m_nameFirmware);
 }
 
+void AppCore::setLogModel(ModelList *newLogModel)
+{
+    if (m_logModel == newLogModel)
+        return;
+    m_logModel = newLogModel;
+    emit logModelChanged();
+}
+
+void AppCore::resetLogModel()
+{
+    setLogModel({}); // TODO: Adapt to use your actual default value
+}
+
+ModelList *AppCore::logModel() const
+{
+    return m_logModel;
+}
+
+void AppCore::getLog()
+{
+    bufLog.clear();
+    sendPacket(IdGetLog, nullptr, 0);
+}
+
+void AppCore::saveLog(const QString &nameFileSave)
+{
+    qDebug()<<nameFileSave;
+    return;
+    if(nameFileSave.length() == 0)
+        return;
+
+    QFile f(nameFileSave);
+    if(f.open(QIODevice::WriteOnly)) {
+        foreach(ElementModelList e, m_logModel->list()) {
+            e.str += "\n";
+            f.write((const char*)e.str.data(), e.str.length());
+        }
+    }
+    f.close();
+
+
+}
+
+void AppCore::clearLog()
+{
+    m_logModel->clearModel();
+}
+
 void AppCore::readData()
 {
    QByteArray ba = client.readAll();
@@ -172,6 +220,20 @@ void AppCore::readData()
    while(ba.length() >= sizeof(PackageNetworkFormat)) {
        PackageNetworkFormat *p = (PackageNetworkFormat *)ba.data();
        switch(p->cmdId){
+       case IdEndLog:{
+            QString s(bufLog);
+
+            QStringList lst = s.split('*');
+            foreach( QString ss , lst){
+                if(ss.at(0) == '~') {
+                    ss.remove(0,1);
+                    m_logModel->addItem(ss);
+                }
+            }
+       }break;
+       case IdDataLog:
+           bufLog.append((const char *)p->data, p->dataSize);
+           break;
        case IdFirmwareResult:
            stateCrc = p->data[0];
             qDebug()<<tr("rcv stateCrc %1").arg(stateCrc);
@@ -202,7 +264,7 @@ void AppCore::sendPacket(const uint16_t id, const uint8_t *data, const uint16_t 
     if(len != 0)
         memcpy(p.data, data, p.dataSize);
     p.crc = CRC_Calc_s16_CCITT((uint16_t*)&p, sizeof(PackageNetworkFormat)/sizeof(uint16_t)-1);
-    client.write((const char*)&p, sizeof(PackageNetworkFormat));
+    qDebug()<<client.write((const char*)&p, sizeof(PackageNetworkFormat));
 }
 
 
