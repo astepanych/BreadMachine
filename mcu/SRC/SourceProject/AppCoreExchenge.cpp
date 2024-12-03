@@ -181,9 +181,13 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 			break;
 		case addrDamperOpen:
 			gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatesPin)data[2]);
+			if (data[2] == GpioDriver::StatePinOne)
+				xTimerStart(timerDamper, 0);
 			break;
 		case addrDamperClose:
 			gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatesPin)data[2]);
+			if (data[2] == GpioDriver::StatePinOne)
+				xTimerStart(timerDamper, 0);
 			break;
 		case addrGreenLed:
 			if (data[2])
@@ -200,6 +204,9 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 		case AddrNumWater:
 			currentWorkMode.stages[currentStage].waterVolume = data[2] | (data[1] << 8);
 			break;
+		case AddrNumDurationNew:
+			currentWorkMode.stages[currentStage].duration = (data[2] | (data[1] << 8))*60;
+			break;
 		case AddrNumTemperature:
 			currentWorkMode.stages[currentStage].temperature = data[2] | (data[1] << 8);
 			break;
@@ -213,7 +220,7 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 		case addrPassword: {
 				uint16_t pwd = data[2] | (data[1] << 8);
 				if (pwd == password) {
-					m_pageSettings = PageExternSettings;
+					//m_pageSettings = PageExternSettings;
 					display->switchPage(PageExternSettings);
 					display->sendToDisplayF(addrK1, gParams.k1);
 					display->sendToDisplayF(addrK2, gParams.k2);
@@ -307,7 +314,7 @@ void AppCore::keyEvent(uint16_t key) {
 			display->switchPage(currentPage);
 			
 			break;
-		case ReturnCodeKeyExitFromMenu :
+		case ReturnCodeKeyHideMsg :
 			display->hideMessage();
 			break;
 		case ReturnCodeKeyMainSettings:

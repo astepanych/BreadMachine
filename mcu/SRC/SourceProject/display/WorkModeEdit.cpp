@@ -92,6 +92,8 @@ Widget* WorkModeEdit::keyEvent(uint16_t key)
 		if (tempWMode.numStage > 0) {
 			memmove(&tempWMode.stages[currentStage], &tempWMode.stages[currentStage + 1], sizeof(StageWorkMode)*(MaxStageMode - currentStage - 1));
 			tempWMode.numStage--;
+			if (currentStage == tempWMode.numStage)
+				currentStage--;
 			paintSettingsWorkMode(stateEdited != StateView);
 		}
 		

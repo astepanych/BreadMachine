@@ -65,7 +65,7 @@ public:
 
 	void init();
 
-	void eventTimeoutLeds(TimerHandle_t timer);
+	void eventTimeoutDamper(TimerHandle_t timer);
 
 	
 	void parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data);
@@ -83,7 +83,7 @@ public:
 	
 	void fillProgram(const std::string &name, const uint16_t numStages, const uint16_t *stage = nullptr);
 	void updateProgressBar(uint16_t value);
-	
+	float selectTemperature();
 	void paintStageProgress();
 	WorkMode currentWorkMode;
 	
@@ -112,7 +112,8 @@ private:
 	uint16_t currentPage;
 	uint16_t newPage;
 	
-	float U;
+	float Utemp1;
+	float Utemp2;
 	uint16_t temperature;
 	float prevTemperature;
 
@@ -148,6 +149,12 @@ private:
 	
 	uint16_t m_pageSettings{PageSettings};
 	uint16_t m_pageExitSettings;
-
+	
+	const float thresholdErrorTemperature = 500;
+	
+	xTimerHandle timerDamper; ///< таймер отключения шибера
+	int16_t timeBlinkYellow{0};
+	
+	
 };
 

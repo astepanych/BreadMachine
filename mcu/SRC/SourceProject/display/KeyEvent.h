@@ -23,6 +23,7 @@ enum ReturnCodeKey
 	ReturnCodeKeyWifiMenuExit,
 	ReturnCodeKeyWifiMenuApply,
 	
+	ReturnCodeKeyHideMsg = 0x2000,
 		
 	ReturnCodeKeySwitchWorkModeUp  = 0x8001,
 	ReturnCodeKeySwitchWorkModeDown,	//0x8002

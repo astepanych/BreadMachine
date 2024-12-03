@@ -184,6 +184,11 @@ ModelList *AppCore::logModel() const
 
 void AppCore::getLog()
 {
+    for(int i = 0; i< 10; i++){
+
+        m_logModel->addItem(tr("item %1").arg(i+1));
+    }
+    return;
     bufLog.clear();
     sendPacket(IdGetLog, nullptr, 0);
 }
@@ -191,15 +196,24 @@ void AppCore::getLog()
 void AppCore::saveLog(const QString &nameFileSave)
 {
     qDebug()<<nameFileSave;
-    return;
     if(nameFileSave.length() == 0)
         return;
+    QString nameFileSaveTemp;
+#ifdef Q_OS_ANDROID
+       nameFileSaveTemp = nameFileSave;
+#else
+       QUrl url(nameFileSave);
+       nameFileSaveTemp = url.path().remove(0,1);
+#endif
 
-    QFile f(nameFileSave);
+
+
+
+    QFile f(nameFileSaveTemp);
     if(f.open(QIODevice::WriteOnly)) {
         foreach(ElementModelList e, m_logModel->list()) {
             e.str += "\n";
-            f.write((const char*)e.str.data(), e.str.length());
+            f.write((const char*)e.str.toLocal8Bit(), e.str.length());
         }
     }
     f.close();

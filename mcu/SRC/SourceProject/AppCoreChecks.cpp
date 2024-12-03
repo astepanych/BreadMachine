@@ -12,7 +12,7 @@
 uint16_t AppCore::checkTemperatureSensors()
 {
 	uint16_t curState = 0;
-	const float thresholdErrorTemperature = 4085;
+
 	if (adc->value2() > thresholdErrorTemperature)
 	{
 		curState = 2;

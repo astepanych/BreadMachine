@@ -41,15 +41,23 @@ GpioDriver::GpioDriver()
 	ins = this;
 }
 
-void GpioDriver::setPin(PinsGpioOut pin, StatesPin state)
-{
+void GpioDriver::setPin(PinsGpioOut pin, StatesPin state) {
 	if (state == StatePinOne)
 		GPIO_SetBits(settingsPins[pin].port, settingsPins[pin].pin);
 	else
 		GPIO_ResetBits(settingsPins[pin].port, settingsPins[pin].pin);
+	if (pin == GpioDriver::PinH2O) {
+		if (state == StatePinOne) {
+			enableInt();
+		}
+		else { 
+			disableInt();
+		}
+	}
+		
+	
 }
-void GpioDriver::togglePin(PinsGpioOut pin)
-{
+void GpioDriver::togglePin(PinsGpioOut pin) {
 	GPIO_ToggleBits(settingsPins[pin].port, settingsPins[pin].pin);
 }
 
@@ -80,20 +88,20 @@ void GpioDriver::initModule()
 	timer.TIM_ClockDivision = TIM_CKD_DIV1;
 	timer.TIM_CounterMode = TIM_CounterMode_Up;
 	timer.TIM_Prescaler = 839;
-	timer.TIM_Period = 10;
+	timer.TIM_Period = 9;
 	TIM_TimeBaseInit(TIM4, &timer);
 	
 	TIM_OCInitTypeDef timerPWM;
 	TIM_OCStructInit(&timerPWM);
-	timerPWM.TIM_Pulse = 0;
+	timerPWM.TIM_Pulse = 2;
 	timerPWM.TIM_OCMode = TIM_OCMode_PWM1;
 	timerPWM.TIM_OutputState = TIM_OutputState_Enable;
 	timerPWM.TIM_OCPolarity = TIM_OCPolarity_High; 
 	TIM_OC1Init(TIM4, &timerPWM);
-	timerPWM.TIM_Pulse = 1;
+	timerPWM.TIM_Pulse = 2;
 	TIM_OC2Init(TIM4, &timerPWM);
 	
-	TIM_SetCounter(TIM4, 10);
+	TIM_SetCounter(TIM4, 0);
 	TIM_Cmd(TIM4, ENABLE);
 
 	
@@ -113,21 +121,12 @@ void GpioDriver::initModule()
 	SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOC, EXTI_PinSource13);
 	
 	exti.EXTI_Line = EXTI_Line13;
-
 	/* Enable interrupt */
-
 	exti.EXTI_LineCmd = ENABLE;
-
 	/* Interrupt mode */
-
 	exti.EXTI_Mode = EXTI_Mode_Interrupt;
-
 	/* Triggers on rising and falling edge */
-
 	exti.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
-
-	/* Add to EXTI */
-
 	EXTI_Init(&exti);
 
 	/* Add IRQ vector to NVIC */
@@ -152,6 +151,31 @@ void GpioDriver::initModule()
 
 	NVIC_Init(&nvic);
 	
+}
+
+void GpioDriver::enableInt()
+{
+	EXTI_InitTypeDef exti;
+	exti.EXTI_Line = EXTI_Line13;
+	/* Enable interrupt */
+	exti.EXTI_LineCmd = ENABLE;
+	/* Interrupt mode */
+	exti.EXTI_Mode = EXTI_Mode_Interrupt;
+	/* Triggers on rising and falling edge */
+	exti.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
+	EXTI_Init(&exti);
+}
+
+void GpioDriver::disableInt() {
+	EXTI_InitTypeDef exti;
+	exti.EXTI_Line = EXTI_Line13;
+	/* Enable interrupt */
+	exti.EXTI_LineCmd = DISABLE;
+	/* Interrupt mode */
+	exti.EXTI_Mode = EXTI_Mode_Interrupt;
+	/* Triggers on rising and falling edge */
+	exti.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
+	EXTI_Init(&exti);
 }
 
 void GpioDriver::enableYellowLed()

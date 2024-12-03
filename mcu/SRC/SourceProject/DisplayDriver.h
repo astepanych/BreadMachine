@@ -27,6 +27,7 @@ constexpr uint16_t AddrNumDamper = 0x400E;
 constexpr uint16_t AddrNumFan = 0x4010;
 constexpr uint16_t AddrNumTime = 0x4012;
 constexpr uint16_t AddrNumTemperatureMeasure = 0x4020;
+constexpr uint16_t AddrNumDurationNew = 0x4028;
 constexpr uint16_t AddrMessage = 0x4040;
 
 constexpr uint16_t AddrStages = 0x7000;
