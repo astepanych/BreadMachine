@@ -205,13 +205,16 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 			currentWorkMode.stages[currentStage].waterVolume = data[2] | (data[1] << 8);
 			break;
 		case AddrNumDurationNew:
-			currentWorkMode.stages[currentStage].duration = (data[2] | (data[1] << 8))*60;
+			currentWorkMode.stages[currentStage].duration += (data[2] | (data[1] << 8))*60;
 			break;
 		case AddrNumTemperature:
 			currentWorkMode.stages[currentStage].temperature = data[2] | (data[1] << 8);
 			break;
 		case AddrNumDamper:
 			currentWorkMode.stages[currentStage].damper ^= 1;
+			gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].damper);
+			gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatesPin)(!currentWorkMode.stages[currentStage].damper));
+			xTimerStart(timerDamper, 0);
 			break;
 		case AddrNumFan:
 			currentWorkMode.stages[currentStage].fan ^= 1;
@@ -299,6 +302,10 @@ void AppCore::keyEvent(uint16_t key) {
 		case ReturnCodeKeyStop:
 			stateRun = StateRunStop;
 			LOG::instance().log("stop");
+			break;
+		case ReturnCodeKeyExitMenuTest:
+			gpio->enableGreenLed();
+			gpio->disableYellowLed();
 			break;
 		case ReturnCodeKeyInMenuSettingsProgramms:
 			p_widget = lstProgramsEdit;

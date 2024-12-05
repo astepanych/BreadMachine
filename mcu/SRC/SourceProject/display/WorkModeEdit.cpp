@@ -123,7 +123,7 @@ void WorkModeEdit::changeParams(const uint16_t id, uint8_t len, uint8_t* data)
 			pName++;
 			tempWMode.lenNameMode++;
 		}
-		memcpy(tempWMode.nameMode, data + 1, tempWMode.lenNameMode);
+		memcpy(tempWMode.nameMode, data + 1, tempWMode.lenNameMode+2);
 		to1251((uint8_t*)tempWMode.nameMode, tempWMode.lenNameMode);
 		
 	}

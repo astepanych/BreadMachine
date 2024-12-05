@@ -184,11 +184,6 @@ ModelList *AppCore::logModel() const
 
 void AppCore::getLog()
 {
-    for(int i = 0; i< 10; i++){
-
-        m_logModel->addItem(tr("item %1").arg(i+1));
-    }
-    return;
     bufLog.clear();
     sendPacket(IdGetLog, nullptr, 0);
 }

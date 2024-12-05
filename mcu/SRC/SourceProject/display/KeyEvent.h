@@ -22,6 +22,7 @@ enum ReturnCodeKey
 	ReturnCodeKeyWifiMenu = 0x1010,
 	ReturnCodeKeyWifiMenuExit,
 	ReturnCodeKeyWifiMenuApply,
+	ReturnCodeKeyExitMenuTest,
 	
 	ReturnCodeKeyHideMsg = 0x2000,
 		

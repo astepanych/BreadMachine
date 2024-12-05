@@ -291,6 +291,8 @@ void AppCore::initText()
 	};
 	lstProgramsEdit->saveWorkModes = [=]() {
 		writeGlobalParams();
+		std::string s = lstPrograms->text(gRun.currentIndex);
+		display->sendToDisplay(addrMainItem, s);
 		currentWorkMode = m_programs.at(gRun.currentIndex);
 	};
 	lstProgramsEdit->setAddrScrollValue(AddrScrolBar);
@@ -494,6 +496,8 @@ void AppCore::taskPeriodic(void *p)
 					display->showMessage(PageMessage, stateTemperatureSensor);
 					break;
 				}
+				currentWorkMode = m_programs.at(gRun.currentIndex);
+
 				LOG::instance().log("start"); 
 				currentStage = 0;
 				stageDuration = 0;
@@ -585,6 +589,7 @@ void AppCore::taskPeriodic(void *p)
 				gpio->setPin(GpioDriver::PinTemperatureUp, GpioDriver::StatePinZero);
 				gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
 				gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
+				gpio->disableYellowLed();
 				//xTimerStart(timerYellow, 0);
 
 				break;

@@ -30,6 +30,7 @@ CMD20=1011=WifiMenuExit
 CMD21=100E=MainSettings
 CMD22=100F=RunSettings
 CMD23=2000=hideMessage
+CMD24=1012=ExitMenuTest
 [IMG]
 00=00_main.jpg
 01=01_main.jpg

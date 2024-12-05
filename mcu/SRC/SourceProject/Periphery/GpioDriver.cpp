@@ -180,7 +180,7 @@ void GpioDriver::disableInt() {
 
 void GpioDriver::enableYellowLed()
 {
-	TIM4->CCR1 = 1;
+	TIM4->CCR1 = 2;
 }
 void GpioDriver::disableYellowLed()
 {
@@ -188,7 +188,7 @@ void GpioDriver::disableYellowLed()
 }
 
 void GpioDriver::enableGreenLed() {
-	TIM4->CCR2 = 1;
+	TIM4->CCR2 = 2;
 }
 void GpioDriver::disableGreenLed() {
 	TIM4->CCR2 = 0;

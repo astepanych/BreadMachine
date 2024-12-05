@@ -4,15 +4,6 @@
 #include "stm32f4xx_rcc.h"
 #include "stm32f4xx_rtc.h"
 
-static void initRtc()
-{
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
-	RTC_DeInit();
-	
-	RTC_InitTypeDef s;
-	RTC_StructInit(&s);
-	RTC_Init(&s);
-}
 
 static void SystemClock_Config(void)
 {
@@ -60,8 +51,7 @@ extern "C" void vApplicationIdleHook(void)
 
 int main()
 {
-//	SystemClock_Config();
-//	initRtc();
+	SystemClock_Config();
 	AppCore::instance();
 	vTaskStartScheduler();
 	return 0;
