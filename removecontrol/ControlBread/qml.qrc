@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>StartPage.qml</file>
+        <file>StartPageForm.ui.qml</file>
+        <file>MyDialog.qml</file>
+        <file>Log.qml</file>
+        <file>LogForm.ui.qml</file>
+    </qresource>
+</RCC>
