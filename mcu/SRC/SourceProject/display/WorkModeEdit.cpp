@@ -134,6 +134,7 @@ void WorkModeEdit::changeParams(const uint16_t id, uint8_t len, uint8_t* data)
 	break;	
 	case AddrTimeStageE:
 		tempWMode.stages[currentStage].duration = data[1] * 60 + data[2];
+			printAllTimeMode();
 	break;	
 	case AddrTempStageE: 
 		tempWMode.stages[currentStage].temperature = val;
@@ -183,6 +184,18 @@ void WorkModeEdit::toMyCodec(uint8_t *buf, const uint16_t len) {
 	}
 }
 
+void WorkModeEdit::printAllTimeMode()
+{
+	char buf[10];
+	int commonDur = 0;
+	memset(buf, 0xff, 10);
+	for (int i = 0; i < tempWMode.numStage; i++) {
+		commonDur += tempWMode.stages[i].duration;
+	}
+	int len = sprintf(buf, "%d:%d  ", commonDur / 60, commonDur % 60);
+	m_display->sendToDisplay(AddrNumTimeModeEdit, len, (uint8_t*)buf);
+}
+
 void WorkModeEdit::paintSettingsWorkMode(bool isEdited_)
 {
 	uint16_t offeset = isEdited_ ? 0x100 : 0;
@@ -191,9 +204,9 @@ void WorkModeEdit::paintSettingsWorkMode(bool isEdited_)
 	uint16_t len;
 	len = sprintf(buf, "%d/%d  ", currentStage + 1, tempWMode.numStage);
 	m_display->sendToDisplay(AddrNumStageV+offeset, len, (uint8_t*)buf);
-	memset(buf, 0, 10);
+	memset(buf, 0xff, 10);
+	printAllTimeMode();
 	uint16_t time = ((tempWMode.stages[currentStage].duration / 60) << 8) + tempWMode.stages[currentStage].duration % 60;
-	
 	m_display->sendToDisplay(AddrTimeStageV + offeset, time);
 	m_display->sendToDisplay(AddrTempStageV + offeset, tempWMode.stages[currentStage].temperature);
 	m_display->sendToDisplay(AddrWaterStageV + offeset, tempWMode.stages[currentStage].waterVolume);

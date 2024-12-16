@@ -29,6 +29,8 @@ constexpr uint16_t AddrNumTime = 0x4012;
 constexpr uint16_t AddrNumTemperatureMeasure = 0x4020;
 constexpr uint16_t AddrNumDurationNew = 0x4028;
 constexpr uint16_t AddrMessage = 0x4040;
+constexpr uint16_t AddrNumTimeMode = 0x4080;
+constexpr uint16_t AddrNumTimeModeEdit = 0x40a0;
 
 constexpr uint16_t AddrStages = 0x7000;
 constexpr uint16_t CmdPaintFillRectangle = 0x0004;	
@@ -46,6 +48,7 @@ constexpr uint16_t addrUpT = 0x6890;
 constexpr uint16_t addrDownT = 0x6892;
 constexpr uint16_t addrEnFan = 0x6894;
 constexpr uint16_t addrWater = 0x6896;
+constexpr uint16_t addrStrTempTest = 0x6f40;
 constexpr uint16_t addrDamperOpen = 0x6898;
 constexpr uint16_t addrDamperClose = 0x689a;
 constexpr uint16_t addrGreenLed = 0x689C;
@@ -99,6 +102,7 @@ public:
 	static std::function<void(const uint16_t, uint8_t, uint8_t*)> newCmd;
 	
 	static void reset();
+	void playSound(uint8_t numSound);
 	
 private:
 	static DisplayDriver *m_instance;

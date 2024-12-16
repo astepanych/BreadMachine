@@ -105,10 +105,11 @@ private:
 	uint16_t countGreenLeds{0};
 	uint16_t countYellowLeds{0};
 	uint16_t stateRun;
-	uint32_t commonDuration;
+	int32_t commonDuration;
 	uint16_t currentStage;
 	uint16_t stageDuration;
 	uint16_t modeDuration;
+	uint16_t allModeDuration;
 	uint16_t currentPage;
 	uint16_t newPage;
 	
@@ -154,6 +155,7 @@ private:
 	
 	xTimerHandle timerDamper; ///< таймер отключения шибера
 	int16_t timeBlinkYellow{0};
+	bool isMenuTests{false};
 	
 	
 };

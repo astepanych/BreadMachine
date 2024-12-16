@@ -383,9 +383,14 @@ void AppCore::updateTime(uint16_t sec)
 {
 	uint16_t _min = sec / 60;	
 	uint16_t _sec = sec % 60;
-	char buf[6];
+	char buf[10];
 	uint8_t len = sprintf(buf, "%02d:%02d", _min, _sec);
 	display->sendToDisplay(AddrNumTime, len, (uint8_t*)buf);
+	
+	_min = (commonDuration - modeDuration) / 60;
+	_sec = (commonDuration - modeDuration) % 60 ;
+	len = sprintf(buf, "%02d:%02d", _min, _sec);
+	display->sendToDisplay(AddrNumTimeMode, len, (uint8_t*)buf);
 }
 
 
@@ -429,6 +434,18 @@ void AppCore::correctTemperature(float &currentTemp, uint16_t &targetTemp)
 
 float AppCore::selectTemperature()
 {
+	
+	if (isMenuTests)
+	{
+		static char buff[32];
+		memset(buff, 0,32);
+		float t1 =  adc->value1();
+		float t2 =  adc->value2();
+		
+		uint16_t len = sprintf(buff, "t1 = %d, t2 = %d", (int)t1, (int)t2);
+		display->sendToDisplay(addrStrTempTest, len, (uint8_t*)buff);
+	}
+	
 	gRun.currentTemp = adc->value2(); 
 	gRun.currentTemp1 = thresholdErrorTemperature+1;//adc->value1();
 	if (gRun.currentTemp < thresholdErrorTemperature && gRun.currentTemp1 < thresholdErrorTemperature) {
@@ -515,7 +532,8 @@ void AppCore::taskPeriodic(void *p)
 				updateParamStage();
 				gpio->enableYellowLed();
 				gRun.isWaterStart = false;
-			
+				timeBlinkYellow = 0;
+				gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinOne);
 				break;
 			case StateRunWork:
 				{
@@ -571,6 +589,7 @@ void AppCore::taskPeriodic(void *p)
 							timeBlinkYellow = 60;
 							updateProgressBar(100);
 							stateRun = StateRunStop;
+							display->playSound(0);
 							LOG::instance().log("finish");
 							break;
 						}
@@ -590,6 +609,7 @@ void AppCore::taskPeriodic(void *p)
 				gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
 				gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
 				gpio->disableYellowLed();
+				gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinZero);
 				//xTimerStart(timerYellow, 0);
 
 				break;
@@ -601,6 +621,7 @@ void AppCore::taskPeriodic(void *p)
 				gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
 				gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
 				gpio->setPin(GpioDriver::PinH2O, GpioDriver::StatePinZero);
+				gpio->disableYellowLed();
 				break;
 			default:
 				break;

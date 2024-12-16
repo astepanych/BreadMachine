@@ -20,7 +20,8 @@ public:
 		PinX1,
 		PinX2, 
 		Led, 
-		Led1
+		Led1, 
+		GlobalEnable
 		
 	};
 	enum StatesPin

@@ -204,9 +204,19 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 		case AddrNumWater:
 			currentWorkMode.stages[currentStage].waterVolume = data[2] | (data[1] << 8);
 			break;
-		case AddrNumDurationNew:
-			currentWorkMode.stages[currentStage].duration += (data[2] | (data[1] << 8))*60;
-			break;
+		case AddrNumDurationNew: {
+				short delta = (short)((data[2] | (data[1] << 8)) * 60);
+			if (delta < 0 && abs(delta)> currentWorkMode.stages[currentStage].duration) {
+				delta = -(currentWorkMode.stages[currentStage].duration - 1);
+				modeDuration -= stageDuration;
+				stageDuration = 0;
+				
+			}
+				currentWorkMode.stages[currentStage].duration += delta;
+				
+				commonDuration += delta;
+				break;
+			}
 		case AddrNumTemperature:
 			currentWorkMode.stages[currentStage].temperature = data[2] | (data[1] << 8);
 			break;
@@ -306,7 +316,15 @@ void AppCore::keyEvent(uint16_t key) {
 		case ReturnCodeKeyExitMenuTest:
 			gpio->enableGreenLed();
 			gpio->disableYellowLed();
+			isMenuTests = false;
 			break;
+		case ReturnCodeKeySoundTest:
+			display->playSound(0);
+			break;
+		case ReturnCodeKeyInMenuTest:
+			isMenuTests = true;
+			break;
+			
 		case ReturnCodeKeyInMenuSettingsProgramms:
 			p_widget = lstProgramsEdit;
 			p_widget->resetWidget();
@@ -314,8 +332,6 @@ void AppCore::keyEvent(uint16_t key) {
 		case ReturnCodeKeyWifiMenu:
 			newPage = PageWifiMenu;
 			display->getDataFromDisplay(AddrCurrentPage,0, 2); 
-			//display->switchPage(PageWifiMenu);
-			//display->sendToDisplay(addrStateWifi, gParams.stateWifi);
 			break;
 		case ReturnCodeKeyWifiMenuExit:
 			display->switchPage(currentPage);

@@ -29,8 +29,9 @@ const GpioPin settingsPins[] = {
 		
 		{GpioDriver::PinX1, GPIOD, GPIO_Pin_14, RCC_AHB1Periph_GPIOD, GpioDriver::StatePinOne },
 		{GpioDriver::PinX2, GPIOD, GPIO_Pin_15, RCC_AHB1Periph_GPIOD, GpioDriver::StatePinOne },
+		{GpioDriver::GlobalEnable, GPIOD, GPIO_Pin_5, RCC_AHB1Periph_GPIOD, GpioDriver::StatePinOne },
 		{GpioDriver::Led, GPIOF, GPIO_Pin_9, RCC_AHB1Periph_GPIOF, GpioDriver::StatePinOne },
-		{GpioDriver::Led1, GPIOF, GPIO_Pin_10, RCC_AHB1Periph_GPIOF, GpioDriver::StatePinOne }
+		{GpioDriver::Led1, GPIOF, GPIO_Pin_10, RCC_AHB1Periph_GPIOF, GpioDriver::StatePinOne },
 };
 const int sizeSettingsPins = sizeof(settingsPins) / sizeof(settingsPins[0]);
 

@@ -43,6 +43,7 @@ public:
 private:
 	void paintNameWorkMode(uint16_t addrItem);
 	void paintSettingsWorkMode(bool isEdited = false);
+	void printAllTimeMode();
 	void toMyCodec(uint8_t *buf, const uint16_t len);
 	void to1251(uint8_t *buf, const uint16_t len);
 	WorkMode tempWMode;
