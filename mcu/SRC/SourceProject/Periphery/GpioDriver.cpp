@@ -73,7 +73,7 @@ void GpioDriver::initModule()
 		ini.GPIO_Mode = GPIO_Mode_OUT;	
 		ini.GPIO_OType = GPIO_OType_PP;
 		ini.GPIO_Speed = GPIO_Speed_50MHz;
-		ini.GPIO_PuPd = GPIO_PuPd_UP;
+		ini.GPIO_PuPd = GPIO_PuPd_DOWN;
 		if (settingsPins[i].indexPin == GpioDriver::PinGreen || settingsPins[i].indexPin == GpioDriver::PinYellow) {
 			ini.GPIO_Mode = GPIO_Mode_AF;
 			ini.GPIO_Speed = GPIO_Speed_2MHz;
@@ -181,18 +181,19 @@ void GpioDriver::disableInt() {
 
 void GpioDriver::enableYellowLed()
 {
-	TIM4->CCR1 = 2;
+	TIM4->CCER |= TIM_CCER_CC1E;
 }
 void GpioDriver::disableYellowLed()
 {
-	TIM4->CCR1 = 0;
+	TIM4->CCER &= (~TIM_CCER_CC1E);
+	
 }
 
 void GpioDriver::enableGreenLed() {
-	TIM4->CCR2 = 2;
+	TIM4->CCER |= TIM_CCER_CC2E;
 }
 void GpioDriver::disableGreenLed() {
-	TIM4->CCR2 = 0;
+	TIM4->CCER &= (~TIM_CCER_CC2E);
 }
 
 GpioDriver::~GpioDriver()
