@@ -7,6 +7,7 @@
 #include <qstringlist.h>
 #include <QTimer>
 #include <modellogdatatransfer.h>
+#include <programmsmodel.h>
 
 class AppCore : public QObject
 {
@@ -32,10 +33,29 @@ public:
     Q_INVOKABLE void getLog();
     Q_INVOKABLE void saveLog(const QString &nameFileSave);
     Q_INVOKABLE void clearLog();
+    Q_INVOKABLE void addPrograms();
+    Q_INVOKABLE void removePrograms(int index);
+
+    Q_INVOKABLE void readProgramms();
+    Q_INVOKABLE void switchModelPrograms(const int index);
+
+    Q_INVOKABLE bool addStage();
+    Q_INVOKABLE void removeStage(int index);
 
 
     void setLogModel(ModelList *newLogModel);
     void resetLogModel();
+
+    int percentProgressbar() const;
+    void setPercentProgressbar(int newPercentProgressbar);
+
+    Q_INVOKABLE ProgrammsModel *modelWM() const;
+
+
+    void setModelWM(ProgrammsModel *newModelWM);
+
+    ParamsWorkMode *paramsWM() const;
+    void setParamsWM(ParamsWorkMode *newParamsWM);
 
 public slots:
     void readData();
@@ -51,6 +71,14 @@ signals:
 
     void logModelChanged();
 
+    void percentProgressbarChanged();
+
+    void waitedAnswerParams();
+
+    void modelWMChanged();
+
+    void addedProgramms();
+
 private:
     QTcpSocket client;
     bool m_stateConnectToHost;
@@ -60,12 +88,26 @@ private:
     bool isProccesFirmware;
     uint16_t countTx;
     uint16_t stateCrc;
+    uint16_t m_waitedAnswerId;
+    bool f_waitAnswer{false};
+    QByteArray b_answer;
+    QByteArray b_programms;
     QString m_nameFirmware;
     QTimer timerWaitBootloader;
     void startThreadFirmware();
     ModelList *m_logModel;
     Q_PROPERTY(ModelList *logModel READ logModel WRITE setLogModel RESET resetLogModel NOTIFY logModelChanged)
     QByteArray bufLog;
+    int m_percentProgressbar;
+    Q_PROPERTY(int percentProgressbar READ percentProgressbar WRITE setPercentProgressbar NOTIFY percentProgressbarChanged)
+    void getParam(const uint16_t id, QByteArray &ba);
+    bool getParam16Bit(const uint16_t id, quint16 &param);
+
+    ProgrammsModel *m_modelWM;
+    ParamsWorkMode *m_paramsWM;
+
+
+
 };
 
 #endif // APPCORE_H

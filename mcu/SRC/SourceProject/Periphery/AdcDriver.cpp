@@ -205,8 +205,8 @@ void AdcDriver::thread(void *p)
 			v1 += workBuf[2*i];
 		}
 		workBuf.erase(workBuf.begin(), workBuf.begin() + ELFR_CFFT_LENGTH * 2);
-		m_value2 = (v2 * 1.0) / lenWork;
-		m_value1 = (v1 * 1.0) / lenWork;
+		m_value2 = (v2 / 11.0) / lenWork;
+		m_value1 = (v1 / 11.0) / lenWork;
 		//m_value1 = v1 / ELFR_CFFT_LENGTH;
 		
 	}

@@ -37,6 +37,10 @@ constexpr uint16_t CmdPaintFillRectangle = 0x0004;
 constexpr uint16_t addrMainItem = 0x2220;
 constexpr uint16_t addrNameProg = 0x2280;
 
+constexpr uint16_t addrCurrentSound = 0x2300;
+constexpr uint16_t addrCurrentVolume = 0x2301;
+
+
 constexpr uint16_t addrPassword = 0x6870;
 constexpr uint16_t addrK1 = 0x6860;
 constexpr uint16_t addrK2 = 0x6864;
@@ -53,6 +57,7 @@ constexpr uint16_t addrDamperOpen = 0x6898;
 constexpr uint16_t addrDamperClose = 0x689a;
 constexpr uint16_t addrGreenLed = 0x689C;
 constexpr uint16_t addrYellowLed = 0x689E;
+constexpr uint16_t addrMainRele = 0x689f;
 
 constexpr uint16_t addrStateWifi = 0x68E0;
 constexpr uint16_t addrStateWifiIcon = 0x68E2;
@@ -102,7 +107,7 @@ public:
 	static std::function<void(const uint16_t, uint8_t, uint8_t*)> newCmd;
 	
 	static void reset();
-	void playSound(uint8_t numSound);
+	void playSound(uint8_t numSound, uint8_t volume);
 	
 private:
 	static DisplayDriver *m_instance;

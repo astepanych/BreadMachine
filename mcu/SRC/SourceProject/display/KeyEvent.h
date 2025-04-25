@@ -25,6 +25,7 @@ enum ReturnCodeKey
 	ReturnCodeKeyExitMenuTest,
 	ReturnCodeKeySoundTest,
 	ReturnCodeKeyInMenuTest,
+	ReturnCodeKeyPlaySoundTest,
 	
 	ReturnCodeKeyHideMsg = 0x2000,
 		

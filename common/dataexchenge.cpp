@@ -135,11 +135,12 @@ void DataExchenge::resetRxIndex() {
 	cntBytes = 0;
 }
 PackageNetworkFormat pack;
-void DataExchenge::sendPackage(int16_t Id, int8_t cmd, int16_t len, uint8_t *data)
-{
-	
-	
+void DataExchenge::sendPackage(int16_t Id, int8_t cmd, int16_t len, uint8_t *data) {
+
 	buildPackage(Id, cmd, len, data, pack);
+#ifndef STM32F407xx
+	ESP_LOGI(TAG, "s = %d", uxQueueMessagesWaiting(txQueue));
+#endif
 	//кладем собранный пакет в очередь
 	xQueueSend(txQueue, &pack, 0);
 	//постим семафор

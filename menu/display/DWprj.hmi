@@ -33,6 +33,7 @@ CMD23=2000=hideMessage
 CMD24=1012=ExitMenuTest
 CMD25=1014=CheckSound
 CMD26=1015=InMenuTests
+CMD27=1016=PlaySoundTest
 [IMG]
 00=00_main.jpg
 01=01_main.jpg
@@ -63,3 +64,4 @@ CMD26=1015=InMenuTests
 26=26_buttons_active.jpg
 27=27_wifi.jpg
 28=28_en_key_board.jpg
+29=29_sound_settings.jpg

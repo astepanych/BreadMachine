@@ -7,6 +7,7 @@
 typedef void(*fnxProcessRxData)(const uint8_t* data, const int length);
 
 #define BODY_WORD_COUNT  16
+#define BODY_BYTE_COUNT  (BODY_WORD_COUNT*sizeof(uint16_t))
 //структура, описывающая пакет обмена по сети с радиостнцией
 typedef struct {
     uint16_t msgType; //тип сообщения
@@ -51,9 +52,17 @@ enum IdHostExtern{
 	IdConnectExternSoft,
 	IdGetLog,
 	IdDataLog,
-    IdEndLog
+    IdEndLog, 
+	IdStartWrite,
+	IdStartEnd,
+    IdNumPrograms,
+    IdReadPrograms,
+    IdWritePrograms,
+    IdDataPrograms,
+    IdCrcPrograms,
+	IdStartCopyPrograms,
 };
 
 
-constexpr uint16_t LenWifiSSID = 32;
-constexpr uint16_t LenWifiPassword = 64;
+constexpr uint16_t LenWifiSSID = 16;
+constexpr uint16_t LenWifiPassword = 16;

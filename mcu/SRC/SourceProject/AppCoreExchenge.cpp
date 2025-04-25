@@ -9,6 +9,7 @@
 #include <time.h>
 #include <math.h>
 #include <version.h>
+#include <I2C3.h>
 
 #define BOOT_ADDRESS    0x08040000//адрес начала программы загрузчика
 
@@ -116,6 +117,29 @@ void AppCore::procUartData(const PackageNetworkFormat&p) {
 			jump_to_app();
 				break;
 			}
+		case IdNumPrograms: {
+			uint16_t var = m_programs.size();
+			objDataExchenge.sendPackage(IdNumPrograms, 1, sizeof(var), (uint8_t*)&var);
+				break;
+			}
+		case IdReadPrograms: {
+			uint16_t index = p.data[0];
+			uint16_t curLen = BODY_BYTE_COUNT;
+			uint8_t *pData = (uint8_t*)&m_programs[index];
+			uint16_t curPos = 0;
+			objDataExchenge.sendPackage(IdStartCopyPrograms, 1, sizeof(uint16_t), (uint8_t*)&index);
+			while(curPos < sizeof(WorkMode)) {
+				curLen = ((sizeof(WorkMode) - curPos) < BODY_BYTE_COUNT) ? sizeof(WorkMode) - curPos : BODY_BYTE_COUNT;
+				objDataExchenge.sendPackage(IdDataPrograms, 1, curLen, pData+curPos);
+				curPos += curLen;
+			}
+			uint32_t crc = DataExchenge::CRC_Calc_s16_CCITT((uint16_t*)pData, sizeof(WorkMode)/sizeof(uint16_t));
+			objDataExchenge.sendPackage(IdCrcPrograms, 1, sizeof(uint32_t), (uint8_t*)&crc);
+		}
+			break;
+		case IdWritePrograms:break;
+		case IdDataPrograms:break;
+		case IdCrcPrograms:break;
 		default:
 			break;
 	}
@@ -155,7 +179,12 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 				display->switchPage(currentPage);
 			objDataExchenge.sendPackage(IdWifiSSID, 1, strlen(gParams.wifiSSID), (uint8_t*)gParams.wifiSSID);
 			objDataExchenge.sendPackage(IdWifiPassword, 1, strlen(gParams.wifiPassword), (uint8_t*)gParams.wifiPassword);
+#ifdef EEPROM_MEMORY
+			writeParamsToEeprom();
+#else
 			writeGlobalParams();
+#endif
+			//
 				break;
 			}
 		case AddrCurrentPage:
@@ -201,6 +230,9 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 			else 
 				gpio->disableYellowLed();
 			break;
+		case addrMainRele:
+			gpio->setPin(GpioDriver::GpioDriver::GlobalEnable, (GpioDriver::StatesPin)data[2]);
+			break;
 		case AddrNumWater:
 			currentWorkMode.stages[currentStage].waterVolume = data[2] | (data[1] << 8);
 			break;
@@ -229,6 +261,12 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 		case AddrNumFan:
 			currentWorkMode.stages[currentStage].fan ^= 1;
 			gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].fan);
+			break;
+		case addrCurrentSound:
+			gParams.numSound = data[1];
+			break;
+		case addrCurrentVolume:
+			gParams.volume = data[1];
 			break;
 		case addrPassword: {
 				uint16_t pwd = data[2] | (data[1] << 8);
@@ -287,7 +325,11 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 			gParams.stateWifi = data[2] | (data[1] << 8);
 			display->sendToDisplay(addrStateWifiIcon, iconIndexWifi[gParams.stateWifi]);
 			objDataExchenge.sendPackage(IdWifiState, 1, sizeof(gParams.stateWifi), (uint8_t*)&gParams.stateWifi);
+#ifdef EEPROM_MEMORY
+			writeParamsToEeprom();
+#else
 			writeGlobalParams();
+#endif
 			break;
 		}
 		case AddrRtc:
@@ -316,10 +358,12 @@ void AppCore::keyEvent(uint16_t key) {
 		case ReturnCodeKeyExitMenuTest:
 			gpio->enableGreenLed();
 			gpio->disableYellowLed();
+			gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinZero);
 			isMenuTests = false;
 			break;
 		case ReturnCodeKeySoundTest:
-			display->playSound(0);
+		case ReturnCodeKeyPlaySoundTest:
+			display->playSound(gParams.numSound, gParams.volume);
 			break;
 		case ReturnCodeKeyInMenuTest:
 			isMenuTests = true;
@@ -353,8 +397,15 @@ void AppCore::keyEvent(uint16_t key) {
 			break;
 		case ReturnCodeKeyExtendedSettings:
 			{
+#ifdef EEPROM_MEMORY
+				writeParamsToEeprom();
+#else
+				
 				if (memcmp((void*)FlashAddrGlobalParams, &gParams, sizeof(RomParams)) != 0)
 					writeGlobalParams();
+#endif
+				
+				
 				break;
 			}
 		default: 

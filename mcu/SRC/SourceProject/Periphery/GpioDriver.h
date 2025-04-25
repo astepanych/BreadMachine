@@ -16,13 +16,11 @@ public:
 		PinShiberX,
 		PinShiberO,
 		PinGreen,
-		PinYellow,
-		PinX1,
+		PinYellow, 
+		GlobalEnable,
 		PinX2, 
 		Led, 
 		Led1, 
-		GlobalEnable
-		
 	};
 	enum StatesPin
 	{

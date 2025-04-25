@@ -12,11 +12,14 @@ ApplicationWindow {
     SwipeView {
         id: swipeView
         anchors.fill: parent
-        currentIndex: tabBar.currentIndex
-
+        currentIndex: 1
         StartPage {
             id: startPage
         }
+        Programs{
+            id: programsPage
+        }
+
         Log{
             id: logPage
         }
@@ -27,6 +30,9 @@ ApplicationWindow {
 
           TabButton {
               text: qsTr("Прошивка")
+          }
+          TabButton {
+              text: qsTr("Программы")
           }
           TabButton {
               text: qsTr("Журнал")

@@ -9,6 +9,8 @@
 #include <QtConcurrent/QtConcurrent>
 #include <qfile.h>
 
+
+
 AppCore::AppCore(QObject *parent) : QObject(parent),
     m_stateConnectToHost(false)
 {
@@ -19,8 +21,21 @@ AppCore::AppCore(QObject *parent) : QObject(parent),
 
     connect(&client, &QTcpSocket::stateChanged, this,[=](QAbstractSocket::SocketState state){
         qDebug()<<state;
+        if(state == QAbstractSocket::ClosingState) {
+            setStateConnectToHost(false);
+        }
 
     });
+    m_modelWM = new ProgrammsModel(this);
+    m_modelWM->addProgramms();
+    m_modelWM->addProgramms();
+    m_modelWM->addProgramms();
+    m_modelWM->addProgramms();
+
+    m_paramsWM = new ParamsWorkMode(this);
+    m_paramsWM->setWorkMode(m_modelWM->workMode(0));
+
+
     timerWaitBootloader.setSingleShot(true);
     connect(&client, &QTcpSocket::readyRead, this, &AppCore::readData);
     connect(this, &AppCore::signalSendPacket, this, &AppCore::sendPacket, Qt::BlockingQueuedConnection);
@@ -164,6 +179,24 @@ void AppCore::startThreadFirmware()
     QtConcurrent::run(QThreadPool::globalInstance(),this,&AppCore::taskFirmware, m_nameFirmware);
 }
 
+int AppCore::percentProgressbar() const
+{
+    return m_percentProgressbar;
+}
+
+void AppCore::setPercentProgressbar(int newPercentProgressbar)
+{
+    if (m_percentProgressbar == newPercentProgressbar)
+        return;
+    m_percentProgressbar = newPercentProgressbar;
+    emit percentProgressbarChanged();
+}
+
+ProgrammsModel *AppCore::modelWM() const
+{
+    return m_modelWM;
+}
+
 void AppCore::setLogModel(ModelList *newLogModel)
 {
     if (m_logModel == newLogModel)
@@ -221,6 +254,67 @@ void AppCore::clearLog()
     m_logModel->clearModel();
 }
 
+void AppCore::addPrograms() {
+    m_modelWM->addProgramms();
+    switchModelPrograms(m_modelWM->rowCount()-1);
+    emit addedProgramms();
+}
+
+void AppCore::removePrograms(int index) {
+    if(m_modelWM->rowCount() != 0 && (index >=0 || index < m_modelWM->rowCount())) {
+        m_modelWM->deleteProgramms(index);
+        switchModelPrograms(index-1);
+    }
+}
+
+void AppCore::readProgramms()
+{
+    uint16_t numPrograms;
+    getParam16Bit(IdNumPrograms, numPrograms);
+    qDebug()<<numPrograms;
+
+    for(uint16_t i = 0 ; i < numPrograms; i++) {
+        stateCrc = StateCrcNoRcv;
+        QEventLoop loop ;
+        connect(this, &AppCore::signalRcvCrc, &loop, &QEventLoop::quit);
+        sendPacket(IdReadPrograms,(uint8_t*)&i,sizeof(uint16_t));
+        QTimer::singleShot(2000, &loop, &QEventLoop::quit);
+        loop.exec();
+        connect(this, &AppCore::signalRcvCrc, &loop, &QEventLoop::quit);
+        if(stateCrc == StateCrcOk) {
+            qDebug()<<"crc ok";
+
+        }
+
+        setPercentProgressbar((i+1)*100/numPrograms);
+    }
+
+}
+
+void AppCore::switchModelPrograms(const int index)
+{
+    qDebug()<<"index = "<<index;
+    if(m_modelWM->rowCount() != 0){
+        if(index >=0 && index < m_modelWM->rowCount()){
+            m_paramsWM->setWorkMode(m_modelWM->workMode(index));
+        } else if(index < 0){
+            m_paramsWM->setWorkMode(m_modelWM->workMode(0));
+        }
+    }
+    else
+        m_paramsWM->setWorkMode(nullptr);
+}
+
+bool AppCore::addStage()
+{
+    return m_paramsWM->addStage();
+}
+
+void AppCore::removeStage(int index)
+{
+    m_paramsWM->removeStage(index);
+}
+
 void AppCore::readData()
 {
    QByteArray ba = client.readAll();
@@ -228,10 +322,18 @@ void AppCore::readData()
    qDebug()<<ba.toHex(',');
    while(ba.length() >= sizeof(PackageNetworkFormat)) {
        PackageNetworkFormat *p = (PackageNetworkFormat *)ba.data();
+       if(f_waitAnswer) {
+           if(m_waitedAnswerId == p->cmdId) {
+               f_waitAnswer = false;
+               b_answer.clear();
+               b_answer.append((const char*)p->data, p->dataSize);
+               emit waitedAnswerParams();
+               continue;
+           }
+       }
        switch(p->cmdId){
        case IdEndLog:{
             QString s(bufLog);
-
             QStringList lst = s.split('*');
             foreach( QString ss , lst){
                 if(ss.at(0) == '~') {
@@ -252,12 +354,35 @@ void AppCore::readData()
            startThreadFirmware();
            qDebug()<<"startThreadFirmware";
            break;
+       case IdStartWrite:
+           qDebug()<<"IdStartWrite";
+           emit addStringLog(tr("Начата запись в ПЗУ"));
+           break;
+       case IdStartEnd:
+          emit addStringLog(tr("Запись в ПЗУ завершена"));
+           break;
+       case IdStartCopyPrograms:
+           b_programms.clear();
+           break;
+       case IdDataPrograms:
+           b_programms.append((const char*)p->data, p->dataSize);
+           break;
+        case IdCrcPrograms:
+       {
+           uint32_t crcRcv;
+            uint32_t crccalc = CRC_Calc_s16_CCITT((uint16_t*)b_programms.data(), b_programms.length()/sizeof (uint16_t));
+           memcpy(&crcRcv, p->data, sizeof(uint32_t));
+           if(crcRcv == crccalc){
+               stateCrc = StateCrcOk;
+               emit signalRcvCrc();
+           }
+       }
+           break;
         default:
            break;
        }
        ba.remove(0, sizeof(PackageNetworkFormat));
    }
-
 }
 
 void AppCore::sendPacket(const uint16_t id, const uint8_t *data, const uint16_t len)
@@ -268,14 +393,70 @@ void AppCore::sendPacket(const uint16_t id, const uint8_t *data, const uint16_t 
     countTx %=0xff;
     p.msgType = 1;
     p.cmdId = id;
-    qDebug()<<countTx;
     p.dataSize = len;
     if(len != 0)
         memcpy(p.data, data, p.dataSize);
     p.crc = CRC_Calc_s16_CCITT((uint16_t*)&p, sizeof(PackageNetworkFormat)/sizeof(uint16_t)-1);
-    qDebug()<<client.write((const char*)&p, sizeof(PackageNetworkFormat));
+    client.write((const char*)&p, sizeof(PackageNetworkFormat));
 }
 
+
+void AppCore::getParam(const uint16_t id, QByteArray &ba)
+{
+    PackageNetworkFormat p;
+    memset(&p, 0, sizeof (PackageNetworkFormat));
+    f_waitAnswer = true;
+    m_waitedAnswerId = id;
+    p.counter = countTx++;
+    countTx %=0xff;
+    p.msgType = 0;
+    p.cmdId = id;
+    p.dataSize = 0;
+
+    p.crc = CRC_Calc_s16_CCITT((uint16_t*)&p, sizeof(PackageNetworkFormat)/sizeof(uint16_t)-1);
+    client.write((const char*)&p, sizeof(PackageNetworkFormat));
+    QEventLoop loop ;
+    ba.clear();
+    connect(this, &AppCore::waitedAnswerParams, &loop, &QEventLoop::quit);
+    QTimer::singleShot(6000, &loop, &QEventLoop::quit);
+    loop.exec();
+    disconnect(this, &AppCore::waitedAnswerParams, &loop, &QEventLoop::quit);
+    f_waitAnswer = false;
+    if(b_answer.length() == 0) {
+        return;
+    }
+    ba.append(b_answer);
+}
+
+bool AppCore::getParam16Bit(const uint16_t id, quint16 &param)
+{
+   QByteArray ba;
+   getParam(id, ba);
+   if(ba.length() != 0) {
+
+       memcpy(&param, ba.data(), sizeof (uint16_t));
+       return true;
+   }
+   return false;
+}
+
+ParamsWorkMode *AppCore::paramsWM() const
+{
+    return m_paramsWM;
+}
+
+void AppCore::setParamsWM(ParamsWorkMode *newParamsWM)
+{
+    m_paramsWM = newParamsWM;
+}
+
+void AppCore::setModelWM(ProgrammsModel *newModelWM)
+{
+    if (m_modelWM == newModelWM)
+        return;
+    m_modelWM = newModelWM;
+    emit modelWMChanged();
+}
 
 void AppCore::taskFirmware(const QString &nameFirmware)
 {
@@ -326,7 +507,7 @@ void AppCore::taskFirmware(const QString &nameFirmware)
 
             QEventLoop l;
             connect(this, &AppCore::signalRcvCrc, &l, &QEventLoop::quit);
-            QTimer::singleShot(3000, &l, &QEventLoop::quit);
+            QTimer::singleShot(6000, &l, &QEventLoop::quit);
             l.exec();
             disconnect(this, &AppCore::signalRcvCrc, &l, &QEventLoop::quit);
             qDebug()<<tr("wait stateCrc %1").arg(stateCrc);

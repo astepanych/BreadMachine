@@ -5,7 +5,7 @@
 #include <QList>
 #include <QTime>
 
-class ModelLogDataTransfer : public QAbstractListModel
+class ModelLogDataTransfer : public QAbstractTableModel
 {
 public:
 

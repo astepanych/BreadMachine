@@ -110,7 +110,7 @@ StartPageForm {
     }
 
     function addImemToModel(str){
-        modelLog.append({"name": new Date().toLocaleString(Qt.locale(),"hh-mm-ss: ") + str});
+        modelLog.append({"name": new Date().toLocaleString(Qt.locale(),"hh-mm-ss.zzz: ") + str});
     }
 
    /* Dialog {

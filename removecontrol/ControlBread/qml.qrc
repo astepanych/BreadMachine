@@ -6,5 +6,8 @@
         <file>MyDialog.qml</file>
         <file>Log.qml</file>
         <file>LogForm.ui.qml</file>
+        <file>Programs.qml</file>
+        <file>ProgramsForm.ui.qml</file>
+        <file>ProrammsNameDelegate.qml</file>
     </qresource>
 </RCC>

@@ -7,9 +7,12 @@ QT += quick qml network
 SOURCES += \
         appcore.cpp \
         main.cpp \
-        modellogdatatransfer.cpp
+        modellogdatatransfer.cpp \
+        programmsmodel.cpp
 
 RESOURCES += qml.qrc
+
+DEFINES += QT_BUILD
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =
@@ -25,7 +28,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     ../../common/common_project.h \
     appcore.h \
-    modellogdatatransfer.h
+    modellogdatatransfer.h \
+    programmsmodel.h
 
 INCLUDEPATH += \
     ../../common/

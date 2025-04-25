@@ -41,12 +41,7 @@ int main(int argc, char *argv[])
     requestAndroidPermissions();
 #endif
 
-    QStringList dataList = {
-            "Tom",
-            "Bob",
-            "Sam",
-            "Alice"
-        };
+
 
     AppCore appCore;
     qmlRegisterType<AppCore>("com.ics.demo", 1, 0, "AppCore");
@@ -54,6 +49,8 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty(QLatin1String("appCore"), &appCore);
     engine.rootContext()->setContextProperty(QLatin1String("modelMain"), appCore.logModel());
+    engine.rootContext()->setContextProperty(QLatin1String("modelPrograms"), appCore.modelWM());
+    engine.rootContext()->setContextProperty(QLatin1String("paramsWorkMode"), appCore.paramsWM());
 
 
     const QUrl url(QStringLiteral("qrc:/main.qml"));

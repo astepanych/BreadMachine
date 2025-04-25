@@ -80,6 +80,8 @@ public:
 	 void initDefaultPrograms();
 	 void readPrograms();
 	 void writeGlobalParams();
+	 void writProgramsToEeprom();
+		void writeParamsToEeprom();
 	
 	void fillProgram(const std::string &name, const uint16_t numStages, const uint16_t *stage = nullptr);
 	void updateProgressBar(uint16_t value);
@@ -151,7 +153,7 @@ private:
 	uint16_t m_pageSettings{PageSettings};
 	uint16_t m_pageExitSettings;
 	
-	const float thresholdErrorTemperature = 500;
+	const float thresholdErrorTemperature = 330;
 	
 	xTimerHandle timerDamper; ///< таймер отключения шибера
 	int16_t timeBlinkYellow{0};

@@ -9,6 +9,7 @@
 #include <time.h>
 #include <math.h>
 #include <version.h>
+#include <I2C3.h>
 
 
 
@@ -120,8 +121,8 @@ void AppCore::fillProgram(const std::string &name, const uint16_t numStages, con
 	
 	WorkMode el;
 	memset(el.nameMode, 0x0, MaxLengthNameMode);
-	char tmpBuf[MaxLengthNameMode];
-	memset(tmpBuf, 0x0, MaxLengthNameMode);
+	char tmpBuf[MaxLengthNameMode*2];
+	memset(tmpBuf, 0x0, MaxLengthNameMode*2);
 	memcpy(tmpBuf, name.data(), name.length());
 	el.lenNameMode = convertUtf8ToCp1251(tmpBuf, el.nameMode);
 
@@ -136,8 +137,63 @@ void AppCore::fillProgram(const std::string &name, const uint16_t numStages, con
 	}
 	m_programs.insert(m_programs.end(), el);
 }
-void AppCore::readPrograms()
-{
+void AppCore::readPrograms() {
+	
+	int magic;
+	
+#ifdef EEPROM_MEMORY
+	
+
+
+	int delay = 20000;
+	while(delay--);
+	I2C3Interface::instance().read(EepromAddrProgramsAttribute, (uint8_t*)&magic, sizeof(int));
+	if (magic != MagicNumber) {
+		initDefaultPrograms();
+		writProgramsToEeprom();
+	}
+	else {
+		I2C3Interface::instance().read(EepromAddrProgramsAttribute + OffsetAddrNumPrograms, (uint8_t*)&magic, sizeof(int));
+		WorkMode mode;
+		m_programs.clear();
+		m_programs.resize(magic);
+		uint16_t stepAddr = 8;
+		for (int i = 0; i < magic; i++) {
+			
+			uint16_t addr = EepromAddrPrograms + i * EepromPageSize * 5;
+			uint8_t *p = (uint8_t*)&m_programs[i];
+				
+			for (int j = 0; j < sizeof(WorkMode); j += stepAddr) {
+				uint16_t size = (sizeof(WorkMode) - j >= stepAddr) ? stepAddr : sizeof(WorkMode) - j; 
+				I2C3Interface::instance().read(addr + j, p, size);
+				p += stepAddr;
+			}
+		}
+	}
+	
+	uint8_t *p = (uint8_t*)&gParams;
+	uint16_t size;
+	for (int i = 0; i < sizeof(gParams); i += EepromPageSize) {
+		size = (sizeof(gParams) - i >= EepromPageSize) ? EepromPageSize : sizeof(gParams) - i; 
+		I2C3Interface::instance().read(EepromAddrGlobalParams + i, p, size);
+		p += EepromPageSize;
+	}
+	if (gParams.crc32 != CRC32_function((uint8_t*)&gParams.k1, sizeof(gParams) - sizeof(gParams.crc32))) {
+		gParams.k1 = 0.1;
+		gParams.k2 = 5;
+		gParams.period = 10;
+		gParams.timeoutAddWater = 60;
+		memset(gParams.wifiPassword, 0, LenWifiPassword);
+		memcpy(gParams.wifiPassword, defaultSSIDPassword, strlen(defaultSSIDPassword));
+		memset(gParams.wifiSSID, 0, LenWifiSSID);
+		memcpy(gParams.wifiSSID, defaultSSIDName, strlen(defaultSSIDName));
+		gParams.stateWifi = WifiOn;
+		gParams.numSound = 0;
+		gParams.volume = 4;
+		writeParamsToEeprom();
+	}
+
+#else
 	bool isFlag = true;
 	int *p = (int*)FlashAddrPrograms;
 	if (*p != MagicNumber)
@@ -153,13 +209,11 @@ void AppCore::readPrograms()
 		m_programs.resize(numProgram);
 		uint8_t *pByte = (uint8_t *)(FlashAddrPrograms + OffsetAddrPrograms);
 		uint8_t *pMode;// = (uint8_t*)&mode;
-		for (int i = 0; i < m_programs.size(); i++)
-		{
+		for (int i = 0; i < m_programs.size(); i++)	{
 			pMode = (uint8_t*)&m_programs[i];
 			for (int j = 0; j < sizeof(WorkMode); j++) {
 				*pMode++ = *pByte++;
 			}
-		
 		}
 	}
 	
@@ -180,7 +234,40 @@ void AppCore::readPrograms()
 	}
 	if(isFlag == false)
 		writeGlobalParams();
+#endif
 	
+}
+void AppCore::writeParamsToEeprom() {
+	gParams.crc32 = CRC32_function((uint8_t*)&gParams.k1, sizeof(gParams) - sizeof(gParams.crc32));
+	uint8_t *p = (uint8_t*)&gParams;
+	uint16_t size;
+	for (int i = 0; i < sizeof(gParams); i += EepromPageSize) {
+		size = (sizeof(gParams) - i >= EepromPageSize) ? EepromPageSize : sizeof(gParams) - i; 
+		I2C3Interface::instance().write(EepromAddrGlobalParams + i, p, size);
+		p += EepromPageSize;
+	}
+}
+
+void AppCore::writProgramsToEeprom()
+{
+	I2C3Interface::instance().write(EepromAddrProgramsAttribute, (uint8_t*)&MagicNumber, sizeof(int));
+	int val = m_programs.size();
+	I2C3Interface::instance().write(EepromAddrProgramsAttribute + OffsetAddrNumPrograms, (uint8_t*)&val, sizeof(int));
+	uint8_t *p;
+	uint16_t size;
+
+	for (int i = 0; i < m_programs.size(); i++) {
+		p = (uint8_t*)&m_programs[i];
+		uint16_t addr = EepromAddrPrograms + i * EepromPageSize*5;
+	
+		for (int j = 0; j < sizeof(WorkMode); j += EepromPageSize)
+		{	size = (sizeof(WorkMode) - j >= EepromPageSize) ? EepromPageSize : sizeof(WorkMode) - j; 
+			I2C3Interface::instance().write(addr+j, p, size);
+			p+=EepromPageSize;
+		}
+		
+		
+	}
 }
 
 
@@ -255,6 +342,10 @@ void AppCore::initHal()
 	
 	m_rtc = &Rtc::instance();
 	m_rtc->initRtc();
+#ifdef EEPROM_MEMORY
+	I2C3Interface::instance().init();
+	readPrograms();
+#endif
 }
 
 
@@ -290,7 +381,11 @@ void AppCore::initText()
 		
 	};
 	lstProgramsEdit->saveWorkModes = [=]() {
+#ifdef EEPROM_MEMORY
+		writProgramsToEeprom();
+#else
 		writeGlobalParams();
+#endif
 		std::string s = lstPrograms->text(gRun.currentIndex);
 		display->sendToDisplay(addrMainItem, s);
 		currentWorkMode = m_programs.at(gRun.currentIndex);
@@ -412,7 +507,7 @@ void AppCore::correctTemperature(float &currentTemp, uint16_t &targetTemp)
 		gRun.newPeriodCorrect = PERIOD_CORRECT;
 		
 		float T = (target - gRun.currentTemp)*gParams.k1 - (gRun.currentTemp - gRun.prevTemp) * gParams.k2 / (PERIOD_CORRECT + delta);
-		gRun.signedDef =  gRun.currentTemp - gRun.prevTemp;
+     	gRun.signedDef =  gRun.currentTemp - gRun.prevTemp;
 		gRun.prevTemp = gRun.currentTemp;
 		if (T <= 0)
 		{
@@ -465,11 +560,11 @@ void AppCore::taskPeriodic(void *p)
 	int count = 0;
 	int cnt = 0, len;
 
+	vTaskDelay(100 / portTICK_PERIOD_MS);
 	
-	readPrograms();
 
 	display->reset();
-	vTaskDelay(2000 / portTICK_PERIOD_MS);
+	vTaskDelay(1800 / portTICK_PERIOD_MS);
 	display->getDataFromDisplay(AddrRtc, 0, 8);
 	vTaskDelay(100 / portTICK_PERIOD_MS);
 	
@@ -483,6 +578,8 @@ void AppCore::taskPeriodic(void *p)
 	
 	display->sendToDisplay(CmdSoftVersion, versionSoft);
 	display->sendToDisplay(addrStateWifiIcon, iconIndexWifi[gParams.stateWifi]);
+	uint8_t arr[4] = { gParams.numSound,0, gParams.volume, 0};
+	display->sendToDisplay(addrCurrentSound, 4, arr);
 	lstPrograms->setIndex(0);
 	lstPrograms->resetWidget();	
 	uint16_t per;
@@ -545,8 +642,8 @@ void AppCore::taskPeriodic(void *p)
 					}
 					stageDuration += 1;
 					modeDuration += 1;
-			
-					correctTemperature(tem, currentWorkMode.stages[currentStage].temperature);
+					uint16_t temp = currentWorkMode.stages[currentStage].temperature;
+					correctTemperature(tem, temp);
 					if (stageDuration == 2) {
 						gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].fan);
 						gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].damper);
@@ -589,7 +686,7 @@ void AppCore::taskPeriodic(void *p)
 							timeBlinkYellow = 60;
 							updateProgressBar(100);
 							stateRun = StateRunStop;
-							display->playSound(0);
+							display->playSound(gParams.numSound, gParams.volume);
 							LOG::instance().log("finish");
 							break;
 						}

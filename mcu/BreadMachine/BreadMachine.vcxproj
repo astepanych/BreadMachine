@@ -14,7 +14,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{4EE95F62-BCDB-42D6-80E6-97B33159FB48}</ProjectGuid>
     <BSP_ID>com.sysprogs.arm.stm32</BSP_ID>
-    <BSP_VERSION>2024.07</BSP_VERSION>
+    <BSP_VERSION>2025.01</BSP_VERSION>
     <InPlaceBSPSubdir />
     <RelativeBSPPath />
   </PropertyGroup>
@@ -32,20 +32,20 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
     <GNUConfigurationType>Debug</GNUConfigurationType>
     <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
-    <ToolchainVersion>13.3.1/15.1/r2</ToolchainVersion>
+    <ToolchainVersion>14.2.1/15.2/r2</ToolchainVersion>
     <MCUPropertyListFile>$(ProjectDir)stm32.props</MCUPropertyListFile>
     <GenerateHexFile>true</GenerateHexFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|VisualGDB'">
     <ToolchainID>com.visualgdb.arm-eabi</ToolchainID>
-    <ToolchainVersion>13.3.1/15.1/r2</ToolchainVersion>
+    <ToolchainVersion>14.2.1/15.2/r2</ToolchainVersion>
     <MCUPropertyListFile>$(ProjectDir)stm32.props</MCUPropertyListFile>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|VisualGDB'">
     <ClCompile>
       <CPPLanguageStandard>CPP14</CPPLanguageStandard>
       <AdditionalIncludeDirectories>..\SRC;..\SRC\SourceProject;..\SRC\SourceProject\display;..\SRC\SourceProject\Periphery;..\SRC\STM\STM32F4xxxx\CMSIS_StdPeriph\Device\ST\STM32F4xx\Include;..\SRC\STM\STM32F4xxxx\CMSIS_HAL\Include;..\SRC\STM\STM32F4xxxx\CMSIS_HAL\Device\ST\STM32F4xx\Include;..\SRC\STM\FreeRTOS\Source\include;..\SRC\STM\FreeRTOS\Source\portable\GCC\ARM_CM3;..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\inc;..\SRC\STM\STM32F4xxxx\STM32F4xx_HAL_Driver\Inc;%(ClCompile.AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>STM32F407xx;STM32F40_41xxx;HSE_VALUE=20000000;__FPU_PRESENT=1;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>STM32F407xx;STM32F40_41xxx;HSE_VALUE=20000000;__FPU_PRESENT=1;%(ClCompile.PreprocessorDefinitions);MAIN_PROJECT</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLinkerInputs>;%(Link.AdditionalLinkerInputs)</AdditionalLinkerInputs>
@@ -109,12 +109,14 @@
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_exti.c" />
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_flash.c" />
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_gpio.c" />
+    <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_i2c.c" />
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_pwr.c" />
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_rcc.c" />
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_rtc.c" />
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_syscfg.c" />
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_tim.c" />
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_usart.c" />
+    <ClCompile Include="I2C3.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
@@ -153,6 +155,7 @@
     <ClInclude Include="..\SRC\STM\FreeRTOS\Source\portable\GCC\ARM_CM3\portmacro.h" />
     <ClInclude Include="AdcDriver.h" />
     <ClInclude Include="FreeRTOSConfig.h" />
+    <ClInclude Include="I2C3.h" />
     <ClInclude Include="KeyEvent.h" />
     <ClInclude Include="MyList.h" />
     <ClInclude Include="stm32f4xx_hal_conf.h" />

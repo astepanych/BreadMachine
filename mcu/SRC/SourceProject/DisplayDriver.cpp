@@ -187,7 +187,7 @@ void DisplayDriver::switchPage(uint16_t page)
 }
 
 
-void DisplayDriver::playSound(uint8_t numSound) {
+void DisplayDriver::playSound(uint8_t numSound, uint8_t volume) {
 	static uint8_t buf[10];
 	buf[0] = startByte1;
 	buf[1] = startByte2;
@@ -197,10 +197,8 @@ void DisplayDriver::playSound(uint8_t numSound) {
 	buf[5] = 0xA0;
 	buf[6] = numSound;
 	buf[7] = 0x01;
-	buf[8] = 0x40;
+	buf[8] = volume*8;
 	buf[9] = 0x00;
-
-
 	uart.write(buf, 10);
 	
 }
