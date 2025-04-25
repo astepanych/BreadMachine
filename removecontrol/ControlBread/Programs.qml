@@ -109,7 +109,7 @@ ProgramsForm {
         }
         MenuSeparator{}
         MenuItem {
-           // enabled: itemDelegate.isSelected
+            enabled: isSelected
             text: "Удалить этап"
             onTriggered: {
                 appCore.removeStage(m_selectedRow)
@@ -119,19 +119,19 @@ ProgramsForm {
     }
 
     maParams {
-
-        //height: listStages.height
+        z:-1
+        height: listStages.height
         propagateComposedEvents: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         onPressAndHold: {
             console.log("onPressAndHold" + 1);
-
             if(mouse.button === Qt.LeftButton) {
                 contextMenu2.popup();
             }
             mouse.accepted = false
         }
         onClicked: {
+             mouse.accepted = false
             console.log("maParams onClicked")
             if(isClicked === false) {
                 isSelected = false
@@ -155,7 +155,6 @@ ProgramsForm {
                 anchors.fill: parent
                 color: (isSelected && m_selectedRow === row)? "skyblue": "#ffffff"
                 MouseArea {
-
                     anchors.fill: parent
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
                     propagateComposedEvents: true
@@ -172,11 +171,11 @@ ProgramsForm {
                             isSelected = true
                             mouse.accepted = false
                         } else {
-                            mouse.accepted = true
+                            mouse.accepted = false
                         }
                         if(mouse.button === Qt.RightButton) {
                             contextMenu2.popup();
-                            mouse.accepted = true
+                            mouse.accepted = false
                         }
 
                         console.log("in onClicked  " + m_selectedRow)
@@ -217,7 +216,7 @@ ProgramsForm {
                 color: (isSelected && m_selectedRow === row)? "skyblue": "#ffffff"
                 CheckBox {
                     x:5
-                    id: textItem
+                    id: checkItem
                     anchors.fill: parent
                     anchors.leftMargin: 2
                     clip: true
@@ -225,6 +224,10 @@ ProgramsForm {
                     anchors.verticalCenter: parent.verticalCenter
                     font.pointSize: 12
                     visible: true
+                    onClicked: {
+                        console.log("onClicked 3");
+                    }
+
                 }
                 MouseArea {
 
@@ -237,19 +240,22 @@ ProgramsForm {
                             contextMenu2.popup();
                         }
                     }
-                    onClicked: {
+                   onClicked: {
                         isClicked = true;
                         if(m_selectedRow !== row){
                             m_selectedRow = row
                             isSelected = true
                             mouse.accepted = false
                         } else {
-                            mouse.accepted = true
+                            mouse.accepted = false
                         }
                         if(mouse.button === Qt.RightButton) {
                             contextMenu2.popup();
                             mouse.accepted = true
+                        } else {
+                            checkItem.checked = !checkItem.checked
                         }
+
                         console.log("in onClicked  " + m_selectedRow)
                         console.log("h = " + rectangle.height+"; h1 = "+maParams.height)
                     }

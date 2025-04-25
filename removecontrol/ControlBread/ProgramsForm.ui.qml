@@ -6,6 +6,7 @@ Page {
     id: page
     width: 400
     height: 600
+    property alias rectangle2: rectangle2
     property alias rectangle: rectangle
     property alias maParams: maParams
     property alias maListProgramms: maListProgramms
@@ -97,8 +98,8 @@ Page {
         VerticalHeaderView {
 
             id: verticalHeader1
-            width: 30
-            anchors.top: listStages.top
+            width: 40
+            anchors.top: rectangle2.top
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 0
             anchors.leftMargin: 0
@@ -110,7 +111,8 @@ Page {
             delegate: Rectangle {
 
                 id: rectangle13
-                implicitHeight: horizontalHeader.height
+                implicitHeight: verticalHeader1.height
+                implicitWidth: verticalHeader1.width
                 border.color: "lightgray"
                 Text {
                     verticalAlignment: Text.AlignVCenter
@@ -124,7 +126,7 @@ Page {
         HorizontalHeaderView {
             id: horizontalHeader
             height: 40
-            anchors.left: listStages.left
+            anchors.left: rectangle2.left
             syncView: listStages
             anchors.right: parent.right
             anchors.top: parent.top
@@ -149,27 +151,37 @@ Page {
             }
         }
 
-        TableView {
-            id: listStages
+        Rectangle {
+            id: rectangle2
+            color: "#ffffff"
             anchors.left: verticalHeader1.right
             anchors.right: parent.right
             anchors.top: horizontalHeader.bottom
             anchors.bottom: parent.bottom
-            z: 0
-            anchors.leftMargin: 0
+            anchors.leftMargin: -1
+            anchors.rightMargin: 1
+            anchors.bottomMargin: 1
             anchors.topMargin: -1
-            anchors.bottomMargin: 0
-            anchors.rightMargin: 0
 
-            ScrollIndicator.vertical: ScrollIndicator {}
-            ScrollIndicator.horizontal: ScrollIndicator {}
-            rowSpacing: -1
-            columnSpacing: -1
-            clip: true
+            TableView {
+                id: listStages
+                anchors.left: verticalHeader1.right
+                anchors.top: horizontalHeader.bottom
+                anchors.fill: parent
+                z: 0
+
+                ScrollIndicator.vertical: ScrollIndicator {}
+                ScrollIndicator.horizontal: ScrollIndicator {}
+                rowSpacing: -1
+                columnSpacing: -1
+                clip: true
+            }
 
             MouseArea {
-                               id: maParams
-                anchors.fill: listStages
+                id: maParams
+                x: 360
+                y: 295
+                anchors.fill: parent
 
             }
         }
