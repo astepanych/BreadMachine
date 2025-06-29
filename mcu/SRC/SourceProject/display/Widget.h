@@ -2,27 +2,80 @@
 #include "DisplayDriver.h"
 #include "KeyEvent.h"
 
-enum Colors
-{
-	ColorBlack = 0x0000,
-	ColorRed = 0xf800,
-	ColorGrey = 0xc618,
-	ColorGreen = 0x07e0,
+/**
+ * @enum Colors
+ * @brief Цвета в формате RGB565
+ * 
+ * Определяет основные цвета, используемые для отображения на дисплее.
+ * Цвета представлены в 16-битном формате (5-6-5 бит на канал).
+ */
+enum Colors {
+    ColorBlack = 0x0000, ///< Черный цвет (RGB: 0, 0, 0)
+    ColorRed = 0xf800, ///< Красный цвет (RGB: 31, 0, 0)
+    ColorGrey = 0xc618, ///< Серый цвет (RGB: 24, 24, 24)
+    ColorGreen = 0x07e0    ///< Зеленый цвет (RGB: 0, 63, 0)
 };
 
-class Widget
-{
+/**
+ * @class Widget
+ * @brief Базовый класс для виджетов интерфейса
+ * 
+ * Абстрактный класс, предоставляющий базовый функционал для элементов
+ * пользовательского интерфейса. Реализует паттерн "Цепочка обязанностей"
+ * через указатель на предыдущий виджет.
+ */
+class Widget {
 public:
-	Widget();
-	virtual Widget* keyEvent(uint16_t key) = 0;
-	virtual void updateDisplay() {};
-	virtual void resetWidget() {};
-	virtual void changeParams(const uint16_t id, uint8_t len, uint8_t* data) {};
-	void setOutputDevice(DisplayDriver *display);
-	void setPrevWidgwt(Widget *w)
-	{m_prevWidget = w;}
+    /**
+     * @brief Конструктор виджета
+     */
+    Widget();
+    
+    /**
+     * @brief Обработчик событий клавиш
+     * @param key Код нажатой клавиши
+     * @return Указатель на виджет, который должен обработать событие
+     * @note Чисто виртуальная функция, должна быть реализована в потомках
+     */
+    virtual Widget* keyEvent(uint16_t key) = 0;
+    
+    /**
+     * @brief Обновление отображения виджета
+     * @note Может быть переопределен в потомках
+     */
+    virtual void updateDisplay() {};
+    
+    /**
+     * @brief Сброс состояния виджета
+     * @note Может быть переопределен в потомках
+     */
+    virtual void resetWidget() {};
+    
+    /**
+     * @brief Изменение параметров виджета
+     * @param id Идентификатор параметра
+     * @param len Длина данных
+     * @param data Указатель на данные
+     * @note Может быть переопределен в потомках
+     */
+    virtual void changeParams(const uint16_t id, uint8_t len, uint8_t* data) {};
+    
+    /**
+     * @brief Установка драйвера дисплея
+     * @param display Указатель на драйвер дисплея
+     */
+    void setOutputDevice(DisplayDriver *display);
+    
+    /**
+     * @brief Установка предыдущего виджета
+     * @param w Указатель на предыдущий виджет в цепочке
+     * 
+     * Используется для реализации навигации между виджетами.
+     * При обработке событий можно вернуться к предыдущему виджету.
+     */
+    void setPrevWidget(Widget *w) { m_prevWidget = w; }
+    
 protected:
-	DisplayDriver *m_display;
-	Widget *m_prevWidget;
+    DisplayDriver *m_display; ///< Указатель на драйвер дисплея
+    Widget *m_prevWidget; ///< Указатель на предыдущий виджет в цепочке
 };
-

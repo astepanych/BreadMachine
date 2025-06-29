@@ -153,15 +153,8 @@
     <ClInclude Include="..\SRC\SourceProject\typedef.h" />
     <ClInclude Include="..\SRC\SourceProject\version.h" />
     <ClInclude Include="..\SRC\STM\FreeRTOS\Source\portable\GCC\ARM_CM3\portmacro.h" />
-    <ClInclude Include="AdcDriver.h" />
     <ClInclude Include="FreeRTOSConfig.h" />
     <ClInclude Include="I2C3.h" />
-    <ClInclude Include="KeyEvent.h" />
-    <ClInclude Include="MyList.h" />
     <ClInclude Include="stm32f4xx_hal_conf.h" />
-    <ClInclude Include="Uart5.h" />
-    <ClInclude Include="Widget.h" />
-    <ClInclude Include="WorkMode.h" />
-    <ClInclude Include="WorkModeEdit.h" />
   </ItemGroup>
 </Project>

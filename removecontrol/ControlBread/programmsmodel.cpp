@@ -72,6 +72,12 @@ void ProgrammsModel::addProgramms()
     endResetModel();
 }
 
+void ProgrammsModel::addProgramms(const WorkMode &mode) {
+    beginInsertRows(QModelIndex(), m_listWorkMode.size(), m_listWorkMode.size());
+    m_listWorkMode.append(mode);
+    endInsertRows();
+}
+
 void ProgrammsModel::deleteProgramms(int index)
 {
     beginResetModel();
@@ -155,19 +161,28 @@ ParamsWorkMode::ParamsWorkMode(QObject *parent) :
 
 bool ParamsWorkMode::setData(const QModelIndex &index, const QVariant &value, int role)
 {
+    qDebug()<<value;
     if(index.isValid() == false )
         return false;
     switch (index.column()) {
     case 0:
         m_workMode->stages[index.row()].duration = value.toUInt();
+         emit dataChanged(index, index);
+        break;
     case 1:
         m_workMode->stages[index.row()].temperature= value.toUInt();
+         emit dataChanged(index, index);
+        break;
     case 2:
         m_workMode->stages[index.row()].waterVolume= value.toUInt();
+         emit dataChanged(index, index);
+        break;
     case 3:
         m_workMode->stages[index.row()].fan= value.toUInt();
+        break;
     case 4:
         m_workMode->stages[index.row()].damper= value.toUInt();
+        break;
         default:return false;
     }
     return true;
@@ -188,12 +203,14 @@ void ParamsWorkMode::setWorkMode(WorkMode *newWorkMode)
 
 QVariant ParamsWorkMode::headerData(int section, Qt::Orientation orientation, int role) const
 {
+    qDebug()<<__PRETTY_FUNCTION__;
+    qDebug()<<"role = "<<role;
     if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
         switch (section) {
-            case 0:
-                return tr("Время, с");
-            case 1:
-                return tr("Температура, ");
+        case 0:
+            return tr("Время, с");
+        case 1:
+            return tr("Темп., °C");
         case 2:
             return tr("Вода, мл");
         case 3:
@@ -219,12 +236,20 @@ QVariant ParamsWorkMode::headerData(int section, Qt::Orientation orientation, in
     return QVariant();
 }
 
+QVariant ParamsWorkMode::horizontalHeader(int colum) {
+    return headerData(colum, Qt::Horizontal);
+}
+
 bool ParamsWorkMode::addStage()
 {
     if(m_workMode->numStage == MaxStageMode)
         return false;
     beginInsertRows(QModelIndex(), m_workMode->numStage, m_workMode->numStage);
+    m_workMode->stages[m_workMode->numStage].duration = 600;
+    m_workMode->stages[m_workMode->numStage].waterVolume = 2000;
+    m_workMode->stages[m_workMode->numStage].temperature = 150;
     m_workMode->numStage++;
+
     endInsertRows();
     return true;
 }

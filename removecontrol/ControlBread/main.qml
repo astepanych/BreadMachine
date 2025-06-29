@@ -8,11 +8,12 @@ ApplicationWindow {
     height: 800
     visible: true
     title: qsTr("Control breadmashine")
+    font.pointSize: Qt.platform.os === "android" ? 15:10
 
     SwipeView {
         id: swipeView
         anchors.fill: parent
-        currentIndex: 1
+        currentIndex: tabBar.currentIndex
         StartPage {
             id: startPage
         }

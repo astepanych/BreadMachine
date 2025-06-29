@@ -23,6 +23,10 @@ typedef struct {
 #define ID_ESP_EXTERN		128
 #define ID_HOST_EXTERN      256
 
+enum MessageType{
+    MessageTypeGet = 0,
+    MessageTypeSet
+};
 
 
 

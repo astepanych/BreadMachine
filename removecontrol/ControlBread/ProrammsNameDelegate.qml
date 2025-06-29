@@ -4,6 +4,7 @@ import QtQuick.Controls 2.15
 Item {
     property Component programmNameDelegate: programmNameDelegate
     property int m_implicitWidth: m_implicitWidth
+    readonly property bool isMobile: Qt.platform.os === "android"
 
     property var m_model;
     property bool isSetCurrentIndexSoft : false;
@@ -75,7 +76,7 @@ Item {
                     wrapMode: Text.WordWrap
                     verticalAlignment: Text.AlignVCenter
                     anchors.verticalCenter: parent.verticalCenter
-                    font.pointSize: 12
+                    font.pointSize: isMobile ? 15 : 12
                     visible: !textInput.visible
                     onFocusChanged: {
                         console.log("focus1 = " + focus)
@@ -92,7 +93,7 @@ Item {
                     verticalAlignment: Text.AlignVCenter
                     wrapMode: Text.WordWrap
                     anchors.verticalCenter: parent.verticalCenter
-                    font.pointSize: 12
+                    font.pointSize: isMobile ? 15 : 12
                     font.italic:  true
                     visible: (isEdit && m_selectedRow === index)
                     onVisibleChanged: {

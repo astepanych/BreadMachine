@@ -44,6 +44,8 @@ int main(int argc, char *argv[])
 
 
     AppCore appCore;
+    // Установка кодировки для вывода (например, UTF-8)
+        QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
     qmlRegisterType<AppCore>("com.ics.demo", 1, 0, "AppCore");
 
     QQmlApplicationEngine engine;

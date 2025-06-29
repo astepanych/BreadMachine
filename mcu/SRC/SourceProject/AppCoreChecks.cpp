@@ -9,31 +9,31 @@
 #include <time.h>
 #include <math.h>
 
-uint16_t AppCore::checkTemperatureSensors()
+eFailSensorTemperature AppCore::checkTemperatureSensors()
 {
-	uint16_t curState = 0;
+    eFailSensorTemperature curState = NoFailSensorTemperature;
 
 	if (adc->value2() > thresholdErrorTemperature)
 	{
-		curState = 2;
+		curState = FailSensorTemperature2;
 		LOG::instance().log("err temp sen2"); 
 	}
 	else
 	{
-		curState = 0;		
+    	curState = NoFailSensorTemperature;		
 	}
 	if (adc->value1() > thresholdErrorTemperature) {
-		curState |= 1;
+    	curState = static_cast<eFailSensorTemperature>(curState | FailSensorTemperature1) ;
 		LOG::instance().log("err temp sen1"); 
 	}
 	else
 	{	
-		curState &= (~1);
+    	curState = static_cast<eFailSensorTemperature>(curState&(~FailSensorTemperature1));
 	}
 	
 	if (stateTemperatureSensor != curState)
 	{
-		if (curState != 0)
+    	if (curState != NoFailSensorTemperature)
 			display->showMessage(PageMessage, curState);
 		else
 			display->hideMessage();

@@ -1,11 +1,16 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
-import QtQuick.Window 2.15
+import Qt.labs.qmlmodels 1.0
+import QtPositioning 5.14
 
 Page {
     id: page
     width: 400
     height: 600
+    property alias horizontalHeader: horizontalHeader
+    property alias verticalHeader1: verticalHeader1
+    property alias bSaveToFile: bSaveToFile
+    property alias bReadFromFile: bReadFromFile
     property alias rectangle2: rectangle2
     property alias rectangle: rectangle
     property alias maParams: maParams
@@ -51,7 +56,7 @@ Page {
         anchors.left: rectangle1.right
         anchors.right: parent.right
         anchors.top: rectangle1.top
-        font.pointSize: 14
+        font.pointSize: 15
         anchors.leftMargin: 5
         anchors.rightMargin: 5
         anchors.topMargin: 0
@@ -66,7 +71,7 @@ Page {
         anchors.top: bReadPrograms.bottom
         anchors.leftMargin: 5
         anchors.rightMargin: 5
-        font.pointSize: 14
+        font.pointSize: 15
         anchors.topMargin: 5
     }
 
@@ -98,7 +103,7 @@ Page {
         VerticalHeaderView {
 
             id: verticalHeader1
-            width: 40
+            width: 30
             anchors.top: rectangle2.top
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 0
@@ -119,7 +124,7 @@ Page {
                     horizontalAlignment: Text.AlignHCenter
                     anchors.fill: parent
                     text: model.display
-                    font.pointSize: 11
+                    font.pointSize: 15
                 }
             }
         }
@@ -135,20 +140,7 @@ Page {
             anchors.rightMargin: 0
             clip: true
 
-            delegate: Rectangle {
 
-                id: rectangle12
-                implicitHeight: horizontalHeader.height
-                border.color: "lightgray"
-                Text {
-                    text: model.display
-                    font.pointSize: 11
-
-                    anchors.fill: parent
-                    verticalAlignment: Text.AlignVCenter
-                    horizontalAlignment: Text.AlignHCenter
-                }
-            }
         }
 
         Rectangle {
@@ -176,14 +168,37 @@ Page {
                 columnSpacing: -1
                 clip: true
             }
-
             MouseArea {
                 id: maParams
-                x: 360
-                y: 295
                 anchors.fill: parent
 
             }
+
+
         }
+    }
+
+    Button {
+        id: bReadFromFile
+        text: qsTr("Открыть файл")
+        anchors.left: rectangle1.right
+        anchors.right: parent.right
+        anchors.top: pbProgramms.bottom
+        font.pointSize: 15
+        anchors.leftMargin: 5
+        anchors.rightMargin: 5
+        anchors.topMargin: 5
+    }
+
+    Button {
+        id: bSaveToFile
+        text: qsTr("Сохранить файл")
+        anchors.left: bReadFromFile.left
+        anchors.right: bReadFromFile.right
+        anchors.top: bReadFromFile.bottom
+        font.pointSize: 15
+        anchors.leftMargin: 0
+        anchors.rightMargin: 0
+        anchors.topMargin: 5
     }
 }

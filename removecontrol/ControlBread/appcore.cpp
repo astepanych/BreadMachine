@@ -8,7 +8,7 @@
 #include <qthreadpool.h>
 #include <QtConcurrent/QtConcurrent>
 #include <qfile.h>
-
+#include <qxmlstream.h>
 
 
 AppCore::AppCore(QObject *parent) : QObject(parent),
@@ -267,12 +267,11 @@ void AppCore::removePrograms(int index) {
     }
 }
 
-void AppCore::readProgramms()
-{
+void AppCore::readProgramms() {
     uint16_t numPrograms;
     getParam16Bit(IdNumPrograms, numPrograms);
     qDebug()<<numPrograms;
-
+    m_modelWM->clearProgramms();
     for(uint16_t i = 0 ; i < numPrograms; i++) {
         stateCrc = StateCrcNoRcv;
         QEventLoop loop ;
@@ -282,13 +281,45 @@ void AppCore::readProgramms()
         loop.exec();
         connect(this, &AppCore::signalRcvCrc, &loop, &QEventLoop::quit);
         if(stateCrc == StateCrcOk) {
+            WorkMode w;
+            memcpy(&w, b_programms.data(), sizeof(w));
+            m_modelWM->addProgramms(w);
             qDebug()<<"crc ok";
 
         }
 
         setPercentProgressbar((i+1)*100/numPrograms);
     }
+}
 
+void AppCore::writeProgramms()
+{
+    QEventLoop loop ;
+    uint16_t numPrograms = m_modelWM->rowCount(QModelIndex());
+    sendPacket(IdNumPrograms, (uint8_t*)&numPrograms, sizeof(uint16_t));
+    for(uint16_t i = 0 ; i < numPrograms; i++) {
+        stateCrc = StateCrcNoRcv;
+        sendPacket(IdWritePrograms,(uint8_t*)&i,sizeof(uint16_t));
+        b_programms.clear();
+        b_programms.append((const char*)m_modelWM->workMode(i), sizeof(WorkMode));
+
+        uint8_t *data = (uint8_t*)m_modelWM->workMode(i);
+        for(int x = 0; x<sizeof(WorkMode); x+=BODY_BYTE_COUNT) {
+            sendPacket(IdDataPrograms, data+x, ((sizeof(WorkMode) - x) > BODY_BYTE_COUNT)?BODY_BYTE_COUNT:sizeof(WorkMode) - x);
+        }
+        QTimer::singleShot(2000, &loop, &QEventLoop::quit);
+        sendPacket(IdCrcPrograms, nullptr, 0);
+        loop.exec();
+        connect(this, &AppCore::signalRcvCrc, &loop, &QEventLoop::quit);
+        if(stateCrc == StateCrcOk) {
+            qDebug()<<"crc ok";
+        } else {
+            return;
+        }
+        setPercentProgressbar((i+1)*100/numPrograms);
+    }
+    sendPacket(IdStartCopyPrograms, nullptr, 0);
+    qDebug()<<numPrograms;
 }
 
 void AppCore::switchModelPrograms(const int index)
@@ -313,6 +344,152 @@ bool AppCore::addStage()
 void AppCore::removeStage(int index)
 {
     m_paramsWM->removeStage(index);
+}
+
+void AppCore::readProgrammsFromFile(const QString &fileName)
+{
+    qDebug()<<fileName;
+    QString s;
+#ifdef Q_OS_ANDROID
+       s = fileName;
+#else
+       QUrl url(fileName);
+       s = url.path().remove(0,1);
+#endif
+    QFile f(s);
+    if(f.open(QIODevice::ReadOnly) == false) {
+        return;
+    }
+    QXmlStreamReader xml(&f);
+    WorkMode mode;
+    int indexStage = 0;
+    m_modelWM->clearProgramms();
+    QString val;
+    while (!xml.atEnd() && !xml.hasError()) {
+        QXmlStreamReader::TokenType token = xml.readNext();
+        qDebug() << xml.tokenString();
+        if (token == QXmlStreamReader::StartElement) {
+            if (xml.name() == "Workmode") {
+                indexStage = 0;
+                memset(&mode, 0, sizeof(mode));
+            } else if (xml.name() == "name") {
+                  val = xml.readElementText();
+                  QString ba = QTextCodec::codecForName("utf-8")->toUnicode(val.toUtf8());
+
+                  QByteArray s  = QTextCodec::codecForName("Windows-1251")->fromUnicode(ba);
+                  mode.lenNameMode = s.length();
+                  memset(mode.nameMode,0, MaxLengthNameMode);
+                  memcpy(mode.nameMode, s.data(), s.length());
+            } else if (xml.name() == "num_stages") {
+
+
+                mode.numStage = xml.readElementText().toInt();
+            } else if (xml.name() == "dur") {
+                 val = xml.readElementText();
+                 mode.stages[indexStage].duration = val.toInt();
+            } else if (xml.name() == "water") {
+                val = xml.readElementText();
+                mode.stages[indexStage].waterVolume = val.toInt();
+            } else if (xml.name() == "temp") {
+                val = xml.readElementText();
+                mode.stages[indexStage].temperature = val.toInt();
+            } else if (xml.name() == "fan") {
+                val = xml.readElementText();
+                mode.stages[indexStage].fan = (val == "true") ? 1 : 0;
+            } else if (xml.name() == "damper") {
+                val = xml.readElementText();
+                mode.stages[indexStage].damper = (val == "true") ? 1 : 0;
+            }
+        } else if (token == QXmlStreamReader::EndElement) {
+            if (xml.name() == "Workmode") {
+                qDebug()<<xml.name();
+                m_modelWM->addProgramms(mode);
+            } else if (xml.name() == "stage") {
+                 qDebug()<<xml.name();
+                 indexStage++;
+            }
+        }
+
+        if (xml.hasError()) {
+            qDebug() << "XML error:" << xml.error();
+        }
+
+    }
+
+    /*
+    stream.setAutoFormatting(true);
+    stream.writeStartDocument();
+    for(int i = 0; i< m_modelWM->rowCount(QModelIndex()); i++) {
+        stream.writeStartElement("Programm");
+        stream.writeAttribute("name", m_modelWM->data(m_modelWM->index(i),ProgrammsModel::NameMode).toString());
+        stream.writeTextElement("num stages", QString("%1").arg(m_modelWM->workMode(i)->numStage));
+        for(int j = 0; j< m_modelWM->workMode(i)->numStage; j++) {
+            stream.writeTextElement("stage", QString("%1").arg(j+1));
+            stream.writeAttribute("dur", QString("%1").arg(m_modelWM->workMode(i)->stages[j].duration));
+            stream.writeAttribute("temp", QString("%1").arg(m_modelWM->workMode(i)->stages[j].temperature));
+            stream.writeAttribute("water", QString("%1").arg(m_modelWM->workMode(i)->stages[j].waterVolume));
+            stream.writeAttribute("fan", QString("%1").arg(m_modelWM->workMode(i)->stages[j].fan?"true":"false"));
+            stream.writeAttribute("damper", QString("%1").arg(m_modelWM->workMode(i)->stages[j].damper?"true":"false"));
+        }
+        stream.writeEndElement(); // Programms
+    }
+*/
+
+}
+
+void AppCore::saveProgrammsToFile(const QString &fileName)
+{
+    qDebug()<<fileName;
+    QString s;
+#ifdef Q_OS_ANDROID
+       s = fileName;
+#else
+       QUrl url(fileName);
+       s = url.path().remove(0,1);
+#endif
+    QFile f(s);
+    if(f.open(QIODevice::WriteOnly) == false) {
+        return;
+    }
+    QXmlStreamWriter stream(&f);
+    stream.setAutoFormatting(true);
+    stream.writeStartDocument();
+    stream.writeStartElement("Programms");
+    for(int i = 0; i< m_modelWM->rowCount(QModelIndex()); i++) {
+        stream.writeStartElement("Workmode");
+        stream.writeTextElement("name", m_modelWM->data(m_modelWM->index(i),ProgrammsModel::NameMode).toString());
+        stream.writeTextElement("num_stages", QString("%1").arg(m_modelWM->workMode(i)->numStage));
+        for(int j = 0; j< m_modelWM->workMode(i)->numStage; j++) {
+            stream.writeStartElement("stage");
+            stream.writeAttribute("num ", QString("%1").arg(j+1));
+            stream.writeTextElement("dur", QString("%1").arg(m_modelWM->workMode(i)->stages[j].duration));
+            stream.writeTextElement("temp", QString("%1").arg(m_modelWM->workMode(i)->stages[j].temperature));
+            stream.writeTextElement("water", QString("%1").arg(m_modelWM->workMode(i)->stages[j].waterVolume));
+            stream.writeTextElement("fan", QString("%1").arg(m_modelWM->workMode(i)->stages[j].fan?"true":"false"));
+            stream.writeTextElement("damper", QString("%1").arg(m_modelWM->workMode(i)->stages[j].damper?"true":"false"));
+            stream.writeEndElement(); // stage
+        }
+        stream.writeEndElement(); // Programm
+    }
+    stream.writeEndElement(); // Programms
+
+   /* stream.writeStartElement("bookmark");
+    stream.writeAttribute("href", "http://qt-project.org/");
+    stream.writeTextElement("title", "Qt Project");
+    stream.writeEndElement(); // bookmark
+
+    stream.writeStartElement("bookmark");
+    stream.writeAttribute("href", "http://qt-project.org/");
+    stream.writeTextElement("title", "Qt Project");
+    stream.writeEndElement(); // bookmark
+*/
+
+
+
+    stream.writeEndDocument();
+
+
+    f.close();
 }
 
 void AppCore::readData()
@@ -391,7 +568,7 @@ void AppCore::sendPacket(const uint16_t id, const uint8_t *data, const uint16_t 
     memset(&p, 0, sizeof (PackageNetworkFormat));
     p.counter = countTx++;
     countTx %=0xff;
-    p.msgType = 1;
+    p.msgType = MessageTypeSet;
     p.cmdId = id;
     p.dataSize = len;
     if(len != 0)
@@ -409,7 +586,7 @@ void AppCore::getParam(const uint16_t id, QByteArray &ba)
     m_waitedAnswerId = id;
     p.counter = countTx++;
     countTx %=0xff;
-    p.msgType = 0;
+    p.msgType = MessageTypeGet;
     p.cmdId = id;
     p.dataSize = 0;
 
