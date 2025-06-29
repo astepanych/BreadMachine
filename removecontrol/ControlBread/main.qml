@@ -8,15 +8,19 @@ ApplicationWindow {
     height: 800
     visible: true
     title: qsTr("Control breadmashine")
+    font.pointSize: Qt.platform.os === "android" ? 15:10
 
     SwipeView {
         id: swipeView
         anchors.fill: parent
         currentIndex: tabBar.currentIndex
-
         StartPage {
             id: startPage
         }
+        Programs{
+            id: programsPage
+        }
+
         Log{
             id: logPage
         }
@@ -27,6 +31,9 @@ ApplicationWindow {
 
           TabButton {
               text: qsTr("Прошивка")
+          }
+          TabButton {
+              text: qsTr("Программы")
           }
           TabButton {
               text: qsTr("Журнал")

@@ -10,49 +10,125 @@
 
 #define uart2 Uart1::instance()
 
-class Uart1
-{
+/**
+ * @class Uart1
+ * @brief Драйвер для работы с UART1
+ * 
+ * Класс предоставляет функционал для асинхронной работы с UART1 
+ * с использованием DMA и RTOS. Реализован как синглтон.
+ */
+class Uart1 {
 public:
-	
-	~Uart1() {};
-	static Uart1 &instance() {
-		static Uart1 m_instance;
-		return m_instance;
-	};
-	void taskWrite(void *p);
-	void taskRead(void *p);
-	void init();
-	void write(uint8_t *buf, uint8_t len);
-	std::function<void(const uint8_t)> putByte;
-	bool isBusyDma() 
-	{
-		return mBusyDma;
-	};
-	void setBusyDma(const bool f) { mBusyDma = f; };
-	void txEnd();
+    /**
+     * @brief Деструктор класса Uart1
+     */
+    ~Uart1() {};
+    
+    /**
+     * @brief Получить экземпляр класса (синглтон)
+     * @return Ссылка на единственный экземпляр Uart1
+     */
+    static Uart1 &instance() {
+        static Uart1 m_instance;
+        return m_instance;
+    };
+    
+    /**
+     * @brief Задача для записи данных в UART
+     * @param p Указатель на параметры задачи (не используется)
+     */
+    void taskWrite(void *p);
+    
+    /**
+     * @brief Задача для чтения данных из UART
+     * @param p Указатель на параметры задачи (не используется)
+     */
+    void taskRead(void *p);
+    
+    /**
+     * @brief Инициализация UART1
+     * @details Выполняет:
+     * - Настройку параметров UART
+     * - Инициализацию DMA
+     * - Создание задач и очередей RTOS
+     */
+    void init();
+    
+    /**
+     * @brief Запись данных в UART
+     * @param buf Указатель на буфер данных
+     * @param len Длина данных для отправки
+     */
+    void write(uint8_t *buf, uint8_t len);
+    
+    /**
+     * @brief Callback-функция для отправки байта
+     * @details Пользовательская функция для обработки отправки каждого байта
+     */
+    std::function<void(const uint8_t)> putByte;
+    
+    /**
+     * @brief Проверка занятости DMA
+     * @return true если DMA занят передачей данных
+     */
+    bool isBusyDma() {
+        return mBusyDma;
+    };
+    
+    /**
+     * @brief Установка флага занятости DMA
+     * @param f Состояние флага (true - занят, false - свободен)
+     */
+    void setBusyDma(const bool f) { mBusyDma = f; };
+    
+    /**
+     * @brief Обработчик завершения передачи
+     * @details Вызывается после завершения передачи данных
+     */
+    void txEnd();
 
-	void pushByteRx(uint8_t byte);
+    /**
+     * @brief Добавление байта в приемный буфер
+     * @param byte Принятый байт
+     */
+    void pushByteRx(uint8_t byte);
+    
 private:
-	Uart1();
-	void initUart();
-	void initDma();
-	int txDma(const uint8_t *data, const uint8_t len);
+    /**
+     * @brief Приватный конструктор (singleton)
+     */
+    Uart1();
+    
+    /**
+     * @brief Инициализация параметров UART
+     */
+    void initUart();
+    
+    /**
+     * @brief Инициализация DMA для UART
+     */
+    void initDma();
+    
+    /**
+     * @brief Передача данных через DMA
+     * @param data Указатель на данные
+     * @param len Длина данных
+     * @return Результат операции (0 - успешно)
+     */
+    int txDma(const uint8_t *data, const uint8_t len);
 
-
-	BaseType_t xReturned;
-	xTaskHandle xHandle;
-	xTaskHandle xHandleRead;
-	xQueueHandle xQueueWrite;
-	xSemaphoreHandle xSemWrite;
-	
-	int indexWriteRx;
-	int indexReadRx;
-	bool isRtosRun;
-	
-	bool mBusyDma; 
-	ElementUart push;
-	ElementUart pop;
-	
-		
+    BaseType_t xReturned; ///< Результат создания задач RTOS
+    xTaskHandle xHandle; ///< Хэндл задачи записи
+    xTaskHandle xHandleRead; ///< Хэндл задачи чтения
+    xQueueHandle xQueueWrite; ///< Очередь для записи данных
+    xSemaphoreHandle xSemWrite; ///< Семафор для синхронизации записи
+    
+    int indexWriteRx; ///< Индекс записи в приемный буфер
+    int indexReadRx; ///< Индекс чтения из приемного буфера
+    bool isRtosRun; ///< Флаг инициализации RTOS
+    
+    bool mBusyDma; ///< Флаг занятости DMA
+    ElementUart push; ///< Элемент для передачи данных
+    ElementUart pop; ///< Элемент для приема данных
 };
 

@@ -36,7 +36,7 @@ QVariant ModelLogDataTransfer::data(const QModelIndex &index, int role) const
 
 QHash<int, QByteArray> ModelLogDataTransfer::roleNames() const
 {
-    QHash<int, QByteArray> roles = QAbstractListModel::roleNames();
+    QHash<int, QByteArray> roles = QAbstractTableModel::roleNames();
     roles[TextRole] = "textModel";
     return roles;
 }

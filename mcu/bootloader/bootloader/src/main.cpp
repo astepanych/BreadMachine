@@ -7,7 +7,9 @@
 #include "misc.h"
 #include <stm32f4xx_flash.h>
 
+
 #define MAIN_ADDRESS 0x08000000
+#define TEMP_ADDRESS 0x08020000
 
 void mainApp(void) {
 	//установка адреса прыжка
@@ -30,6 +32,8 @@ TaskHandle_t xHandleExchange = NULL;
 uint8_t bufFirmware[1100];
 uint32_t indexBuf;
 uint32_t commonIndex;
+uint32_t commonIndexWrite;
+uint32_t firmwareSize;
 uint16_t crcCalc;
 
 void procUartData(PackageNetworkFormat &p)
@@ -42,14 +46,18 @@ void procUartData(PackageNetworkFormat &p)
 			objDataExchenge.sendPackage(IdDoneBootloader, 1, 0, nullptr);
 			break;
 		case IdFirmwareStart:
-			commonIndex = 0;
+			commonIndex = TEMP_ADDRESS;
+			commonIndexWrite = MAIN_ADDRESS;
+			firmwareSize = 0;
 			indexBuf = 0;
 			FLASH_Unlock();
-			FLASH_EraseSector(FLASH_Sector_0, VoltageRange_3);
+			FLASH_EraseSector(FLASH_Sector_5, VoltageRange_3);
+			
+			/*FLASH_EraseSector(FLASH_Sector_0, VoltageRange_3);
 			FLASH_EraseSector(FLASH_Sector_1, VoltageRange_3);
 			FLASH_EraseSector(FLASH_Sector_2, VoltageRange_3);
 			FLASH_EraseSector(FLASH_Sector_3, VoltageRange_3);
-			FLASH_EraseSector(FLASH_Sector_4, VoltageRange_3);
+			FLASH_EraseSector(FLASH_Sector_4, VoltageRange_3);*/
 			FLASH_Lock();
 		
 			break;
@@ -57,6 +65,7 @@ void procUartData(PackageNetworkFormat &p)
 			if (p.dataSize > 0x20)
 				asm(" nop");
 			memcpy(bufFirmware + indexBuf, p.data, p.dataSize);
+			firmwareSize += p.dataSize;
 			
 			indexBuf += p.dataSize;
 			if(indexBuf>1024)
@@ -73,7 +82,7 @@ void procUartData(PackageNetworkFormat &p)
 					commonIndex++;
 				}
 				FLASH_Lock();
-				
+	
 			}
 			else
 			{
@@ -82,9 +91,37 @@ void procUartData(PackageNetworkFormat &p)
 			indexBuf = 0;
 			objDataExchenge.sendPackage(IdFirmwareResult, 1, sizeof(uint16_t), (uint8_t*)&crcCalc);
 			break;
-		case IdResetMcu:
-			mainApp();
-			break;
+		case IdResetMcu: {
+			uint8_t *adrDst = (uint8_t *)TEMP_ADDRESS;
+			
+			objDataExchenge.sendPackage(IdStartWrite, 1, 0, nullptr);
+				FLASH_Unlock();
+				FLASH_EraseSector(FLASH_Sector_0, VoltageRange_3);
+				FLASH_EraseSector(FLASH_Sector_1, VoltageRange_3);
+				FLASH_EraseSector(FLASH_Sector_2, VoltageRange_3);
+				FLASH_EraseSector(FLASH_Sector_3, VoltageRange_3);
+				FLASH_EraseSector(FLASH_Sector_4, VoltageRange_3);
+				FLASH_Lock();
+				vTaskDelay(1500 / portTICK_PERIOD_MS);
+				
+			
+				
+				uint8_t byte;
+				for (uint32_t i = 0; i < firmwareSize; i++) {
+					byte = adrDst[i];
+					FLASH_Unlock();
+					FLASH_ProgramByte(commonIndexWrite, byte);
+					FLASH_Lock();
+					commonIndexWrite++;
+				}
+				//FLASH_EraseSector(FLASH_Sector_5, VoltageRange_3);
+				
+				objDataExchenge.sendPackage(IdStartEnd, 1, 0, nullptr);
+				vTaskDelay(500 / portTICK_PERIOD_MS);
+				mainApp();
+				break;
+			}
+			
 		default:
 			break;
 	}
@@ -117,7 +154,7 @@ int main() {
 	xTaskCreate(
 	                        tskExchange,       /* Function that implements the task. */
 	                        "exch",          /* Text name for the task. */
-	                        1024,      /* Stack size in words, not bytes. */
+	                        2048,      /* Stack size in words, not bytes. */
 	                        (void *) 1,    /* Parameter passed into the task. */
 	                        tskIDLE_PRIORITY,/* Priority at which the task is created. */
 	                        &xHandleExchange); /* Used to pass out the created task's handle. */

@@ -18,7 +18,7 @@ public:
 	static void init();
 	static void initTimer(uint16_t smplperiod);
 	static void rx();
-	static uint16_t value1()
+	static float value1()
 	{
 		
 		return (2590.0*m_value1 * 3.3 / 4095 - 330) / (1.2705 - 0.385*m_value1 * 3.3 / 4095);

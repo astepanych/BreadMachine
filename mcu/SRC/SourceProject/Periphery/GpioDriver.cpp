@@ -27,10 +27,10 @@ const GpioPin settingsPins[] = {
 		{GpioDriver::PinGreen, GPIOD, GPIO_Pin_12, RCC_AHB1Periph_GPIOD, GpioDriver::StatePinOne },
 		{GpioDriver::PinYellow,	GPIOD, GPIO_Pin_13, RCC_AHB1Periph_GPIOD,GpioDriver::StatePinOne },
 		
-		{GpioDriver::PinX1, GPIOD, GPIO_Pin_14, RCC_AHB1Periph_GPIOD, GpioDriver::StatePinOne },
+		{GpioDriver::GlobalEnable, GPIOD, GPIO_Pin_14, RCC_AHB1Periph_GPIOD, GpioDriver::StatePinOne },
 		{GpioDriver::PinX2, GPIOD, GPIO_Pin_15, RCC_AHB1Periph_GPIOD, GpioDriver::StatePinOne },
 		{GpioDriver::Led, GPIOF, GPIO_Pin_9, RCC_AHB1Periph_GPIOF, GpioDriver::StatePinOne },
-		{GpioDriver::Led1, GPIOF, GPIO_Pin_10, RCC_AHB1Periph_GPIOF, GpioDriver::StatePinOne }
+		{GpioDriver::Led1, GPIOF, GPIO_Pin_10, RCC_AHB1Periph_GPIOF, GpioDriver::StatePinOne },
 };
 const int sizeSettingsPins = sizeof(settingsPins) / sizeof(settingsPins[0]);
 
@@ -150,6 +150,7 @@ void GpioDriver::initModule()
 	/* Add to NVIC */
 
 	NVIC_Init(&nvic);
+
 	
 }
 

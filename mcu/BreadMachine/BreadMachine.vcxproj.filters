@@ -191,6 +191,12 @@
     <ClCompile Include="..\SRC\SourceProject\log.cpp">
       <Filter>Source files\APP</Filter>
     </ClCompile>
+    <ClCompile Include="I2C3.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_i2c.c">
+      <Filter>Source files\HAL</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SRC\SourceProject\AppCore.h">
@@ -223,22 +229,10 @@
     <ClInclude Include="..\SRC\SourceProject\DisplayDriver.h">
       <Filter>Header files\APP</Filter>
     </ClInclude>
-    <ClInclude Include="KeyEvent.h">
-      <Filter>Header files\APP</Filter>
-    </ClInclude>
-    <ClInclude Include="Widget.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="MyList.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
     <ClInclude Include="..\SRC\SourceProject\LittleBigEndian.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\SRC\SourceProject\typedef.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="AdcDriver.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\SRC\SourceProject\1251\bit.h">
@@ -246,15 +240,6 @@
     </ClInclude>
     <ClInclude Include="..\SRC\SourceProject\1251\utf8_to_cp1251.h">
       <Filter>Source files</Filter>
-    </ClInclude>
-    <ClInclude Include="WorkMode.h">
-      <Filter>Header files\APP</Filter>
-    </ClInclude>
-    <ClInclude Include="WorkModeEdit.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="Uart5.h">
-      <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\SRC\SourceProject\display\KeyEvent.h">
       <Filter>Source files\display</Filter>
@@ -297,6 +282,9 @@
     </ClInclude>
     <ClInclude Include="..\SRC\SourceProject\log.h">
       <Filter>Source files\APP</Filter>
+    </ClInclude>
+    <ClInclude Include="I2C3.h">
+      <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
