@@ -126,7 +126,7 @@ void GpioDriver::initModule()
 	/* Interrupt mode */
 	exti.EXTI_Mode = EXTI_Mode_Interrupt;
 	/* Triggers on rising and falling edge */
-	exti.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
+    exti.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
 	EXTI_Init(&exti);
 
 	/* Add IRQ vector to NVIC */
