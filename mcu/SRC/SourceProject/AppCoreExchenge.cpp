@@ -168,6 +168,12 @@ void AppCore::procUartData(const PackageNetworkFormat&p) {
 void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
     uint8_t cmd = data[0];
     switch (id) {
+        case AddrPopupDamper:
+            //display->getDataFromDisplay(AddrCurrentPage, 0, 2); 
+        break;
+        case IndexPopupDamper:
+            
+        break;
         case addrStateWifiSSID: {
                 int l = 0;
                 uint8_t *pName = data + 1;
@@ -221,7 +227,7 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
             gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatesPin)data[2]);
             break;
         case addrEnFan:
-            gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatesPin)data[2]);
+        gpio->setPin(GpioDriver::PinFanLowSpeed, (GpioDriver::StatesPin)data[2]);
             break;
         case addrWater:
             gpio->setPin(GpioDriver::GpioDriver::PinH2O, (GpioDriver::StatesPin)data[2]);
@@ -278,7 +284,7 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
             break;
         case AddrNumFan:
             currentWorkMode.stages[currentStage].fan ^= 1;
-            gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].fan);
+            gpio->setPin(GpioDriver::PinFanLowSpeed, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].fan);
             break;
         case addrCurrentSound:
             gParams.numSound = data[1];
@@ -351,7 +357,6 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
                 break;
             }
         case AddrRtc:
-			
             m_rtc->setDate(data[1], data[2], data[3]);
             m_rtc->setTime(data[5], data[6], data[7]);
             break;

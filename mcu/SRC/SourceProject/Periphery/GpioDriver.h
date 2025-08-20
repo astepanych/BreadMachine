@@ -17,19 +17,21 @@ public:
      * @brief Перечисление выходных пинов GPIO
      */
     enum PinsGpioOut {
-        PinFan = 0, ///< Пин управления вентилятором
+        PinFanLowSpeed = 0, ///< Пин управления вентилятором
         PinH2O, ///< Пин управления водой
         PinTemperatureUp, ///< Пин управления верхним температурным пределом
         PinTemperatureDown, ///< Пин управления нижним температурным пределом
         PinShiberX, ///< Пин управления заслонкой X
-        PinShiberO,
-        ///< Пин управления заслонкой O
+        PinShiberO, ///< Пин управления заслонкой O
         PinGreen, ///< Пин зеленого светодиода
         PinYellow, ///< Пин желтого светодиода
         GlobalEnable, ///< Пин глобального разрешения
-        PinX2, ///< Дополнительный пин X2
-        Led, ///< Основной светодиод
-        Led1                    ///< Дополнительный светодиод 1
+        HoodVisor, ///< Вытяжка козырек
+        MainHood,                   ///< вытяжка козырек
+        EnableLightDoorLight,        ///< посдсветка двери
+        PinFanFastSpeed, 
+        PinLoadBread,       ///< 1        
+        PinDownloadBread,   ///< 2
     };
 
     /**
@@ -112,6 +114,14 @@ public:
      * @param state Состояние пина (true - высокий уровень, false - низкий)
      */
     std::function<void(bool)> pinEvent;
+
+    bool isEventLoadBread();
+    bool isEventDownloadBread();
+    bool isEventSensorTempDrive1();
+    bool isEventSensorTempDrive2();
+    bool isEventSensorTempDrive3();
+    bool isDoorClosed();
+    bool isStartKey();
 
 private:
     static GpioDriver *ins; ///< Указатель на экземпляр драйвера (синглтон)

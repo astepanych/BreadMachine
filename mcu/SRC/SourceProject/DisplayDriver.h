@@ -33,6 +33,8 @@ constexpr uint16_t CmdSoftVersion = 0x2000;
 constexpr uint16_t AddrRtc = 0x0010;
 constexpr uint16_t AddrDamper = 0x1200;
 constexpr uint16_t AddrFan = 0x1202;
+constexpr uint16_t AddrPopupDamper = 0x1204;
+constexpr uint16_t IndexPopupDamper = 0x1206;
 
 constexpr uint16_t CmdDateTime = 0x2014;
 constexpr uint16_t CmdSetDateTime = 0x009c;
@@ -68,15 +70,22 @@ constexpr uint16_t addrAddWater = 0x686a;
 
 
 constexpr uint16_t addrUpT = 0x6890;
+constexpr uint16_t addrHoodVisor = 0x6891;
 constexpr uint16_t addrDownT = 0x6892;
+constexpr uint16_t addrMainHood = 0x6893;
 constexpr uint16_t addrEnFan = 0x6894;
+constexpr uint16_t addrEnFanFast = 0x6895;
 constexpr uint16_t addrWater = 0x6896;
-constexpr uint16_t addrStrTempTest = 0x6f40;
+constexpr uint16_t addrEnableLightDoorLight = 0x6897;
+
 constexpr uint16_t addrDamperOpen = 0x6898;
+constexpr uint16_t addrDamperPinLoadBread = 0x6899;
 constexpr uint16_t addrDamperClose = 0x689a;
+constexpr uint16_t addrPinDownloadBread = 0x689b;
 constexpr uint16_t addrGreenLed = 0x689C;
 constexpr uint16_t addrYellowLed = 0x689E;
 constexpr uint16_t addrMainRele = 0x689f;
+constexpr uint16_t addrStrTempTest = 0x6f40;
 
 constexpr uint16_t addrStateWifi = 0x68E0;
 constexpr uint16_t addrStateWifiIcon = 0x68E2;

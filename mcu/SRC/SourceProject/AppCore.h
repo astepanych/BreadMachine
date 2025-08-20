@@ -38,6 +38,21 @@ enum ePages {
 };
 
 /**
+    @enum  ePages
+    @brief перечисление описывает номера страниц на дисплее
+**/
+enum eMessages {
+    ProgrammEnd = 0,
+    FailureTemperatureSensor1,
+    FailureTemperatureSensor2,
+    FailureTemperatureSensors,
+    FailureWaterSensor,
+    DoorNoClosed
+};
+
+
+
+/**
     @enum  eStateWifi
     @brief состояние работы беспроводной сети
 **/
@@ -88,6 +103,8 @@ public:
         @param p - не используется
     **/
     void taskPeriodic(void *p = 0);
+
+    void taskControlInPins(void *p = 0);
     /**
         @brief поток обработки данных от ESP
         @param p - не используется
@@ -231,6 +248,7 @@ private:
 	
     BaseType_t xReturned;
     TaskHandle_t xHandle = NULL;
+    TaskHandle_t xHandlePull = NULL;
     TaskHandle_t xHandleExchange = NULL;
 
     uint8_t helperBuf[256];

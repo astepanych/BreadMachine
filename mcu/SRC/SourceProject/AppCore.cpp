@@ -49,6 +49,9 @@ struct FanState {
 static void tskPeriodic(void *p) {
     AppCore::instance().taskPeriodic();
 }
+static void tskControlInPins(void *p) {
+    AppCore::instance().taskControlInPins();
+}
 
 AppCore &AppCore::instance() {
     static AppCore obj;
@@ -81,10 +84,18 @@ void AppCore::initOsal() {
     xReturned = xTaskCreate(
                             tskPeriodic,       /* Function that implements the task. */
                             "NAME",          /* Text name for the task. */
-                            1024,      /* Stack size in words, not bytes. */
+                            512,      /* Stack size in words, not bytes. */
                             (void *) 1,    /* Parameter passed into the task. */
                             tskIDLE_PRIORITY,/* Priority at which the task is created. */
                             &xHandle); /* Used to pass out the created task's handle. */
+    
+    xReturned = xTaskCreate(
+    tskControlInPins,       /* Function that implements the task. */
+        "NAME1",          /* Text name for the task. */
+        256,      /* Stack size in words, not bytes. */
+        (void *) 1,    /* Parameter passed into the task. */
+        tskIDLE_PRIORITY,/* Priority at which the task is created. */
+        &xHandlePull); /* Used to pass out the created task's handle. */
 		
 }
 
@@ -127,22 +138,19 @@ void AppCore::fillProgram(const std::string &name, const uint16_t numStages) {
     m_programs.insert(m_programs.end(), el);
 }
 void AppCore::readPrograms() {
-	
-    int magic;
-	
+    int magic = 0;
 #ifdef EEPROM_MEMORY
-	
-
-
     int delay = 20000;
     while (delay--) ;
-    I2C3Interface::instance().read(EepromAddrProgramsAttribute, (uint8_t*)&magic, sizeof(int));
-    if (magic != MagicNumber) {
+    bool res = I2C3Interface::instance().read(EepromAddrProgramsAttribute, (uint8_t*)&magic, sizeof(int));
+    if (magic != MagicNumber || !res) {
         initDefaultPrograms();
         writProgramsToEeprom();
     }
     else {
-        I2C3Interface::instance().read(EepromAddrProgramsAttribute + OffsetAddrNumPrograms, (uint8_t*)&magic, sizeof(int));
+        res = I2C3Interface::instance().read(EepromAddrProgramsAttribute + OffsetAddrNumPrograms, (uint8_t*)&magic, sizeof(int));
+        if (!res)
+            return;
         WorkMode mode;
         m_programs.clear();
         m_programs.resize(magic);
@@ -237,9 +245,13 @@ void AppCore::writeParamsToEeprom() {
 }
 
 void AppCore::writProgramsToEeprom() {
-    I2C3Interface::instance().write(EepromAddrProgramsAttribute, (uint8_t*)&MagicNumber, sizeof(int));
+    bool res = I2C3Interface::instance().write(EepromAddrProgramsAttribute, (uint8_t*)&MagicNumber, sizeof(int));
+    if (!res)
+        return;
     int val = m_programs.size();
-    I2C3Interface::instance().write(EepromAddrProgramsAttribute + OffsetAddrNumPrograms, (uint8_t*)&val, sizeof(int));
+    res = I2C3Interface::instance().write(EepromAddrProgramsAttribute + OffsetAddrNumPrograms, (uint8_t*)&val, sizeof(int));
+    if (!res)
+        return;
     uint8_t *p;
     uint16_t size;
 
@@ -249,11 +261,10 @@ void AppCore::writProgramsToEeprom() {
 	
         for (int j = 0; j < sizeof(WorkMode); j += EepromPageSize) {
             size = (sizeof(WorkMode) - j >= EepromPageSize) ? EepromPageSize : sizeof(WorkMode) - j; 
-            I2C3Interface::instance().write(addr + j, p, size);
+            if (I2C3Interface::instance().write(addr + j, p, size) == false)
+                return;
             p += EepromPageSize;
         }
-		
-		
     }
 }
 
@@ -283,7 +294,6 @@ void AppCore::writeGlobalParams() {
             adr++;
             p++;
         }
-		
     }
     FLASH_Lock();
 }
@@ -304,12 +314,10 @@ void AppCore::initHal() {
         cntInt++;
         if (cntInt % 2 == 0) {
             currentWorkMode.stages[currentStage].waterVolume -= 100;
-			
         }
 		
 		
         if (currentWorkMode.stages[currentStage].waterVolume <= 0) {
-		
             gpio->setPin(GpioDriver::GpioDriver::PinH2O, GpioDriver::StatePinZero);
 			
         }
@@ -525,6 +533,32 @@ float AppCore::selectTemperature() {
     }
     return -1;
 } 
+void AppCore::taskControlInPins(void *p )
+{
+    while (true) {
+        vTaskDelay(10/portTICK_PERIOD_MS);
+        if (gpio->isEventLoadBread()) {
+        
+        }
+        if (gpio->isEventDownloadBread()) {
+        
+        }
+        if (gpio->isStartKey()) {
+        
+        }
+        if (gpio->isEventSensorTempDrive1()) {
+        
+        }
+        if (gpio->isEventSensorTempDrive2()) {
+        
+        }
+        if (gpio->isEventSensorTempDrive3()) {
+        
+        }
+    }
+}
+
+
 
 void AppCore::taskPeriodic(void *p) {
     int count = 0;
@@ -578,6 +612,11 @@ void AppCore::taskPeriodic(void *p) {
                     display->showMessage(PageMessage, stateTemperatureSensor);
                     break;
                 }
+                if (gpio->isDoorClosed() == false) {
+                    stateRun = StateRunIdle;
+                    display->showMessage(PageMessage, DoorNoClosed);
+                    break;
+                }
                 currentWorkMode = m_programs.at(gRun.currentIndex);
 
                 LOG::instance().log("start"); 
@@ -612,7 +651,19 @@ void AppCore::taskPeriodic(void *p) {
                     uint16_t temp = currentWorkMode.stages[currentStage].temperature;
                     correctTemperature(tem, temp);
                     if (stageDuration == 2) {
-                        gpio->setPin(GpioDriver::PinFan, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].fan);
+                        if (currentWorkMode.stages[currentStage].fan == FanX1) {
+                            gpio->setPin(GpioDriver::PinFanLowSpeed, (GpioDriver::StatePinOne));
+                            gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinZero));
+                        }
+                        else if (currentWorkMode.stages[currentStage].fan == FanX2) {
+                            gpio->setPin(GpioDriver::PinFanLowSpeed, (GpioDriver::StatePinZero));
+                            gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinOne));
+                        }
+                        else {
+                            gpio->setPin(GpioDriver::PinFanLowSpeed, (GpioDriver::StatePinZero));
+                            gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinZero));
+                        }
+                        
                         gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].damper);
                         gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatesPin)(!currentWorkMode.stages[currentStage].damper));
                         xTimerStart(timerDamper, 0);
@@ -665,7 +716,7 @@ void AppCore::taskPeriodic(void *p) {
             case StateRunStop:
                 stateRun = StateRunIdle;
                 paintStageProgress();
-                gpio->setPin(GpioDriver::PinFan, GpioDriver::StatePinZero);
+                gpio->setPin(GpioDriver::GpioDriver::PinFanLowSpeed, GpioDriver::StatePinZero);
                 gpio->setPin(GpioDriver::PinTemperatureDown, GpioDriver::StatePinZero);
                 gpio->setPin(GpioDriver::PinTemperatureUp, GpioDriver::StatePinZero);
                 gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
@@ -677,7 +728,7 @@ void AppCore::taskPeriodic(void *p) {
                 break;
             case StateRunError:
                 stateRun = StateRunIdle;
-                gpio->setPin(GpioDriver::PinFan, GpioDriver::StatePinZero);
+                gpio->setPin(GpioDriver::GpioDriver::PinFanLowSpeed, GpioDriver::StatePinZero);
                 gpio->setPin(GpioDriver::PinTemperatureDown, GpioDriver::StatePinZero);
                 gpio->setPin(GpioDriver::PinTemperatureUp, GpioDriver::StatePinZero);
                 gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);

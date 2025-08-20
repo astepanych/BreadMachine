@@ -34,7 +34,7 @@ public:
      * @param len Длина данных в байтах
      * @note Адрес автоматически сдвигается влево на 1 бит
      */
-    void write(uint16_t addr, uint8_t* data, uint8_t len);
+    bool write(uint16_t addr, uint8_t* data, uint8_t len);
     
     /**
      * @brief Чтение данных по шине I2C
@@ -43,7 +43,7 @@ public:
      * @param len Количество байт для чтения
      * @warning Буфер должен быть заранее выделен
      */
-    void read(uint16_t addr, uint8_t* data, uint8_t len);    
+    bool read(uint16_t addr, uint8_t* data, uint8_t len);    
     
 private:
     /**

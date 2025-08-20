@@ -12,6 +12,13 @@
 #define OffsetAddrPrograms 8		//смещение в байтах, откуда начинаются данные программ
 constexpr int MagicNumber = 0x09abcdf3; // признак, что данные программ в памяти валидны
 
+enum eStatesFan
+{
+    FanOff = 0,
+    FanX1,
+    FanX2,
+};
+
 /**
     @struct StageWorkMode
     @brief  Структура описывает этап рабочей программы
@@ -27,9 +34,9 @@ struct StageWorkMode {
     ;
     uint16_t duration; //!< продолжительность этапа
     int16_t waterVolume;  //!< объем выливаемой воды
-    uint16_t temperature : 14; //!< температура для текущего этапа
-    uint16_t damper : 1; //!< состояние шибера
-    uint16_t fan : 1;  //!< состояние вентилятора
+    uint16_t temperature : 10; //!< температура для текущего этапа
+    uint16_t damper : 4; //!< состояние шибера
+    uint16_t fan : 2;  //!< состояние вентилятора
 };
 /**
     @struct WorkMode
