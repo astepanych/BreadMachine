@@ -146,9 +146,9 @@ private:
      */
 	DataExchenge(); 
 
-	uint8_t alignas(2) bufRx[SIZE_BUF_RX]; ///< буфер приема
-	uint8_t alignas(2) bufRxPackage[SIZE_PACKAGE]; ///< приянтый пакет 
-	uint8_t alignas(2) bufTxPackage[SIZE_PACKAGE]; ///< пакет для отправки
+    alignas(2) uint8_t  bufRx[SIZE_BUF_RX]; ///< буфер приема
+    alignas(2) uint8_t bufRxPackage[SIZE_PACKAGE]; ///< приянтый пакет 
+    alignas(2) uint8_t bufTxPackage[SIZE_PACKAGE]; ///< пакет для отправки
 	uint16_t indexFill; ///< индекс приянтых данных 
 	uint16_t indexWork; ///< индекс обработанных данных
 	uint16_t cntBytes; ///< количество прияных данных пакета

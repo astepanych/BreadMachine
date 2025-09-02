@@ -149,6 +149,12 @@ void WorkModeEdit::changeParams(const uint16_t id, uint8_t len, uint8_t* data)
 		tempWMode.stages[currentStage].fan = val;
 		
 	break;	
+    case AddrWaterStageE2 :
+    	tempWMode.stages[currentStage].waterVolume2 = val;
+	break;
+	case AddrWaterTimeoutE:
+    	tempWMode.stages[currentStage].watertimeout = val;
+	break;
 	}
 }
 
@@ -212,6 +218,8 @@ void WorkModeEdit::paintSettingsWorkMode(bool isEdited_)
 	m_display->sendToDisplay(AddrWaterStageV + offeset, tempWMode.stages[currentStage].waterVolume);
 	m_display->sendToDisplay(AddrDamperStageV + offeset, tempWMode.stages[currentStage].damper);
 	m_display->sendToDisplay(AddrFanStageV + offeset, tempWMode.stages[currentStage].fan);
+    m_display->sendToDisplay(AddrWaterStageV2 + offeset, tempWMode.stages[currentStage].waterVolume2);
+    m_display->sendToDisplay(AddrWaterTimeoutV + offeset, tempWMode.stages[currentStage].watertimeout);
 		
 }
 

@@ -227,20 +227,40 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
             gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatesPin)data[2]);
             break;
         case addrEnFan:
-        gpio->setPin(GpioDriver::PinFanLowSpeed, (GpioDriver::StatesPin)data[2]);
+            gpio->setPin(GpioDriver::PinFanLowSpeed, (GpioDriver::StatesPin)data[2]);
             break;
+        case addrEnFanFast:
+            gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatesPin)data[2]);
+        break;
+        case addrHoodVisor:
+            gpio->setPin(GpioDriver::HoodVisor, (GpioDriver::StatesPin)data[2]);
+        break;
+        case addrMainHood:
+            gpio->setPin(GpioDriver::MainHood, (GpioDriver::StatesPin)data[2]);
+        break;
+        case addrEnableLightDoorLight:
+            gpio->setPin(GpioDriver::EnableLightDoorLight, (GpioDriver::StatesPin)data[2]);
+        break;
+        case addrPinDownloadBread:
+        if(gpio->isDoorClosed())
+            gpio->setPin(GpioDriver::PinDownloadBread, (GpioDriver::StatesPin)data[2]);
+        break;
+        case addrPinLoadBread:
+            if (gpio->isDoorClosed())
+                gpio->setPin(GpioDriver::PinLoadBread, (GpioDriver::StatesPin)data[2]);
+        break;
         case addrWater:
             gpio->setPin(GpioDriver::GpioDriver::PinH2O, (GpioDriver::StatesPin)data[2]);
             break;
         case addrDamperOpen:
             gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatesPin)data[2]);
-            if (data[2] == GpioDriver::StatePinOne)
-                xTimerStart(timerDamper, 0);
+            /*if (data[2] == GpioDriver::StatePinOne)
+                xTimerStart(timerDamper, 0);*/
             break;
         case addrDamperClose:
             gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatesPin)data[2]);
-            if (data[2] == GpioDriver::StatePinOne)
-                xTimerStart(timerDamper, 0);
+          /*  if (data[2] == GpioDriver::StatePinOne)
+                xTimerStart(timerDamper, 0);*/
             break;
         case addrGreenLed:
             if (data[2])
@@ -277,10 +297,20 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
             currentWorkMode.stages[currentStage].temperature = data[2] | (data[1] << 8);
             break;
         case AddrNumDamper:
-            currentWorkMode.stages[currentStage].damper ^= 1;
-            gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].damper);
-            gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatesPin)(!currentWorkMode.stages[currentStage].damper));
+            currentWorkMode.stages[currentStage].damper = data[2] | (data[1] << 8);
+        if (currentWorkMode.stages[currentStage].damper > m_stateDamper) {
+            gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatePinOne));
             xTimerStart(timerDamper, 0);
+            m_signedStateDamper = 1;
+        }
+        else if (currentWorkMode.stages[currentStage].damper < m_stateDamper)
+        {
+            gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatePinOne));
+            xTimerStart(timerDamper, 0);
+            m_signedStateDamper = -1;
+        }
+
+            xTimerStart(timerDamper, 0);//
             break;
         case AddrNumFan:
             currentWorkMode.stages[currentStage].fan ^= 1;
@@ -301,6 +331,8 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
                     display->sendToDisplayF(addrK2, gParams.k2);
                     display->sendToDisplay(addrPeriod, gParams.period);
                     display->sendToDisplay(addrAddWater, gParams.timeoutAddWater);
+                    display->sendToDisplay(addrWaterOneVolume, gParams.waterOneVolume);
+                    display->sendToDisplayF(addrAmpSensTem, gParams.ampSensTemp);
 
                 }
                 break;
@@ -322,6 +354,19 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
                 gParams.period = data[2] | (data[1] << 8);
                 break;
             }
+        case addrWaterOneVolume:
+        {
+            gParams.waterOneVolume = data[2] | (data[1] << 8);
+
+            break;
+        }
+        case addrAmpSensTem: {
+            uint32_t t = data[4] | (data[3] << 8) | (data[2] << 16) | (data[1] << 24);
+            memcpy(&gParams.ampSensTemp, &t, sizeof(uint32_t));
+            adc->setCoeff(gParams.ampSensTemp);
+            break;
+        }
+
         case addrAddWater:
             gParams.timeoutAddWater = data[2] | (data[1] << 8);
             break;
@@ -393,6 +438,7 @@ void AppCore::keyEvent(uint16_t key) {
             break;
         case ReturnCodeKeyInMenuTest:
             isMenuTests = true;
+            m_stateInpinTestMenu = NoEvent;
             break;
 			
         case ReturnCodeKeyInMenuSettingsProgramms:
@@ -439,4 +485,80 @@ void AppCore::keyEvent(uint16_t key) {
             break;
     }
 	
+}
+
+void AppCore::getSizeWRectangle(const WorkMode &mode, uint16_t *wList) {
+	
+    int i;
+    int xStart = xProgresStage, xEnd;
+
+    for (i = 0; i < mode.numStage; i++) {
+        wList[2*i] = xStart;
+        xEnd = xStart + mode.stages[i].duration * (wProgresStage - mode.numStage * 2) / (commonDuration);
+        wList[2*i + 1] = xEnd;
+        xStart = xEnd + 3;
+    }
+    wList[2*i - 1] = xProgresStage + wProgresStage;
+}
+
+void AppCore::paintStageProgress() {
+
+    uint16_t wList[2*MaxStageMode];
+    getSizeWRectangle(currentWorkMode, wList);
+	
+	
+    uint16_t numSpliter = currentWorkMode.numStage - 1;
+    uint16_t *p16;
+    u16be *p = (u16be *)helperBuf;
+    *p = CmdPaintFillRectangle;
+    p++;
+    *p = currentWorkMode.numStage;
+	
+    Rectangle rec;
+	
+    rec.beginY = yProgresStage;
+	
+    rec.endY = yProgresStage + hProgresStage;
+	
+    p16 = (uint16_t *)(helperBuf + 4);
+    for (int i = 0; i < currentWorkMode.numStage; i++) {
+        rec.beginX = wList[2*i];
+        rec.endX = wList[2*i + 1];
+        rec.color = i < currentStage ? ColorGreen : ColorGrey;
+		
+        memcpy(p16, &rec, sizeof(Rectangle));
+        p16 += (sizeof(Rectangle) / sizeof(uint16_t));
+    }
+	
+    p = (u16be *)p16;
+    *p = 0xff00;
+    p16++;
+    uint16_t len = p16 - (uint16_t*)helperBuf;
+    display->sendToDisplay(AddrStages, len*sizeof(uint16_t), helperBuf);
+	
+}
+
+void AppCore::updateProgressBar(uint16_t value) {
+    display->sendToDisplay(AddrProgressBar, value);
+}
+void AppCore::updateParamStage() {
+    display->sendToDisplay(AddrNumStage, currentStage + 1);
+    display->sendToDisplay(AddrNumWater, currentWorkMode.stages[currentStage].waterVolume);
+    display->sendToDisplay(AddrNumTemperature, currentWorkMode.stages[currentStage].temperature);
+    display->sendToDisplay(AddrNumFan, currentWorkMode.stages[currentStage].fan);
+    display->sendToDisplay(AddrNumDamper, currentWorkMode.stages[currentStage].damper);
+	
+}
+
+void AppCore::updateTime(uint16_t sec) {
+    uint16_t _min = sec / 60;	
+    uint16_t _sec = sec % 60;
+    char buf[10];
+    uint8_t len = sprintf(buf, "%02d:%02d", _min, _sec);
+    display->sendToDisplay(AddrNumTime, len, (uint8_t*)buf);
+	
+    _min = (commonDuration - modeDuration) / 60;
+    _sec = (commonDuration - modeDuration) % 60;
+    len = sprintf(buf, "%02d:%02d", _min, _sec);
+    display->sendToDisplay(AddrNumTimeMode, len, (uint8_t*)buf);
 }

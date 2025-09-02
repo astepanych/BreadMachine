@@ -24,6 +24,25 @@ constexpr uint16_t yProgresStage = 175;      //!< позиция по оси y �
 constexpr uint16_t hProgresStage = 60;       //!< высота прогресс бара выполения программы
 constexpr uint16_t wProgresStage = 568;      //!< ширина прогресс бара выполения программы
 
+struct StateWork {
+    bool isStart;
+    bool isDownTemp;
+    float signedDef;
+    float unsignedDef;
+    float currentTemp;
+    float currentTemp1;
+    float prevTemp;
+    uint16_t newPeriodCorrect;
+    uint16_t cntH2O;
+    bool isWaterStart;
+    bool isWaterStage2;
+    int cntIntWater;
+    uint16_t periodWater;
+    uint16_t currentIndex;
+    int cntPlaySignal;
+	
+};
+
 /**
     @enum  ePages
     @brief перечисление описывает номера страниц на дисплее
@@ -71,6 +90,21 @@ enum eFailSensorTemperature
     FailSensorTemperature1 =  1<<0 ,       //!< неисправен датчик 1
     FailSensorTemperature2 = 1<<1 //!< неисправен датчик 2
 
+};
+
+enum eInputEventPins
+{
+    NoEvent = 0,
+    EventWater = 1<<0,
+    EventDoor =  1<<1,
+    EventLoad = 1 << 2,
+    EventDownload = 1<<3,
+    EventStart = 1<<4,
+    EventDamper0 = 1<<5,
+    EventRotor1 = 1<<6,
+    EventRotor2 = 1<<7,
+    EventRotor3 = 1<<8,
+    EventStop = 1<<9,
 };
 
 constexpr uint16_t password = 2024;   //!< пароль для входа в расширенное меню Настроек
@@ -209,6 +243,10 @@ public:
         @retval  - возвращает маску несправности датчиков
     **/
     eFailSensorTemperature checkTemperatureSensors();
+
+    void addWater();
+
+    void controlTestPins();
 	
 private:
     /**
@@ -217,6 +255,7 @@ private:
     **/
     void procUartData(const PackageNetworkFormat&p);
     void initExchange();
+    void checkPinState(bool state, uint16_t mask, uint16_t addrIcon);
     TimerHandle_t timerYellow;
     TimerHandle_t timerGreen;
     uint16_t countGreenLeds{0};
@@ -276,5 +315,9 @@ private:
     bool isMenuTests{false};
     uint16_t indexProgramms;
     uint16_t indexProgrammsData;
+    uint16_t m_stateDamper;
+    int16_t m_signedStateDamper;
+    StateWork m_statesWork;
+    int m_stateInpinTestMenu;
 };
 

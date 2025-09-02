@@ -55,6 +55,12 @@
     <Filter Include="Source files\display">
       <UniqueIdentifier>{18f7e608-5455-4c46-9d46-1ff103ddcecd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source files\CODER">
+      <UniqueIdentifier>{b1ca56b3-9426-4656-a85f-6772b9c18bca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files\EXCHANGE">
+      <UniqueIdentifier>{87d94d9c-832f-4d8d-aab9-f2773d1d4b96}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="BreadMachine-Debug.vgdbsettings">
@@ -155,9 +161,6 @@
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_rtc.c">
       <Filter>Source files\HAL</Filter>
     </ClCompile>
-    <ClCompile Include="..\SRC\SourceProject\1251\utf8_to_cp1251.cpp">
-      <Filter>Source files</Filter>
-    </ClCompile>
     <ClCompile Include="..\SRC\SourceProject\Periphery\Uart5.cpp">
       <Filter>Source files\APP</Filter>
     </ClCompile>
@@ -172,9 +175,6 @@
     </ClCompile>
     <ClCompile Include="..\SRC\SourceProject\Periphery\AdcDriver.cpp">
       <Filter>Source files\APP</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\common\dataexchenge.cpp">
-      <Filter>Source files</Filter>
     </ClCompile>
     <ClCompile Include="..\SRC\SourceProject\AppCoreExchenge.cpp">
       <Filter>Source files\APP</Filter>
@@ -196,6 +196,12 @@
     </ClCompile>
     <ClCompile Include="..\SRC\SourceProject\Periphery\I2C3.cpp">
       <Filter>Source files\APP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SRC\SourceProject\1251\utf8_to_cp1251.cpp">
+      <Filter>Source files\CODER</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\dataexchenge.cpp">
+      <Filter>Source files\EXCHANGE</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -238,9 +244,6 @@
     <ClInclude Include="..\SRC\SourceProject\1251\bit.h">
       <Filter>Source files</Filter>
     </ClInclude>
-    <ClInclude Include="..\SRC\SourceProject\1251\utf8_to_cp1251.h">
-      <Filter>Source files</Filter>
-    </ClInclude>
     <ClInclude Include="..\SRC\SourceProject\display\KeyEvent.h">
       <Filter>Source files\display</Filter>
     </ClInclude>
@@ -265,12 +268,6 @@
     <ClInclude Include="..\SRC\SourceProject\Periphery\Uart5.h">
       <Filter>Source files\APP</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\common_project.h">
-      <Filter>Source files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\dataexchenge.h">
-      <Filter>Source files</Filter>
-    </ClInclude>
     <ClInclude Include="..\SRC\SourceProject\version.h">
       <Filter>Source files\APP</Filter>
     </ClInclude>
@@ -288,6 +285,15 @@
     </ClInclude>
     <ClInclude Include="..\SRC\SourceProject\Periphery\I2C3.h">
       <Filter>Source files\APP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SRC\SourceProject\1251\utf8_to_cp1251.h">
+      <Filter>Source files\CODER</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\dataexchenge.h">
+      <Filter>Source files\EXCHANGE</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\common_project.h">
+      <Filter>Source files\EXCHANGE</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

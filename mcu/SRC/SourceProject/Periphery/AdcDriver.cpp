@@ -18,6 +18,7 @@ xTaskHandle AdcDriver::xHandle;
 xSemaphoreHandle AdcDriver::xSem;
 float AdcDriver::m_value1;
 float AdcDriver::m_value2;
+float AdcDriver::m_coeff;
 
 AdcDriver *AdcDriver::m_instance;
 uint16_t *AdcDriver::pWork;
@@ -25,6 +26,7 @@ uint16_t *AdcDriver::pWork;
 AdcDriver::AdcDriver()
 {
 	m_instance = this;
+    m_coeff = 1.0;
 }
 
 
@@ -205,8 +207,8 @@ void AdcDriver::thread(void *p)
 			v1 += workBuf[2*i];
 		}
 		workBuf.erase(workBuf.begin(), workBuf.begin() + ELFR_CFFT_LENGTH * 2);
-		m_value2 = (v2 / 11.0) / lenWork;
-		m_value1 = (v1 / 11.0) / lenWork;
+    	m_value2 = (v2) / lenWork;
+    	m_value1 = (v1) / lenWork;
 		//m_value1 = v1 / ELFR_CFFT_LENGTH;
 		
 	}

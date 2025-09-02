@@ -47,6 +47,8 @@ constexpr uint16_t AddrNumTemperature = 0x400a;
 constexpr uint16_t AddrNumDamper = 0x400E;
 constexpr uint16_t AddrNumFan = 0x4010;
 constexpr uint16_t AddrNumTime = 0x4012;
+constexpr uint16_t AddrNumWaterTime = 0x4034;
+constexpr uint16_t AddrNumWater1 = 0x4036;
 constexpr uint16_t AddrNumTemperatureMeasure = 0x4020;
 constexpr uint16_t AddrNumDurationNew = 0x4028;
 constexpr uint16_t AddrMessage = 0x4040;
@@ -79,18 +81,38 @@ constexpr uint16_t addrWater = 0x6896;
 constexpr uint16_t addrEnableLightDoorLight = 0x6897;
 
 constexpr uint16_t addrDamperOpen = 0x6898;
-constexpr uint16_t addrDamperPinLoadBread = 0x6899;
+constexpr uint16_t addrPinLoadBread = 0x6899;
 constexpr uint16_t addrDamperClose = 0x689a;
 constexpr uint16_t addrPinDownloadBread = 0x689b;
 constexpr uint16_t addrGreenLed = 0x689C;
 constexpr uint16_t addrYellowLed = 0x689E;
 constexpr uint16_t addrMainRele = 0x689f;
-constexpr uint16_t addrStrTempTest = 0x6f40;
+constexpr uint16_t addrStrTempTest = 0x69F0;
 
 constexpr uint16_t addrStateWifi = 0x68E0;
 constexpr uint16_t addrStateWifiIcon = 0x68E2;
 constexpr uint16_t addrStateWifiSSID = 0x68A0;
 constexpr uint16_t addrStateWifiPassword = 0x68c0;
+
+constexpr uint16_t addrIconWaterPin = 0x6b00;
+constexpr uint16_t addrIconDamperPos = 0x6b10;
+constexpr uint16_t addrIconDamperZero = 0x6b20;
+constexpr uint16_t addrIconDoor = 0x6b30;
+constexpr uint16_t addrIconKeyStart = 0x6b40;
+constexpr uint16_t addrIconKeyDownload = 0x6b50;
+constexpr uint16_t addrIconKeyLoad = 0x6b60;
+constexpr uint16_t addrIconKeyStop = 0x6b70;
+constexpr uint16_t addrIconRotor1 = 0x6b80;
+constexpr uint16_t addrIconRotor2 = 0x6b90;
+constexpr uint16_t addrIconRotor3 = 0x6ba0;
+
+constexpr uint16_t addrWaterOneVolume = 0x6a10;
+constexpr uint16_t addrAmpSensTem = 0x6a20;
+
+
+
+
+
 
 constexpr uint16_t CmdCofirm = 0x4f4b;
 

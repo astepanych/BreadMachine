@@ -57,6 +57,15 @@ void GpioDriver::setPin(PinsGpioOut pin, StatesPin state) {
 			disableInt();
 		}
 	}
+	
+	/*if (pin == GpioDriver::PinShiberX) {
+		if (state == StatePinOne) {
+			enableIntDamperState();
+		}
+		else { 
+			disableIntDamperState();
+		}
+	}*/
 		
 	
 }
@@ -161,53 +170,8 @@ void GpioDriver::initModule()
     ini.GPIO_PuPd = GPIO_PuPd_UP;
     GPIO_Init(GPIOD, &ini);
   
-    //кнопка стоп
-    SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOD, EXTI_PinSource1);
-    exti.EXTI_Line = EXTI_Line1;
-    /* Enable interrupt */
-    exti.EXTI_LineCmd = ENABLE;
-    /* Interrupt mode */
-    exti.EXTI_Mode = EXTI_Mode_Interrupt;
-    /* Triggers on rising and falling edge */
-    exti.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
-    EXTI_Init(&exti);
-	
-    /* Add IRQ vector to NVIC */
-    /* PA3 is connected to EXTI_Line3, which has EXTI3_IRQn vector */
-    nvic.NVIC_IRQChannel = EXTI1_IRQn;
-    /* Set priority */
-    nvic.NVIC_IRQChannelPreemptionPriority = 0x09;
-    /* Set sub priority */
-    nvic.NVIC_IRQChannelSubPriority = 0x0c;
-    /* Enable interrupt */
-    nvic.NVIC_IRQChannelCmd = ENABLE;
-    /* Add to NVIC */
-    NVIC_Init(&nvic);
-
-    //датчик-концевик шибера
-    SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOD, EXTI_PinSource0);
-    exti.EXTI_Line = EXTI_Line0;
-    /* Enable interrupt */
-    exti.EXTI_LineCmd = ENABLE;
-    /* Interrupt mode */
-    exti.EXTI_Mode = EXTI_Mode_Interrupt;
-    /* Triggers on rising and falling edge */
-    exti.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
-    EXTI_Init(&exti);
-	
-    /* Add IRQ vector to NVIC */
-    /* PA3 is connected to EXTI_Line3, which has EXTI3_IRQn vector */
-    nvic.NVIC_IRQChannel = EXTI0_IRQn;
-    /* Set priority */
-    nvic.NVIC_IRQChannelPreemptionPriority = 0x09;
-    /* Set sub priority */
-    nvic.NVIC_IRQChannelSubPriority = 0x0d;
-    /* Enable interrupt */
-    nvic.NVIC_IRQChannelCmd = ENABLE;
-    /* Add to NVIC */
-    NVIC_Init(&nvic);
-
-    //датчик-концевик шибера
+   
+    //датчик позиционный шибера
     SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOB, EXTI_PinSource15);
     exti.EXTI_Line = EXTI_Line15;
     /* Enable interrupt */
@@ -215,7 +179,7 @@ void GpioDriver::initModule()
     /* Interrupt mode */
     exti.EXTI_Mode = EXTI_Mode_Interrupt;
     /* Triggers on rising and falling edge */
-    exti.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
+    exti.EXTI_Trigger = EXTI_Trigger_Falling;
     EXTI_Init(&exti);
 	
     /* Add IRQ vector to NVIC */
@@ -257,6 +221,31 @@ void GpioDriver::disableInt() {
 	EXTI_Init(&exti);
 }
 
+void GpioDriver::enableIntDamperState()
+{
+    EXTI_InitTypeDef exti;
+    exti.EXTI_Line = EXTI_Line15;
+    /* Enable interrupt */
+    exti.EXTI_LineCmd = ENABLE;
+    /* Interrupt mode */
+    exti.EXTI_Mode = EXTI_Mode_Interrupt;
+    /* Triggers on rising and falling edge */
+    exti.EXTI_Trigger = EXTI_Trigger_Falling;
+    EXTI_Init(&exti);
+}
+
+void GpioDriver::disableIntDamperState() {
+    EXTI_InitTypeDef exti;
+    exti.EXTI_Line = EXTI_Line15;
+    /* Enable interrupt */
+    exti.EXTI_LineCmd = DISABLE;
+    /* Interrupt mode */
+    exti.EXTI_Mode = EXTI_Mode_Interrupt;
+    /* Triggers on rising and falling edge */
+    exti.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
+    EXTI_Init(&exti);
+}
+
 void GpioDriver::enableYellowLed()
 {
 	TIM4->CCER |= TIM_CCER_CC1E;
@@ -284,7 +273,7 @@ bool GpioDriver::isEventLoadBread()
     uint8_t state = GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_7);
     if (state != prevState) {
         prevState = state;
-        if (state == Bit_SET) {
+        if (state == Bit_RESET) {
             return true;
         }
     }
@@ -295,7 +284,7 @@ bool GpioDriver::isEventDownloadBread()
     uint8_t state = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_3);
     if (state != prevState) {
         prevState = state;
-        if (state == Bit_SET) {
+        if (state == Bit_RESET) {
             return true;
         }
     }
@@ -305,7 +294,7 @@ bool GpioDriver::isEventSensorTempDrive1(){static uint8_t prevState = GPIO_ReadI
     uint8_t state = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_12);
     if (state != prevState) {
         prevState = state;
-        if (state == Bit_SET) {
+        if (state == Bit_RESET) {
             return true;
         }
     }
@@ -315,7 +304,7 @@ bool GpioDriver::isEventSensorTempDrive2(){static uint8_t prevState = GPIO_ReadI
     uint8_t state = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_13);
     if (state != prevState) {
         prevState = state;
-        if (state == Bit_SET) {
+        if (state == Bit_RESET) {
             return true;
         }
     }
@@ -325,55 +314,63 @@ bool GpioDriver::isEventSensorTempDrive3(){static uint8_t prevState = GPIO_ReadI
     uint8_t state = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14);
     if (state != prevState) {
         prevState = state;
-        if (state == Bit_SET) {
+        if (state == Bit_RESET) {
             return true;
         }
     }
     return false;
 }
-bool GpioDriver::isDoorClosed(){static uint8_t prevState = GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_3);
-    uint8_t state = GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_3);
-    if (state != prevState) {
-        prevState = state;
-        if (state == Bit_SET) {
-            return true;
-        }
-    }
-    return false;
+bool GpioDriver::isDoorClosed(){
+    return GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_3) == Bit_RESET ? true : false;
 }
+
 bool GpioDriver::isStartKey(){static uint8_t prevState = GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_4);
     uint8_t state = GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_4);
     if (state != prevState) {
         prevState = state;
-        if (state == Bit_SET) {
+        if (state == Bit_RESET) {
             return true;
         }
     }
     return false;
+}
+
+bool GpioDriver::isStopLoadKey() {
+    static uint8_t prevState = GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_1);
+    uint8_t state = GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_1);
+    if (state != prevState) {
+        prevState = state;
+        if (state == Bit_RESET) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool GpioDriver::isDamperStateStart() {
+    return GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_0) == Bit_RESET ? true : false;
 }
 
 uint16_t cntInt = 0;
 
 extern "C" 
-void EXTI1_IRQHandler() {
-    EXTI_ClearITPendingBit(EXTI_Line1);
-}
-extern "C" 
 void EXTI0_IRQHandler() {
+    uint16_t delay = 10000;
+    while (delay--) ;
     EXTI_ClearITPendingBit(EXTI_Line0);
 }
 
 extern "C" 
 void EXTI15_10_IRQHandler() {
 	cntInt++;
-	uint16_t delay = 10000;
+	int32_t delay = 100000;
 	while (delay--); 
     if (EXTI_GetITStatus(EXTI_Line13)) {
-        GpioDriver::instace()->pinEvent(GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_13));
+        GpioDriver::instace()->pinEvent(GpioDriver::InputPinWater, GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_13));
         EXTI_ClearITPendingBit(EXTI_Line13);
     }
     if (EXTI_GetITStatus(EXTI_Line15)) {
-        //GpioDriver::instace()->pinEvent(GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_15));
+        GpioDriver::instace()->pinEvent(GpioDriver::InputPinDamperState, GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_15));
         EXTI_ClearITPendingBit(EXTI_Line15);
     }
 

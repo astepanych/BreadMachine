@@ -195,7 +195,7 @@ void Uart3::write(const uint8_t *buf, const uint8_t len)
 		ElementUart el;
 		memcpy(el.buf, buf, len); 
 		el.len = len;
-		xQueueSendToBack(xQueueWrite, &el, 0);
+		xQueueSendToBackFromISR(xQueueWrite, &el, 0);
 		taskYIELD();
 	}
 	

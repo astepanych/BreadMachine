@@ -23,6 +23,8 @@ struct RomParams {
 	uint32_t stateWifi;
 	uint8_t numSound;
 	uint8_t volume;
+    uint16_t waterOneVolume;
+    float ampSensTemp;
 	
 };
 #pragma pack(pop)

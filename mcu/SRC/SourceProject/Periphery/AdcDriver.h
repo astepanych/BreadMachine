@@ -20,15 +20,21 @@ public:
 	static void rx();
 	static float value1()
 	{
-		
-		return (2590.0*m_value1 * 3.3 / 4095 - 330) / (1.2705 - 0.385*m_value1 * 3.3 / 4095);
+    	float avg = (m_value1 * 3.3 / 4095) / m_coeff;
+    	return (2590.0*avg  - 330) / (1.2705 - 0.385*(avg));
 	};
 	static float value2()
 	{
-		return (2590.0*(m_value2 * 3.3 / 4095) - 330) / (1.2705 - 0.385*(m_value2 * 3.3 / 4095));
+    	float avg = (m_value2 * 3.3 / 4095) / m_coeff;
+		return (2590.0*avg - 330) / (1.2705 - 0.385*(avg));
 	};
 	
 	static void thread(void *p);
+
+    static void setCoeff(float newCoeff)
+    {	
+        m_coeff = newCoeff;
+    };
 	
 private:
 	static AdcDriver *m_instance;
@@ -38,6 +44,7 @@ private:
 	static uint16_t *pWork;
 	static BaseType_t xReturned;
 	static xTaskHandle xHandle;
+    static float m_coeff;
 	
 	
 };
