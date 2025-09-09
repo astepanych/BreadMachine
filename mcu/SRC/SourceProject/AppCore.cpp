@@ -307,12 +307,13 @@ void AppCore::initHal() {
             }
         }
         else  if (pin == GpioDriver::InputPinDamperState) {
-            if (m_stateDamper == 0XFFFF)
-                return;
             if (isMenuTests) {
                 display->sendToDisplay(addrIconDamperPos, flag);
                 return;
             }
+            if (m_stateDamper == 0XFFFF)
+                return;
+            
             if (!flag) {
                 m_stateDamper += m_signedStateDamper;
                 if (currentWorkMode.stages[currentStage].damper == m_stateDamper || m_stateDamper == 0 || m_stateDamper == 8) {
@@ -330,7 +331,7 @@ void AppCore::initHal() {
 	
     adc = new AdcDriver;
     adc->init();
-    adc->setCoeff(gParams.ampSensTemp);
+    
 	
     m_rtc = &Rtc::instance();
     m_rtc->initRtc();
@@ -338,6 +339,7 @@ void AppCore::initHal() {
     I2C3Interface::instance().init();
     readPrograms();
 #endif
+	adc->setCoeff(gParams.ampSensTemp);
 }
 
 
@@ -453,7 +455,7 @@ void AppCore::taskPeriodic(void *p) {
                     display->showMessage(PageMessage, stateTemperatureSensor);
                     break;
                 }
-                if (gpio->isDoorClosed() == true) {
+                if (gpio->isDoorOpen() == true) {
                     stateRun = StateRunIdle;
                     display->showMessage(PageMessage, DoorNoClosed);
                     break;

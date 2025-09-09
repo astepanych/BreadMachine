@@ -179,7 +179,7 @@ void GpioDriver::initModule()
     /* Interrupt mode */
     exti.EXTI_Mode = EXTI_Mode_Interrupt;
     /* Triggers on rising and falling edge */
-    exti.EXTI_Trigger = EXTI_Trigger_Falling;
+    exti.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
     EXTI_Init(&exti);
 	
     /* Add IRQ vector to NVIC */
@@ -230,7 +230,7 @@ void GpioDriver::enableIntDamperState()
     /* Interrupt mode */
     exti.EXTI_Mode = EXTI_Mode_Interrupt;
     /* Triggers on rising and falling edge */
-    exti.EXTI_Trigger = EXTI_Trigger_Falling;
+    exti.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
     EXTI_Init(&exti);
 }
 
@@ -279,6 +279,13 @@ bool GpioDriver::isEventLoadBread()
     }
     return false;
 }
+
+bool GpioDriver::levelLoadBread()
+{
+    return GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_7) == Bit_RESET ? true : false;
+}
+
+
 bool GpioDriver::isEventDownloadBread()
 {static uint8_t prevState = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_3);
     uint8_t state = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_3);
@@ -290,6 +297,11 @@ bool GpioDriver::isEventDownloadBread()
     }
     return false;
 }
+bool GpioDriver::levelDownloadBread()
+{
+    return GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_3) == Bit_RESET ? true : false;
+}
+
 bool GpioDriver::isEventSensorTempDrive1(){static uint8_t prevState = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_12);
     uint8_t state = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_12);
     if (state != prevState) {
@@ -300,6 +312,12 @@ bool GpioDriver::isEventSensorTempDrive1(){static uint8_t prevState = GPIO_ReadI
     }
     return false;
 }
+
+bool GpioDriver::levelSensorTempDrive1()
+{
+    return GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_12) == Bit_SET ? true : false;
+}
+
 bool GpioDriver::isEventSensorTempDrive2(){static uint8_t prevState = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_13);
     uint8_t state = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_13);
     if (state != prevState) {
@@ -310,6 +328,11 @@ bool GpioDriver::isEventSensorTempDrive2(){static uint8_t prevState = GPIO_ReadI
     }
     return false;
 }
+bool GpioDriver::levelSensorTempDrive2()
+{
+    return GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_13) == Bit_SET ? true : false;
+}
+
 bool GpioDriver::isEventSensorTempDrive3(){static uint8_t prevState = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14);
     uint8_t state = GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14);
     if (state != prevState) {
@@ -320,9 +343,11 @@ bool GpioDriver::isEventSensorTempDrive3(){static uint8_t prevState = GPIO_ReadI
     }
     return false;
 }
-bool GpioDriver::isDoorClosed(){
-    return GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_3) == Bit_RESET ? true : false;
+bool GpioDriver::levelSensorTempDrive3()
+{
+    return GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14) == Bit_SET ? true : false;
 }
+
 
 bool GpioDriver::isStartKey(){static uint8_t prevState = GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_4);
     uint8_t state = GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_4);
@@ -333,6 +358,10 @@ bool GpioDriver::isStartKey(){static uint8_t prevState = GPIO_ReadInputDataBit(G
         }
     }
     return false;
+}
+bool GpioDriver::levelStartKey()
+{
+    return GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_4) == Bit_SET ? true : false;
 }
 
 bool GpioDriver::isStopLoadKey() {
@@ -346,9 +375,16 @@ bool GpioDriver::isStopLoadKey() {
     }
     return false;
 }
+bool GpioDriver::levelStopLoadKey()
+{
+    return GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_1) == Bit_RESET ? true : false;
+}
 
 bool GpioDriver::isDamperStateStart() {
     return GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_0) == Bit_RESET ? true : false;
+}
+bool GpioDriver::isDoorOpen() {
+    return GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_3) == Bit_RESET ? true : false;
 }
 
 uint16_t cntInt = 0;
@@ -370,7 +406,7 @@ void EXTI15_10_IRQHandler() {
         EXTI_ClearITPendingBit(EXTI_Line13);
     }
     if (EXTI_GetITStatus(EXTI_Line15)) {
-        GpioDriver::instace()->pinEvent(GpioDriver::InputPinDamperState, GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_15));
+        GpioDriver::instace()->pinEvent(GpioDriver::InputPinDamperState, GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_15));
         EXTI_ClearITPendingBit(EXTI_Line15);
     }
 

@@ -242,11 +242,11 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
             gpio->setPin(GpioDriver::EnableLightDoorLight, (GpioDriver::StatesPin)data[2]);
         break;
         case addrPinDownloadBread:
-        if(gpio->isDoorClosed())
+        if(gpio->isDoorOpen())
             gpio->setPin(GpioDriver::PinDownloadBread, (GpioDriver::StatesPin)data[2]);
         break;
         case addrPinLoadBread:
-            if (gpio->isDoorClosed())
+            if (gpio->isDoorOpen())
                 gpio->setPin(GpioDriver::PinLoadBread, (GpioDriver::StatesPin)data[2]);
         break;
         case addrWater:

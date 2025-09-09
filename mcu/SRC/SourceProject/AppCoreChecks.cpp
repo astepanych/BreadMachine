@@ -43,76 +43,131 @@ eFailSensorTemperature AppCore::checkTemperatureSensors()
 	
 }
 
+/**
+ * @brief Задача управления входными пинами и контроля состояния системы
+ * 
+ * Основные функции:
+ * 1. Инициализация положения шибера (привод загрузки) в нулевое положение
+ * 2. Обработка событий нажатия кнопок и изменения состояний
+ * 3. Управление процессами загрузки и выгрузки хлеба
+ * 4. Контроль состояния двери и связанных с ней функций
+ * 5. Обработка тестового режима меню
+ * 
+ * @param p Указатель на параметры задачи (не используется)
+ */
 void AppCore::taskControlInPins(void *p)
 {
-    const int delayControlDamper = 100;
-    bool isRunLoad = false;
-    int cntDamperTime = 20000;
-    if (!gpio->isDamperStateStart()) {
+	const int delayControlDamper = 100; // Период проверки положения шибера (мс)
+	bool isRunLoad = false; // Флаг выполнения процесса загрузки/выгрузки
+	int cntDamperTime = 20000; // Таймаут инициализации шибера (20 секунд)
+    
+	// Инициализация шибера - приведение в нулевое положение
+	if (!gpio->isDamperStateStart()) {
+		// Активируем привод шибера
+		gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinOne);
         
-        gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinOne);
-        do {
-            vTaskDelay(100 / portTICK_PERIOD_MS);
-            cntDamperTime -= 100;
-            if (cntDamperTime <= 0)
-                break;
-        } while (!gpio->isDamperStateStart());
+		// Ожидаем пока шибер достигнет начального положения или сработает таймаут
+		do {
+			vTaskDelay(delayControlDamper / portTICK_PERIOD_MS);
+			cntDamperTime -= delayControlDamper;
+			if (cntDamperTime <= 0)
+				break;
+		} while (!gpio->isDamperStateStart());
         
-        gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
-    }
-    if (cntDamperTime == 0) {
-    //тут надо вывести ошибку, что шибер не в нулевом положении за время таймаута
-    }
-    m_stateDamper = 0;
-    while (true) {
-        vTaskDelay(10 / portTICK_PERIOD_MS);
-        if (isMenuTests) {
-            controlTestPins();
-        }
-        if (gpio->isEventLoadBread()) {
-            if (gpio->isDoorClosed() && !isMenuTests && !isRunLoad) {
-                gpio->setPin(GpioDriver::PinLoadBread, GpioDriver::StatePinOne);
-                isRunLoad = true;
-            }
-        }
-        if (gpio->isEventDownloadBread()) {
-            if (gpio->isDoorClosed() && !isMenuTests && !isRunLoad) {
-                gpio->setPin(GpioDriver::PinDownloadBread, GpioDriver::StatePinOne);
-                isRunLoad = true;
-            }
-        }
-        if (gpio->isStartKey()) {
-            if (stateRun == StateRunIdle) {
-                display->switchPage(PageRun);
-                stateRun = StateRunStart;
-            }
-        }
+		// Отключаем привод шибера
+		gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
+	}
+    
+	// Обработка ошибки инициализации шибера
+	if (cntDamperTime == 0) {
+		// TODO: Вывести ошибку - шибер не достиг нулевого положения за время таймаута
+	}
+    
+	m_stateDamper = 0; // Сброс состояния шибера
+    
+	// Основной цикл задачи
+	while (true) {
+		vTaskDelay(10 / portTICK_PERIOD_MS); // Задержка 10 мс
         
-        if (gpio->isStopLoadKey() || !gpio->isDoorClosed()) {
-            gpio->setPin(GpioDriver::PinLoadBread, GpioDriver::StatePinZero);
-            gpio->setPin(GpioDriver::PinDownloadBread, GpioDriver::StatePinZero);
-          //  gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinOne);
-            isRunLoad = false; 
-        }
-
-        if (gpio->isEventSensorTempDrive1()) {
+		// Режим тестового меню - приоритетная обработка
+		if (isMenuTests) {
+			controlTestPins(); // Управление пинами в тестовом режиме
+			continue; // Пропускаем остальную логику в тестовом режиме
+		}
         
-        }
-        if (gpio->isEventSensorTempDrive2()) {
+		// Обработка события загрузки хлеба
+		if (gpio->isEventLoadBread()) {
+			if (gpio->isDoorOpen() && !isMenuTests && !isRunLoad) {
+				gpio->setPin(GpioDriver::PinLoadBread, GpioDriver::StatePinOne);
+				isRunLoad = true; // Устанавливаем флаг выполнения процесса
+			}
+		}
         
-        }
-        if (gpio->isEventSensorTempDrive3()) {
+		// Обработка события выгрузки хлеба
+		if (gpio->isEventDownloadBread()) {
+			if (gpio->isDoorOpen() && !isMenuTests && !isRunLoad) {
+				gpio->setPin(GpioDriver::PinDownloadBread, GpioDriver::StatePinOne);
+				isRunLoad = true; // Устанавливаем флаг выполнения процесса
+			}
+		}
         
-        }
-        //управление подсветкой взависимости от состояния двери
-        if (!isMenuTests)
-            gpio->setPin(GpioDriver::EnableLightDoorLight, (GpioDriver::StatesPin)gpio->isDoorClosed());
-        if (gpio->isDoorClosed())
-            m_statesWork.cntPlaySignal = -1;
-
-    }
+		// Обработка нажатия кнопки START
+		if (gpio->isStartKey()) {
+			if (stateRun == StateRunIdle) {
+				display->switchPage(PageRun); // Переключаем на страницу выполнения
+				stateRun = StateRunStart; // Меняем состояние системы
+			}
+		}
+        
+		// Остановка процессов загрузки/выгрузки при нажатии STOP или закрытии двери
+		if (gpio->isStopLoadKey() || !gpio->isDoorOpen()) {
+			gpio->setPin(GpioDriver::PinLoadBread, GpioDriver::StatePinZero);
+			gpio->setPin(GpioDriver::PinDownloadBread, GpioDriver::StatePinZero);
+			isRunLoad = false; // Сбрасываем флаг выполнения процесса
+		}
+        
+		// Обработка событий датчиков температуры приводов (заглушки)
+		if (gpio->isEventSensorTempDrive1()) {
+			// TODO: Реализовать обработку
+		}
+		if (gpio->isEventSensorTempDrive2()) {
+			// TODO: Реализовать обработку
+		}
+		if (gpio->isEventSensorTempDrive3()) {
+			// TODO: Реализовать обработку
+		}
+        
+		// Управление подсветкой в зависимости от состояния двери
+		if (!isMenuTests)
+			gpio->setPin(GpioDriver::EnableLightDoorLight, (GpioDriver::StatesPin)gpio->isDoorOpen());
+        
+		// Сброс счетчика воспроизведения звука при открытой двери
+		if (gpio->isDoorOpen())
+			m_statesWork.cntPlaySignal = -1; // Признак, что не надо продолжать воспроизводить звук
+	}
 }
 
+/**
+ * @brief Выбирает и возвращает корректное значение температуры из двух датчиков.
+ * 
+ * Функция выполняет следующие действия:
+ * 1. В режиме тестового менения (isMenuTests == true) отображает на дисплее 
+ *    сырые значения с обоих датчиков температуры
+ * 2. Проверяет значения обоих датчиков на превышение порога ошибки
+ * 3. Возвращает наиболее подходящее значение температуры согласно логике:
+ *    - Если оба датчика исправны - среднее арифметическое
+ *    - Если один датчик неисправен - значение исправного датчика
+ *    - Если оба датчика неисправны - возвращает -1
+ * 
+ * @note В текущей реализации значение m_statesWork.currentTemp1 принудительно 
+ *       устанавливается выше порога ошибки (thresholdErrorTemperature + 1),
+ *       что фактически эмулирует неисправность второго датчика.
+ * 
+ * @return float - Корректное значение температуры или -1 в случае ошибки обоих датчиков
+ * 
+ * @warning Режим тестового менения доступен только при isMenuTests == true
+ * @warning Порог ошибки температуры задается thresholdErrorTemperature
+ */
 float AppCore::selectTemperature() {
 	
     if (isMenuTests) {
@@ -223,15 +278,15 @@ void AppCore::checkPinState(bool event, uint16_t mask, uint16_t addrIcon)
 void AppCore::controlTestPins()
 {
 
-    checkPinState(gpio->isDoorClosed(), EventDoor, addrIconDoor);
+    checkPinState(gpio->isDoorOpen(), EventDoor, addrIconDoor);
     checkPinState(gpio->isDamperStateStart(), EventDamper0, addrIconDamperZero);
-    checkPinState(gpio->isEventDownloadBread(), EventDownload, addrIconKeyDownload);
-    checkPinState(gpio->isEventLoadBread(), EventLoad, addrIconKeyLoad);
-    checkPinState(gpio->isEventSensorTempDrive1(), EventRotor1, addrIconRotor1);
-    checkPinState(gpio->isEventSensorTempDrive2(), EventRotor2, addrIconRotor2);
-    checkPinState(gpio->isEventSensorTempDrive2(), EventRotor3, addrIconRotor3);
-    checkPinState(gpio->isStartKey(), EventStart, addrIconKeyStart);
-    checkPinState(gpio->isStopLoadKey(), EventStop, addrIconKeyStop);
+    checkPinState(gpio->levelDownloadBread(), EventDownload, addrIconKeyDownload);
+    checkPinState(gpio->levelLoadBread(), EventLoad, addrIconKeyLoad);
+    checkPinState(gpio->levelSensorTempDrive1(), EventRotor1, addrIconRotor1);
+    checkPinState(gpio->levelSensorTempDrive2(), EventRotor2, addrIconRotor2);
+    checkPinState(gpio->levelSensorTempDrive3(), EventRotor3, addrIconRotor3);
+    checkPinState(gpio->levelStartKey(), EventStart, addrIconKeyStart);
+    checkPinState(gpio->levelStopLoadKey(), EventStop, addrIconKeyStop);
         
 
 }

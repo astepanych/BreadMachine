@@ -134,10 +134,20 @@ public:
     bool isEventSensorTempDrive1();
     bool isEventSensorTempDrive2();
     bool isEventSensorTempDrive3();
-    bool isDoorClosed();
+    bool isDoorOpen();
     bool isStartKey();
     bool isStopLoadKey();
     bool isDamperStateStart();
+
+    bool levelLoadBread();
+    bool levelDownloadBread();
+    bool levelSensorTempDrive1();
+    bool levelSensorTempDrive2();
+    bool levelSensorTempDrive3();
+    bool levelDoorClosed();
+    bool levelStartKey();
+    bool levelStopLoadKey();
+    bool levelDamperStateStart();
 
 private:
     static GpioDriver *ins; ///< Указатель на экземпляр драйвера (синглтон)
