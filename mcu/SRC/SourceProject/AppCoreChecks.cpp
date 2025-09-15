@@ -62,6 +62,7 @@ void AppCore::taskControlInPins(void *p)
 	int cntDamperTime = 20000; // Таймаут инициализации шибера (20 секунд)
     
 	// Инициализация шибера - приведение в нулевое положение
+	gpio->disableIntDamperState();
 	if (!gpio->isDamperStateStart()) {
 		// Активируем привод шибера
 		gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinOne);
@@ -77,6 +78,7 @@ void AppCore::taskControlInPins(void *p)
 		// Отключаем привод шибера
 		gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
 	}
+	gpio->enableIntDamperState();
     
 	// Обработка ошибки инициализации шибера
 	if (cntDamperTime == 0) {
@@ -176,7 +178,7 @@ float AppCore::selectTemperature() {
         float t1 =  adc->value1();
         float t2 =  adc->value2();
 		
-        uint16_t len = sprintf(buff, "t1 = %d, t2 = %d", (int)t1, (int)t2);
+        uint16_t len = sprintf(buff, "t1=%d, t2=%d", (int)t1, (int)t2);
         display->sendToDisplay(addrStrTempTest, len, (uint8_t*)buff);
     }
 	
@@ -197,7 +199,7 @@ float AppCore::selectTemperature() {
 void AppCore::addWater()
 {
     static int timeEndAddWater = 0;
-    if (m_statesWork.isWaterStage2 == false) {
+    if (m_statesWork.isWaterStage2 == false) {//первый этам добавления воды
         //Добавляем воду если она должна быть добавлена
         if ((stageDuration >= gParams.timeoutAddWater) && (currentWorkMode.stages[currentStage].waterVolume != 0) && (m_statesWork.isWaterStart == false)) {
             m_statesWork.cntH2O = currentWorkMode.stages[currentStage].waterVolume;
@@ -232,7 +234,7 @@ void AppCore::addWater()
             }
         }
     }
-    else {
+    else {//второй этап добавлления
         //Добавляем воду если она должна быть добавлена
         if ((stageDuration >= timeEndAddWater + currentWorkMode.stages[currentStage].watertimeout) && (currentWorkMode.stages[currentStage].waterVolume2 != 0) && (m_statesWork.isWaterStart == false)) {
             m_statesWork.cntH2O = currentWorkMode.stages[currentStage].waterVolume2;
@@ -277,7 +279,6 @@ void AppCore::checkPinState(bool event, uint16_t mask, uint16_t addrIcon)
 
 void AppCore::controlTestPins()
 {
-
     checkPinState(gpio->isDoorOpen(), EventDoor, addrIconDoor);
     checkPinState(gpio->isDamperStateStart(), EventDamper0, addrIconDamperZero);
     checkPinState(gpio->levelDownloadBread(), EventDownload, addrIconKeyDownload);

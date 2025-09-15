@@ -299,18 +299,19 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
         case AddrNumDamper:
             currentWorkMode.stages[currentStage].damper = data[2] | (data[1] << 8);
         if (currentWorkMode.stages[currentStage].damper > m_stateDamper) {
+	        m_signedStateDamper = 1;
             gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatePinOne));
             xTimerStart(timerDamper, 0);
-            m_signedStateDamper = 1;
+            
         }
         else if (currentWorkMode.stages[currentStage].damper < m_stateDamper)
         {
+	        m_signedStateDamper = -1;
             gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatePinOne));
             xTimerStart(timerDamper, 0);
-            m_signedStateDamper = -1;
+            
         }
 
-            xTimerStart(timerDamper, 0);//
             break;
         case AddrNumFan:
             currentWorkMode.stages[currentStage].fan ^= 1;

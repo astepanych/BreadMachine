@@ -35,7 +35,7 @@ struct StateWork {
     uint16_t newPeriodCorrect;
     uint16_t cntH2O;
     bool isWaterStart;
-    bool isWaterStage2;
+    bool isWaterStage2; // флаг отвечающий за номер этапа добавления воды
     int cntIntWater;
     uint16_t periodWater;
     uint16_t currentIndex;

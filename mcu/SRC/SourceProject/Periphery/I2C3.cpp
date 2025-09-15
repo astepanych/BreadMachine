@@ -106,7 +106,7 @@ bool I2C3Interface::write(uint16_t addr, uint8_t* data, uint8_t len)
 	I2C_GenerateSTOP(I2C3, ENABLE);
 	uint16_t del = 10000;
 	while(del--);
-    return true;
+   return true;
 }
 bool I2C3Interface::read(uint16_t addr, uint8_t* data, uint8_t len)
 {

@@ -27,7 +27,7 @@ public:
         PinYellow, ///< Пин желтого светодиода
         GlobalEnable, ///< Пин глобального разрешения
         HoodVisor, ///< Вытяжка козырек
-        MainHood,                   ///< вытяжка козырек
+        MainHood,                   ///< вытяжка крыша
         EnableLightDoorLight,        ///< посдсветка двери
         PinFanFastSpeed, 
         PinLoadBread,       ///< 1        
