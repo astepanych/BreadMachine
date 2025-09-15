@@ -61,12 +61,6 @@
     <Filter Include="Source files\EXCHANGE">
       <UniqueIdentifier>{87d94d9c-832f-4d8d-aab9-f2773d1d4b96}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source files\Device-specific files\Semihosting/Profiler">
-      <UniqueIdentifier>{186bc0b4-bb68-40a2-85ea-de461a7136bd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header files\Device-specific files\Semihosting/Profiler">
-      <UniqueIdentifier>{a4473a91-415f-4123-b3d5-db89628a99d5}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="BreadMachine-Debug.vgdbsettings">
@@ -78,42 +72,6 @@
     <None Include="stm32.xml">
       <Filter>VisualGDB settings</Filter>
     </None>
-    <None Include="stm32.props">
-      <Filter>Source files\Device-specific files</Filter>
-    </None>
-    <ClCompile Include="$(BSP_ROOT)\STM32F4xxxx\StartupFiles\startup_stm32f407xx.c">
-      <Filter>Source files\Device-specific files</Filter>
-    </ClCompile>
-    <ClCompile Include="$(EFP_BASE)\Profiler\FastSemihosting.cpp">
-      <Filter>Source files\Device-specific files\Semihosting/Profiler</Filter>
-    </ClCompile>
-    <ClCompile Include="$(EFP_BASE)\Profiler\InstrumentingProfiler.cpp">
-      <Filter>Source files\Device-specific files\Semihosting/Profiler</Filter>
-    </ClCompile>
-    <ClCompile Include="$(EFP_BASE)\Profiler\TestResourceManager.cpp">
-      <Filter>Source files\Device-specific files\Semihosting/Profiler</Filter>
-    </ClCompile>
-    <ClCompile Include="$(EFP_BASE)\Profiler\ProfilerRTOS_FreeRTOS.c">
-      <Filter>Source files\Device-specific files\Semihosting/Profiler</Filter>
-    </ClCompile>
-    <ClInclude Include="$(EFP_BASE)\Profiler\SysprogsProfiler.h">
-      <Filter>Header files\Device-specific files\Semihosting/Profiler</Filter>
-    </ClInclude>
-    <ClInclude Include="$(EFP_BASE)\Profiler\SmallNumberCoder.h">
-      <Filter>Header files\Device-specific files\Semihosting/Profiler</Filter>
-    </ClInclude>
-    <ClInclude Include="$(EFP_BASE)\Profiler\SysprogsProfilerInterface.h">
-      <Filter>Header files\Device-specific files\Semihosting/Profiler</Filter>
-    </ClInclude>
-    <ClInclude Include="$(EFP_BASE)\Profiler\ProfilerFreeRTOSHooks.h">
-      <Filter>Header files\Device-specific files\Semihosting/Profiler</Filter>
-    </ClInclude>
-    <ClInclude Include="$(EFP_BASE)\Profiler\CustomRealTimeWatches.h">
-      <Filter>Header files\Device-specific files\Semihosting/Profiler</Filter>
-    </ClInclude>
-    <ClInclude Include="$(EFP_BASE)\Profiler\DebuggerChecker.h">
-      <Filter>Header files\Device-specific files\Semihosting/Profiler</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\SRC\SourceProject\AppCore.cpp">
