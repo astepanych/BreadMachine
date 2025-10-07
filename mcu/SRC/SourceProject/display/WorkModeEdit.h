@@ -113,6 +113,9 @@ private:
      * @brief Вывод всех временных параметров режима
      */
     void printAllTimeMode();
+
+	void sendSettings(const SettingsFanAndDamper *sett, uint16_t addr);
+	void applySettings(SettingsFanAndDamper  *sett, uint8_t *data);
     
     /**
      * @brief Конвертация в внутреннюю кодировку

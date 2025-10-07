@@ -35,6 +35,8 @@ constexpr uint16_t AddrDamper = 0x1200;
 constexpr uint16_t AddrFan = 0x1202;
 constexpr uint16_t AddrPopupDamper = 0x1204;
 constexpr uint16_t IndexPopupDamper = 0x1206;
+constexpr uint16_t AddrSettingsFan = 0x1300;
+constexpr uint16_t AddrSettingsDamper = 0x1320;
 
 constexpr uint16_t CmdDateTime = 0x2014;
 constexpr uint16_t CmdSetDateTime = 0x009c;
@@ -79,6 +81,7 @@ constexpr uint16_t addrEnFan = 0x6894;
 constexpr uint16_t addrEnFanFast = 0x6895;
 constexpr uint16_t addrWater = 0x6896;
 constexpr uint16_t addrEnableLightDoorLight = 0x6897;
+constexpr uint16_t addrIsIdleMode = 0x6f10;
 
 constexpr uint16_t addrDamperOpen = 0x6898;
 constexpr uint16_t addrPinLoadBread = 0x6899;
@@ -108,11 +111,6 @@ constexpr uint16_t addrIconRotor3 = 0x6ba0;
 
 constexpr uint16_t addrWaterOneVolume = 0x6a10;
 constexpr uint16_t addrAmpSensTem = 0x6a20;
-
-
-
-
-
 
 constexpr uint16_t CmdCofirm = 0x4f4b;
 

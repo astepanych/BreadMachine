@@ -82,14 +82,7 @@ void AppCore::initOsal() {
 void AppCore::initDefaultPrograms() {
 	m_programs.clear();
 	fillProgram("ХЛЕБ БОРОДИНСКИЙ", 3);
-	fillProgram("ХЛЕБ КИРПИЧИК", 4);
-	fillProgram("ХЛЕБ СЕРЫЙ", 5);
-	fillProgram("БАТОН НАРЕЗНОЙ", 2);
-	fillProgram("БАТОН С ПОВИДЛОМ", 7);
-	fillProgram("ВАТРУШКА", 6);
-	fillProgram("БАТОН С МАКОМ", 7);
-	fillProgram("ПЕЧЕНЬЕ ОВСЯНОЕ", 4);
-	fillProgram("ПРЯНИК МЕДОВЫЙ", 3);
+
 }
 
 void AppCore::fillProgram(const std::string &name, const uint16_t numStages) {
@@ -104,13 +97,22 @@ void AppCore::fillProgram(const std::string &name, const uint16_t numStages) {
 	el.numStage = numStages;
 	srand(time(0));
 	for (int i = 0; i < numStages; i++) {
-		el.stages[i].duration = rand() % 100 * 10;
+		el.stages[i].duration = 8;
 		el.stages[i].temperature = 180 + rand() % 20 * 10;
 		el.stages[i].waterVolume = rand() % 30 * 100;
 		el.stages[i].waterVolume2 = rand() % 30 * 100;
 		el.stages[i].watertimeout = 40;
-		el.stages[i].fan = rand() % 3;
-		el.stages[i].damper = rand() % 8;
+		memset(el.stages[i].fan, 0, MAX_SETTINGS_FUN_AND_DAMP*sizeof(SettingsFanAndDamper));
+		memset(el.stages[i].damper, 0, MAX_SETTINGS_FUN_AND_DAMP*sizeof(SettingsFanAndDamper));
+		for (int j = 0; j < 3; j++) {
+			el.stages[i].fan[j].start = 8*j+1;
+			el.stages[i].fan[j].finish = 8*j + 7;
+			el.stages[i].fan[j].state = 0;
+			el.stages[i].damper[j].start = 8*j + 1;
+			el.stages[i].damper[j].finish = 8*j + 7;
+			el.stages[i].damper[j].state = 0;
+		}
+
 	}
 	m_programs.insert(m_programs.end(), el);
 }
@@ -281,72 +283,183 @@ void AppCore::writeGlobalParams() {
 AppCore::~AppCore() {
 }
 
+/**
+ * @brief Инициализация аппаратного уровня (HAL) приложения
+ * 
+ * Выполняет настройку приоритетов прерываний, инициализацию драйверов периферии
+ * и регистрацию обработчиков событий. Включает:
+ * - Настройку NVIC
+ * - Инициализацию GPIO с обработчиками событий
+ * - Инициализацию драйвера дисплея
+ * - Инициализацию ADC
+ * - Инициализацию RTC
+ * - Чтение конфигурации из EEPROM (если определена)
+ * - Установку коэффициентов усиления для датчиков температуры
+ */
 void AppCore::initHal() {
+	// Настройка группировки приоритетов прерываний
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
-	gpio = new GpioDriver;
-	gpio->initModule();
-	gpio->pinEvent = [=](int pin, bool flag) {
-		if (pin == GpioDriver::InputPinWater) {
-			if (isMenuTests) {
-				display->sendToDisplay(addrIconWaterPin, flag);
-				return;
-			}
-			if (m_statesWork.cntH2O == 0)
-				m_statesWork.cntIntWater = 0;
-			m_statesWork.cntIntWater++;
-			if (m_statesWork.cntIntWater % 2 == 0) {
-				m_statesWork.cntH2O -= gParams.waterOneVolume;
-			}
-		
-			if (m_statesWork.cntH2O <= 0) {
-				gpio->setPin(GpioDriver::GpioDriver::PinH2O, GpioDriver::StatePinZero);
-				m_statesWork.cntIntWater = 0;
-			}
-		}
-		else  if (pin == GpioDriver::InputPinDamperState) {
-			if (isMenuTests) {
-				display->sendToDisplay(addrIconDamperPos, !flag);
-				return;
-			}
-			if (m_stateDamper == 0XFFFF)
-				return;
-			
-            
-			if (!flag) {
-				gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatePinZero));
-				gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatePinZero));
-				m_stateDamper += m_signedStateDamper;
-				if (currentWorkMode.stages[currentStage].damper == m_stateDamper || m_stateDamper == 0 || m_stateDamper == 8) {
-					gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatePinZero));
-					gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatePinZero));
-					m_signedStateDamper = 0;
-				}
-				else {
-					if (m_signedStateDamper == 1)
-						gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatePinOne));
-					else
-						gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatePinOne));
-				}
-			}
-		}
-	};
-
-	display = new DisplayDriver();
-	display->newCmd = [=](const uint16_t id, uint8_t len, uint8_t* data) {
-		AppCore::instance().parsePackDisplay(id, len, data);
-	};
-	
-	adc = new AdcDriver;
-	adc->init();
     
-	
-	m_rtc = &Rtc::instance();
-	m_rtc->initRtc();
+	// Инициализация драйвера GPIO
+	initGpio();
+    
+	// Инициализация драйвера дисплея
+	initDisplay();
+    
+	// Инициализация ADC
+	initAdc();
+    
+	// Инициализация RTC
+	initRtc();
+    
+	// Чтение программ из EEPROM (если поддержка включена)
 #ifdef EEPROM_MEMORY
 	I2C3Interface::instance().init();
 	readPrograms();
 #endif
+    
+	// Установка коэффициентов для датчиков температуры
 	adc->setCoeff(gParams.ampSensTemp);
+}
+
+/**
+ * @brief Инициализация драйвера GPIO и регистрация обработчиков событий
+ */
+void AppCore::initGpio() {
+	gpio = new GpioDriver;
+	gpio->initModule();
+    
+	// Регистрация обработчика событий пинов GPIO
+	gpio->pinEvent = [this](int pin, bool flag) {
+		handleGpioEvent(pin, flag);
+	};
+}
+
+/**
+ * @brief Обработчик событий GPIO
+ * 
+ * @param pin Идентификатор пина, на котором произошло событие
+ * @param flag Состояние пина (true - активное, false - неактивное)
+ */
+void AppCore::handleGpioEvent(int pin, bool flag) {
+	switch (pin) {
+	case GpioDriver::InputPinWater:
+		handleWaterSensorEvent(flag);
+		break;
+            
+	case GpioDriver::InputPinDamperState:
+		handleDamperSensorEvent(flag);
+		break;
+            
+	default:
+		// Игнорируем неизвестные пины
+		break;
+	}
+}
+
+/**
+ * @brief Обработчик событий датчика воды
+ * 
+ * @param flag Состояние датчика воды
+ */
+void AppCore::handleWaterSensorEvent(bool &flag) {
+	if (isMenuTests) {
+		display->sendToDisplay(addrIconWaterPin, flag);
+		return;
+	}
+    
+	// Если счетчик воды обнулен, сбрасываем счетчик импульсов
+	if (m_statesWork.cntH2O == 0) {
+		m_statesWork.cntIntWater = 0;
+	}
+    
+	// Увеличиваем счетчик импульсов воды
+	m_statesWork.cntIntWater++;
+    
+	// Каждое второе срабатывание датчика уменьшает счетчик воды
+	if (m_statesWork.cntIntWater % 2 == 0) {
+		m_statesWork.cntH2O -= gParams.waterOneVolume;
+	}
+    
+	// Если вода закончилась, закрываем клапан и сбрасываем счетчик
+	if (m_statesWork.cntH2O <= 0) {
+		gpio->setPin(GpioDriver::PinH2O, GpioDriver::StatePinZero);
+		m_statesWork.cntIntWater = 0;
+	}
+}
+
+/**
+ * @brief Обработчик событий датчика положения заслонки
+ * 
+ * @param flag Состояние датчика заслонки
+ */
+void AppCore::handleDamperSensorEvent(bool flag) {
+	if (isMenuTests) {
+		display->sendToDisplay(addrIconDamperPos, !flag);
+		return;
+	}
+    
+	// Проверка на неинициализированное состояние заслонки
+	if (m_stateDamper == 0xFFFF) {
+		return;
+	}
+    
+	// Обработка срабатывания датчика (активный низкий уровень)
+	if (!flag) {
+		// Останавливаем движение заслонки
+		gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
+		gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
+        
+		// Обновляем текущее положение заслонки
+		m_stateDamper += m_signedStateDamper;
+        
+		// Проверяем, достигли ли целевого положения или границ
+		bool isTargetPosition = (currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].state == m_stateDamper);
+		bool isMinPosition = (m_stateDamper == 0);
+		bool isMaxPosition = (m_stateDamper == 8);
+        
+		if (isTargetPosition || isMinPosition || isMaxPosition) {
+			// Достигли целевой позиции или границы - останавливаемся
+			m_signedStateDamper = 0;
+		}
+		else {
+			// Продолжаем движение в заданном направлении
+			if (m_signedStateDamper == 1) {
+				gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinOne);
+			}
+			else {
+				gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinOne);
+			}
+		}
+	}
+}
+
+/**
+ * @brief Инициализация драйвера дисплея
+ */
+void AppCore::initDisplay() {
+	display = new DisplayDriver();
+    
+	// Регистрация обработчика команд от дисплея
+	display->newCmd = [this](const uint16_t id, uint8_t len, uint8_t* data) {
+		parsePackDisplay(id, len, data);
+	};
+}
+
+/**
+ * @brief Инициализация драйвера ADC
+ */
+void AppCore::initAdc() {
+	adc = new AdcDriver;
+	adc->init();
+}
+
+/**
+ * @brief Инициализация модуля RTC
+ */
+void AppCore::initRtc() {
+	m_rtc = &Rtc::instance();
+	m_rtc->initRtc();
 }
 
 
@@ -359,7 +472,8 @@ void AppCore::initText() {
 		vTaskDelay(10 / portTICK_PERIOD_MS);
 		display->sendToDisplay(addrNameProg, s);
 		currentWorkMode = m_programs.at(index);
-		m_statesWork.currentIndex = index;
+		m_statesWork.currentIndexProgramm = index;
+		m_statesWork.m_targetTemperature = m_programs.at(index).stages[0].temperature;
 	};
 	lstPrograms->setAddrScrollValue(AddrScrollMainList);
 	
@@ -386,9 +500,9 @@ void AppCore::initText() {
 #else
 		writeGlobalParams();
 #endif
-		std::string s = lstPrograms->text(m_statesWork.currentIndex);
+		std::string s = lstPrograms->text(m_statesWork.currentIndexProgramm);
 		display->sendToDisplay(addrMainItem, s);
-		currentWorkMode = m_programs.at(m_statesWork.currentIndex);
+		currentWorkMode = m_programs.at(m_statesWork.currentIndexProgramm);
 	};
 	lstProgramsEdit->setAddrScrollValue(AddrScrolBar);
 	
@@ -403,207 +517,314 @@ void AppCore::initText() {
 }
 
 void AppCore::taskPeriodic(void *p) {
-	const int delayAfterResetDisplay = 1800; 
-	int count = 0;
-	int cnt = 0, len;
+
+    
 	m_signedStateDamper = 0;
 
-	vTaskDelay(100 / portTICK_PERIOD_MS);
+	vTaskDelay(pdMS_TO_TICKS(100));
 	display->reset();
-	int cntDamperTime = delayAfterResetDisplay;
     
-	if (cntDamperTime > 0)
-		vTaskDelay(cntDamperTime / portTICK_PERIOD_MS);
+	if (delayAfterResetDisplay > 0) {
+		vTaskDelay(pdMS_TO_TICKS(delayAfterResetDisplay));
+	}
+    
 	display->getDataFromDisplay(AddrRtc, 0, 8);
-	vTaskDelay(100 / portTICK_PERIOD_MS);
-	
+	vTaskDelay(pdMS_TO_TICKS(100));
+    
 	checkTemperatureSensors();
 
-	objDataExchenge.sendPackage(IdBootHost, 1, 0, nullptr);
-	objDataExchenge.sendPackage(IdWifiSSID, 1, strlen(gParams.wifiSSID), (uint8_t*)gParams.wifiSSID);
-	objDataExchenge.sendPackage(IdWifiPassword, 1, strlen(gParams.wifiPassword), (uint8_t*)gParams.wifiPassword);
-	objDataExchenge.sendPackage(IdWifiState, 1, sizeof(gParams.stateWifi), (uint8_t*)&gParams.stateWifi);
-	
+	// Инициализация данных
+	sendInitialData();
 	display->sendToDisplay(CmdSoftVersion, versionSoft);
 	display->sendToDisplay(addrStateWifiIcon, iconIndexWifi[gParams.stateWifi]);
-	uint8_t arr[4] = { gParams.numSound, 0, gParams.volume, 0 };
-	display->sendToDisplay(addrCurrentSound, 4, arr);
+    
+	uint8_t soundParams[4] = { gParams.numSound, 0, gParams.volume, 0 };
+	display->sendToDisplay(addrCurrentSound, 4, soundParams);
+    
 	lstPrograms->setIndex(0);
-	lstPrograms->resetWidget();	
-	uint16_t per;
-	float uTemp, uTemp1;
+	lstPrograms->resetWidget();
+	m_statesWork.m_targetTemperature = m_programs.at(0).stages[0].temperature;
 	m_statesWork.cntPlaySignal = -1;
+	m_statesWork.isMaintainTemperature = false;
+	m_statesWork.cntContolDownTemperature = 0;
 	while (true) {
-		
-		xSemaphoreTake(xSemPeriodic, 1000 / portTICK_PERIOD_MS);
-		if (m_statesWork.cntPlaySignal != -1) {
-			if (m_statesWork.cntPlaySignal-- == 0) {
-				m_statesWork.cntPlaySignal = 5;
-				display->playSound(gParams.numSound, gParams.volume);
-			}
-		}
-		
-		float tem = selectTemperature();
-		display->sendToDisplayF(AddrNumTemperatureMeasure, tem);
-
+		xSemaphoreTake(xSemPeriodic, pdMS_TO_TICKS(1000));
+        
+		handleSoundPlayback();
+        
+		float temperature = selectTemperature();
+		display->sendToDisplayF(AddrNumTemperatureMeasure, temperature);
+        
 		switch (stateRun) {
 		case StateRunIdle:
-			if (timeBlinkYellow >= 0) {	
-				if (timeBlinkYellow % 2 == 0)
-					gpio->disableYellowLed();
-				else
-					gpio->enableYellowLed();
-				timeBlinkYellow--;
-			}
+			handleIdleState(temperature);
 			break;
+                
 		case StateRunStart:
-			if (checkTemperatureSensors() != 0) {
-				stateRun = StateRunIdle;
-				display->showMessage(PageMessage, stateTemperatureSensor);
-				break;
-			}
-			if (gpio->isDoorOpen() == true) {
-				stateRun = StateRunIdle;
-				display->showMessage(PageMessage, DoorNoClosed);
-				break;
-			}
-			gpio->disableIntDamperState();
-			// Инициализация шибера - приведение в нулевое положение
-			if (!gpio->isDamperStateStart()) {
-				gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinOne);
-				vTaskDelay(100 / portTICK_PERIOD_MS);
-				xSemaphoreGive(xSemPeriodic);
+			if (!handleStartState(temperature)) {
 				continue;
 			}
-			else // Отключаем привод шибера
-				gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
-			m_stateDamper = 0;
-			gpio->enableIntDamperState();
-			currentWorkMode = m_programs.at(m_statesWork.currentIndex);
-
-			LOG::instance().log("start"); 
-			currentStage = 0;
-			stageDuration = 0;
-			m_statesWork.prevTemp = m_statesWork.currentTemp;
-			modeDuration = 0;
-			commonDuration = 0;
-			m_statesWork.isStart = true;
-			m_statesWork.isWaterStart  = false;
-			m_statesWork.isWaterStage2 = false;
-			for (int i = 0; i < currentWorkMode.numStage; i++) {
-				commonDuration += currentWorkMode.stages[i].duration;
-			}
-			paintStageProgress();
-			stateRun = StateRunWork;
-			updateParamStage();
-			gpio->enableYellowLed();
-			timeBlinkYellow = 0;
-			gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinOne);
-			display->sendToDisplay(AddrNumWaterTime, currentWorkMode.stages[currentStage].watertimeout);
-			display->sendToDisplay(AddrNumWater1, currentWorkMode.stages[currentStage].waterVolume2);
-			m_signedStateDamper = 0;
 			break;
-		case StateRunWork: {
-				if (checkTemperatureSensors() != 0) {
-					stateRun = StateRunError;
-					display->showMessage(PageMessage, stateTemperatureSensor);
-					break;
-				}
-				stageDuration += 1;
-				modeDuration += 1;
-				uint16_t temp = currentWorkMode.stages[currentStage].temperature;
-				correctTemperature(tem, temp);
-				if (stageDuration == 1) {
-					display->sendToDisplay(AddrNumWaterTime, currentWorkMode.stages[currentStage].watertimeout);
-					display->sendToDisplay(AddrNumWater1, currentWorkMode.stages[currentStage].waterVolume2);
-				}
-				if (stageDuration >= 2) {
-					if (currentWorkMode.stages[currentStage].fan == FanX1) {
-						gpio->setPin(GpioDriver::PinFanLowSpeed, (GpioDriver::StatePinOne));
-						gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinZero));
-					}
-					else if (currentWorkMode.stages[currentStage].fan == FanX2) {
-						gpio->setPin(GpioDriver::PinFanLowSpeed, (GpioDriver::StatePinZero));
-						gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinOne));
-					}
-					else {
-						gpio->setPin(GpioDriver::PinFanLowSpeed, (GpioDriver::StatePinZero));
-						gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinZero));
-					}
-				} 
-				if (stageDuration >= 1) {
-				if (m_signedStateDamper == 0) {
-					if (currentWorkMode.stages[currentStage].damper > m_stateDamper) {
-						gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatePinOne));
-						xTimerStart(timerDamper, 0);
-						m_signedStateDamper = 1;
-					}
-					else if (currentWorkMode.stages[currentStage].damper < m_stateDamper)
-					{
-						gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatePinOne));
-						xTimerStart(timerDamper, 0);
-						m_signedStateDamper = -1;
-					}
-				}
-			}
-
-				addWater();// анализируем данные по добавлению воды и добавляем ее если нужно
-			
-				paintStageProgress();// обновляем прогресс бар
-				updateTime(currentWorkMode.stages[currentStage].duration - stageDuration);
-				//за 40 секунд до окончание первый раз воспроизводим звукое оповещение
-				if (commonDuration - modeDuration <= 40) {
-					display->playSound(gParams.numSound, gParams.volume);
-					m_statesWork.cntPlaySignal = 1;
-				}
-				//за 300 секунд до окончаниЯ включаем вытяжку для удаления гари
-				if (commonDuration - modeDuration <= 300) {
-					gpio->setPin(GpioDriver::MainHood, GpioDriver::StatePinOne);
-				}
-				else {
-					//иначе вытяжку на крыше включаем в зависимости от положения шибера
-					gpio->setPin(GpioDriver::MainHood, (currentWorkMode.stages[currentStage].damper != 0) ? GpioDriver::StatePinOne : GpioDriver::StatePinZero);
-				}
-
-				if (stageDuration >= currentWorkMode.stages[currentStage].duration) {
-					m_statesWork.isWaterStart = false;
-					m_statesWork.isWaterStage2 = false;
-					currentStage++;
-					stageDuration = 0;
-					m_statesWork.cntH2O = currentWorkMode.stages[currentStage].waterVolume;
-					if (currentStage == currentWorkMode.numStage) {
-						timeBlinkYellow = 60;
-						updateProgressBar(100);
-						stateRun = StateRunStop;
-						display->playSound(gParams.numSound, gParams.volume);
-						LOG::instance().log("finish");
-						break;
-					}
-					updateParamStage();
-				}
-				per = (uint16_t)(stageDuration * 100.0 / currentWorkMode.stages[currentStage].duration);
-				updateProgressBar(per);
-			}	
+                
+		case StateRunWork:
+			handleWorkState(temperature);
 			break;
+                
 		case StateRunStop:
 			paintStageProgress();
+			// Продолжаем в StateRunError
+                
 		case StateRunError:
+			handleStopAndErrorState();
 			stateRun = StateRunIdle;
-			gpio->setPin(GpioDriver::GpioDriver::PinFanLowSpeed, GpioDriver::StatePinZero);
-			gpio->setPin(GpioDriver::GpioDriver::PinFanFastSpeed, GpioDriver::StatePinZero);
-			gpio->setPin(GpioDriver::PinTemperatureDown, GpioDriver::StatePinZero);
-			gpio->setPin(GpioDriver::PinTemperatureUp, GpioDriver::StatePinZero);
-			gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
-			gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
-			gpio->disableYellowLed();
-			gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinZero);
-			//xTimerStart(timerYellow, 0);
-
 			break;
+                
 		default:
 			break;
 		}
 	}
+}
+
+// Вспомогательные функции
+void AppCore::sendInitialData() {
+	objDataExchenge.sendPackage(IdBootHost, 1, 0, nullptr);
+	objDataExchenge.sendPackage(IdWifiSSID, 1, strlen(gParams.wifiSSID), (uint8_t*)gParams.wifiSSID);
+	objDataExchenge.sendPackage(IdWifiPassword, 1, strlen(gParams.wifiPassword), (uint8_t*)gParams.wifiPassword);
+	objDataExchenge.sendPackage(IdWifiState, 1, sizeof(gParams.stateWifi), (uint8_t*)&gParams.stateWifi);
+}
+
+void AppCore::handleSoundPlayback() {
+	if (m_statesWork.cntPlaySignal != -1 && m_statesWork.cntPlaySignal-- == 0) {
+		m_statesWork.cntPlaySignal = 5;
+		display->playSound(gParams.numSound, gParams.volume);
+	}
+}
+
+void AppCore::handleIdleState(float temperature) {
+	if (m_statesWork.isMaintainTemperature)
+		correctTemperature(temperature, m_statesWork.m_targetTemperature);
+	else {
+		if (m_statesWork.cntContolDownTemperature!=0) {
+			m_statesWork.cntContolDownTemperature--;
+			if (m_statesWork.cntContolDownTemperature == 0) {
+				gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatePinZero));
+			}
+		}
+	}
+	if (timeBlinkYellow >= 0) {    
+		if (timeBlinkYellow % 2 == 0) {
+			gpio->disableYellowLed();
+		}
+		else {
+			gpio->enableYellowLed();
+		}
+		timeBlinkYellow--;
+	}
+}
+
+bool AppCore::handleStartState(float temperature) {
+	if (checkTemperatureSensors() != 0) {
+		stateRun = StateRunIdle;
+		display->showMessage(PageMessage, stateTemperatureSensor);
+
+		return true;
+	}
+    
+	if (gpio->isDoorOpen()) {
+		stateRun = StateRunIdle;
+		display->showMessage(PageMessage, DoorNoClosed);
+		return true;
+	}
+    
+	gpio->disableIntDamperState();
+    
+	// Инициализация шибера
+	if (!gpio->isDamperStateStart()) {
+		gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinOne);
+		vTaskDelay(pdMS_TO_TICKS(100));
+		xSemaphoreGive(xSemPeriodic);
+		return false;
+	}
+	gpio->setPin(GpioDriver::PinTemperatureDown, GpioDriver::StatePinZero);
+	gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
+	m_stateDamper = 0;
+	gpio->enableIntDamperState();
+	currentWorkMode = m_programs.at(m_statesWork.currentIndexProgramm);
+
+	LOG::instance().log("start"); 
+	initializeWorkState();
+    
+	stateRun = StateRunWork;
+	updateParamStage();
+	gpio->enableYellowLed();
+	timeBlinkYellow = 0;
+	gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinOne);
+    
+	display->sendToDisplay(AddrNumWaterTime, currentWorkMode.stages[currentStage].watertimeout);
+	display->sendToDisplay(AddrNumWater1, currentWorkMode.stages[currentStage].waterVolume2);
+	m_signedStateDamper = 0;
+	m_currentIndexDamper = 0;
+	m_currentIndexFan = 0;
+    
+	return true;
+}
+
+void AppCore::initializeWorkState() {
+	currentStage = 0;
+	stageDuration = 0;
+	m_statesWork.prevTemp = m_statesWork.currentTemp;
+	modeDuration = 0;
+	commonDuration = 0;
+	m_statesWork.isStart = true;
+	m_statesWork.isWaterStart = false;
+	m_statesWork.isWaterStage2 = false;
+    
+	for (int i = 0; i < currentWorkMode.numStage; i++) {
+		commonDuration += TO_SECONDS(currentWorkMode.stages[i].duration);
+	}
+    
+	paintStageProgress();
+}
+
+void AppCore::handleWorkState(float temperature) {
+	if (checkTemperatureSensors() != 0) {
+		stateRun = StateRunError;
+		display->showMessage(PageMessage, stateTemperatureSensor);
+		return;
+	}
+    
+	stageDuration++;
+	modeDuration++;
+    
+	correctTemperature(temperature, m_statesWork.m_targetTemperature);
+    
+	if (stageDuration == 1) {
+		display->sendToDisplay(AddrNumWaterTime, currentWorkMode.stages[currentStage].watertimeout);
+		display->sendToDisplay(AddrNumWater1, currentWorkMode.stages[currentStage].waterVolume2);
+	}
+    
+	if (stageDuration >= 2) {
+		handleFanControl();
+		handleDamperControl();
+	}
+    
+	addWater();
+	paintStageProgress();
+	updateTime(TO_SECONDS(currentWorkMode.stages[currentStage].duration) - stageDuration) ;
+    
+	handlePreFinishActions();
+
+	if (currentWorkMode.stages[currentStage].duration - stageDuration) {
+	
+	}
+    
+	if (stageDuration >= TO_SECONDS(currentWorkMode.stages[currentStage].duration)) {
+		handleStageCompletion();
+	}
+    
+	uint16_t progress = static_cast<uint16_t>(stageDuration * 100.0 / TO_SECONDS(currentWorkMode.stages[currentStage].duration)) ;
+	updateProgressBar(progress);
+}
+
+void AppCore::handleFanControl() {
+	//есть в настройках работы вентилятора есть хотя бы один 0, то выключаем винтеляторы
+	if (currentWorkMode.stages[currentStage].fan[m_currentIndexFan].start == 0 || currentWorkMode.stages[currentStage].fan[m_currentIndexFan].finish == 0 || currentWorkMode.stages[currentStage].fan[m_currentIndexFan].state == FanOff) {
+		gpio->setPin(GpioDriver::PinFanLowSpeed, GpioDriver::StatePinZero);
+		gpio->setPin(GpioDriver::PinFanFastSpeed, GpioDriver::StatePinZero);
+		return;
+	}
+	//если текущее время меньше времени начала работы ветилятора, то вентилятор выключен
+	if (stageDuration < TO_SECONDS(currentWorkMode.stages[currentStage].fan[m_currentIndexFan].start - 1)) {
+		gpio->setPin(GpioDriver::PinFanLowSpeed, GpioDriver::StatePinZero);
+		gpio->setPin(GpioDriver::PinFanFastSpeed, GpioDriver::StatePinZero);
+		return;
+	}
+	//если текущее время больше времени завершения работы ветилятора, то наращиваем индекс 
+	if (stageDuration >= TO_SECONDS(currentWorkMode.stages[currentStage].fan[m_currentIndexFan].finish)) {
+		m_currentIndexFan++;
+		return;
+	}
+	// в зависимости от настройки включаем вентилятор на нужную скорость
+	switch (currentWorkMode.stages[currentStage].fan[m_currentIndexFan].state) {
+	case FanX1:
+		gpio->setPin(GpioDriver::PinFanLowSpeed, GpioDriver::StatePinOne);
+		gpio->setPin(GpioDriver::PinFanFastSpeed, GpioDriver::StatePinZero);
+		break;
+	case FanX2:
+		gpio->setPin(GpioDriver::PinFanLowSpeed, GpioDriver::StatePinZero);
+		gpio->setPin(GpioDriver::PinFanFastSpeed, GpioDriver::StatePinOne);
+		break;
+	default:
+		gpio->setPin(GpioDriver::PinFanLowSpeed, GpioDriver::StatePinZero);
+		gpio->setPin(GpioDriver::PinFanFastSpeed, GpioDriver::StatePinZero);
+		break;
+	}
+}
+
+void AppCore::handleDamperControl() {
+	if (m_signedStateDamper == 0) {
+		int8_t targetDamper = currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].state;
+        
+		if (targetDamper > m_stateDamper) {
+			gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinOne);
+			xTimerStart(timerDamper, 0);
+			m_signedStateDamper = 1;
+		}
+		else if (targetDamper < m_stateDamper) {
+			gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinOne);
+			xTimerStart(timerDamper, 0);
+			m_signedStateDamper = -1;
+		}
+	}
+}
+
+void AppCore::handlePreFinishActions() {
+	if (commonDuration - modeDuration <= preFinishSoundTime) {
+		display->playSound(gParams.numSound, gParams.volume);
+		m_statesWork.cntPlaySignal = 1;
+	}
+    
+	if (commonDuration - modeDuration <= preFinishVentTime) {
+		gpio->setPin(GpioDriver::MainHood, GpioDriver::StatePinOne);
+	}
+	else {
+		bool shouldEnableHood = currentWorkMode.stages[currentStage].damper != 0;
+		gpio->setPin(GpioDriver::MainHood,
+			shouldEnableHood ? 
+		             GpioDriver::StatePinOne : GpioDriver::StatePinZero);
+	}
+}
+
+void AppCore::handleStageCompletion() {
+	m_statesWork.isWaterStart = false;
+	m_statesWork.isWaterStage2 = false;
+	currentStage++;
+	stageDuration = 0;
+	m_currentIndexDamper = 0;
+	m_currentIndexFan = 0;
+	m_statesWork.cntH2O = currentWorkMode.stages[currentStage].waterVolume;
+    
+	if (currentStage == currentWorkMode.numStage) {
+		timeBlinkYellow = 60;
+		updateProgressBar(100);
+		stateRun = StateRunStop;
+		display->playSound(gParams.numSound, gParams.volume);
+		LOG::instance().log("finish");
+		return;
+	}
+    
+	updateParamStage();
+}
+
+void AppCore::handleStopAndErrorState() {
+	gpio->setPin(GpioDriver::PinFanLowSpeed, GpioDriver::StatePinZero);
+	gpio->setPin(GpioDriver::PinFanFastSpeed, GpioDriver::StatePinZero);
+	gpio->setPin(GpioDriver::PinTemperatureDown, GpioDriver::StatePinZero);
+	gpio->setPin(GpioDriver::PinTemperatureUp, GpioDriver::StatePinZero);
+	gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
+	gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
+	gpio->disableYellowLed();
+	gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinZero);
 }
 
 unsigned int AppCore::CRC32_function(unsigned char *buf, unsigned long len) {

@@ -49,6 +49,13 @@ enum ReturnCodeKey {
     ReturnCodeKeySwitchWorkModeDown, ///< Переключить режим работы вниз (0x8002)
     ReturnCodeKeySaveWorkMode, ///< Сохранить режим работы (0x8003)
     ReturnCodeKeyAddStageWorkMode, ///< Добавить этап в режим работы (0x8004)
-    ReturnCodeKeyDeleteStageWorkMode               ///< Удалить этап из режима работы (0x8005)
+    ReturnCodeKeyDeleteStageWorkMode,               ///< Удалить этап из режима работы (0x8005)
+    
+    ReturnCodeKeyEditDamper  = 0x8010,               ///< Удалить этап из режима работы (0x8005)
+    ReturnCodeKeyEditFan,               ///< Удалить этап из режима работы (0x8005)
+    ReturnCodeKeyViewDamper,               ///< Удалить этап из режима работы (0x8005)
+    ReturnCodeKeyViewFan,               ///<
+
+
     /// @}
 };

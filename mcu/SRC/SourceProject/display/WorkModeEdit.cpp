@@ -78,9 +78,9 @@ Widget* WorkModeEdit::keyEvent(uint16_t key)
 		break;
 	case ReturnCodeKeyAddStageWorkMode:
 		if (tempWMode.numStage < MaxStageMode) {
-			tempWMode.stages[tempWMode.numStage].damper = 0;
-			tempWMode.stages[tempWMode.numStage].fan = 0;
-			tempWMode.stages[tempWMode.numStage].duration = 900;
+			//tempWMode.stages[tempWMode.numStage].damper = 0;
+			//tempWMode.stages[tempWMode.numStage].fan = 0;
+			tempWMode.stages[tempWMode.numStage].duration = 8;
 			tempWMode.stages[tempWMode.numStage].temperature = 180;
 			tempWMode.stages[tempWMode.numStage].waterVolume = 1000;
 			tempWMode.numStage++;
@@ -98,10 +98,40 @@ Widget* WorkModeEdit::keyEvent(uint16_t key)
 		}
 		
 		break;
+	case ReturnCodeKeyEditFan:
+	case ReturnCodeKeyViewFan: {
+		sendSettings(tempWMode.stages[currentStage].fan, AddrSettingsFan);
+		break;
+		}
+	case ReturnCodeKeyEditDamper:
+	case ReturnCodeKeyViewDamper: {
+		sendSettings(tempWMode.stages[currentStage].damper, AddrSettingsDamper);
+	}
+		break;
 	default:
 		break;
 	}
 	return this;
+}
+
+void WorkModeEdit::sendSettings(const SettingsFanAndDamper  *sett, uint16_t addr)
+{
+	uint8_t mas[MAX_SETTINGS_FUN_AND_DAMP * 4];
+	memset(mas, 0, MAX_SETTINGS_FUN_AND_DAMP * 4);
+	for (int i = 0; i < MAX_SETTINGS_FUN_AND_DAMP; i++) {
+		mas[4*i] = sett[i].finish;
+		mas[4*i + 1] = sett[i].start;
+		mas[4*i + 3] = sett[i].state;
+	}
+	m_display->sendToDisplay(addr, MAX_SETTINGS_FUN_AND_DAMP * 4, mas);
+}
+void WorkModeEdit::applySettings(SettingsFanAndDamper  *sett, uint8_t *data)
+{
+	for (int i = 0; i < MAX_SETTINGS_FUN_AND_DAMP; i++) {
+		sett[i].finish = data[4*i];
+		sett[i].start = data[4*i + 1];
+		sett[i].state = data[4*i + 3];
+	}
 }
 
 void WorkModeEdit::changeParams(const uint16_t id, uint8_t len, uint8_t* data)
@@ -125,7 +155,6 @@ void WorkModeEdit::changeParams(const uint16_t id, uint8_t len, uint8_t* data)
 		}
 		memcpy(tempWMode.nameMode, data + 1, tempWMode.lenNameMode+2);
 		to1251((uint8_t*)tempWMode.nameMode, tempWMode.lenNameMode);
-		
 	}
 		
 	break;		
@@ -143,10 +172,10 @@ void WorkModeEdit::changeParams(const uint16_t id, uint8_t len, uint8_t* data)
 		tempWMode.stages[currentStage].waterVolume = val;
 	break;	
 	case AddrDamperStageE: 
-		tempWMode.stages[currentStage].damper = val;
+		//tempWMode.stages[currentStage].damper = val;
 	break;
 	case AddrFanStageE: 
-		tempWMode.stages[currentStage].fan = val;
+		//tempWMode.stages[currentStage].fan = val;
 		
 	break;	
     case AddrWaterStageE2 :
@@ -155,6 +184,12 @@ void WorkModeEdit::changeParams(const uint16_t id, uint8_t len, uint8_t* data)
 	case AddrWaterTimeoutE:
     	tempWMode.stages[currentStage].watertimeout = val;
 	break;
+	case AddrSettingsFan:
+		applySettings(tempWMode.stages[currentStage].fan, data + 1);
+		break;
+	case AddrSettingsDamper:
+		applySettings(tempWMode.stages[currentStage].damper, data + 1);
+		break;
 	}
 }
 
@@ -196,9 +231,9 @@ void WorkModeEdit::printAllTimeMode()
 	int commonDur = 0;
 	memset(buf, 0xff, 10);
 	for (int i = 0; i < tempWMode.numStage; i++) {
-		commonDur += tempWMode.stages[i].duration;
+		commonDur += TO_SECONDS(tempWMode.stages[i].duration) ;
 	}
-	int len = sprintf(buf, "%d:%d  ", commonDur / 60, commonDur % 60);
+	int len = sprintf(buf, "%d", commonDur / 60);
 	m_display->sendToDisplay(AddrNumTimeModeEdit, len, (uint8_t*)buf);
 }
 
@@ -212,12 +247,12 @@ void WorkModeEdit::paintSettingsWorkMode(bool isEdited_)
 	m_display->sendToDisplay(AddrNumStageV+offeset, len, (uint8_t*)buf);
 	memset(buf, 0xff, 10);
 	printAllTimeMode();
-	uint16_t time = ((tempWMode.stages[currentStage].duration / 60) << 8) + tempWMode.stages[currentStage].duration % 60;
-	m_display->sendToDisplay(AddrTimeStageV + offeset, time);
+	//uint16_t time = ((TO_SECONDS(tempWMode.stages[currentStage].duration) / 60) << 8) + TO_SECONDS(tempWMode.stages[currentStage].duration) % 60 ;
+	m_display->sendToDisplay(AddrTimeStageV + offeset, tempWMode.stages[currentStage].duration);
 	m_display->sendToDisplay(AddrTempStageV + offeset, tempWMode.stages[currentStage].temperature);
 	m_display->sendToDisplay(AddrWaterStageV + offeset, tempWMode.stages[currentStage].waterVolume);
-	m_display->sendToDisplay(AddrDamperStageV + offeset, tempWMode.stages[currentStage].damper);
-	m_display->sendToDisplay(AddrFanStageV + offeset, tempWMode.stages[currentStage].fan);
+	//m_display->sendToDisplay(AddrDamperStageV + offeset, tempWMode.stages[currentStage].damper);
+	//m_display->sendToDisplay(AddrFanStageV + offeset, tempWMode.stages[currentStage].fan);
     m_display->sendToDisplay(AddrWaterStageV2 + offeset, tempWMode.stages[currentStage].waterVolume2);
     m_display->sendToDisplay(AddrWaterTimeoutV + offeset, tempWMode.stages[currentStage].watertimeout);
 		
