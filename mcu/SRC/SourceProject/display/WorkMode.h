@@ -10,7 +10,7 @@
 
 #define OffsetAddrNumPrograms 4		// смещение в байтах , где хранится количество программ
 #define OffsetAddrPrograms 8		//смещение в байтах, откуда начинаются данные программ
-constexpr int MagicNumber = 0x09abcdf9; // признак, что данные программ в памяти валидны
+constexpr int MagicNumber = 0x09abcdf5; // признак, что данные программ в памяти валидны
 
 #define TO_SECONDS(x) (60 * (x))
 #define MAX_SETTINGS_FUN_AND_DAMP 6

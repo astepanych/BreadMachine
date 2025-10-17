@@ -2,4 +2,4 @@
 
 #include <stdint.h>
 
-constexpr uint16_t versionSoft = 2002;
+constexpr uint16_t versionSoft = 2003;
