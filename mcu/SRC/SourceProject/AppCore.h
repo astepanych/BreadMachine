@@ -41,7 +41,7 @@ struct StateWork {
     uint16_t currentIndexProgramm;
     int cntPlaySignal;
 	uint16_t m_targetTemperature;
-	bool isMaintainTemperature;
+	bool isModeIdleControlTemperature;
 	uint16_t cntContolDownTemperature;
 	
 };
@@ -250,6 +250,8 @@ public:
     void addWater();
 
     void controlTestPins();
+
+	bool moveDamperToStartPositon();
 	
 private:
     /**

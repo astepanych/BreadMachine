@@ -43,24 +43,10 @@ eFailSensorTemperature AppCore::checkTemperatureSensors()
 	
 }
 
-/**
- * @brief Задача управления входными пинами и контроля состояния системы
- * 
- * Основные функции:
- * 1. Инициализация положения шибера (привод загрузки) в нулевое положение
- * 2. Обработка событий нажатия кнопок и изменения состояний
- * 3. Управление процессами загрузки и выгрузки хлеба
- * 4. Контроль состояния двери и связанных с ней функций
- * 5. Обработка тестового режима меню
- * 
- * @param p Указатель на параметры задачи (не используется)
- */
-void AppCore::taskControlInPins(void *p)
+bool AppCore::moveDamperToStartPositon()
 {
 	const int delayControlDamper = 100; // Период проверки положения шибера (мс)
-	bool isRunLoad = false; // Флаг выполнения процесса загрузки/выгрузки
 	int cntDamperTime = 20000; // Таймаут инициализации шибера (20 секунд)
-    
 	// Инициализация шибера - приведение в нулевое положение
 	gpio->disableIntDamperState();
 	if (!gpio->isDamperStateStart()) {
@@ -79,9 +65,35 @@ void AppCore::taskControlInPins(void *p)
 		gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
 	}
 	gpio->enableIntDamperState();
+	m_stateDamper = 0;
+	if (cntDamperTime <= 0 && !gpio->isDamperStateStart())
+		return false;
+	return true;
+}
+
+
+/**
+ * @brief Задача управления входными пинами и контроля состояния системы
+ * 
+ * Основные функции:
+ * 1. Инициализация положения шибера (привод загрузки) в нулевое положение
+ * 2. Обработка событий нажатия кнопок и изменения состояний
+ * 3. Управление процессами загрузки и выгрузки хлеба
+ * 4. Контроль состояния двери и связанных с ней функций
+ * 5. Обработка тестового режима меню
+ * 
+ * @param p Указатель на параметры задачи (не используется)
+ */
+void AppCore::taskControlInPins(void *p)
+{
+	
+	bool isRunLoad = false; // Флаг выполнения процесса загрузки/выгрузки
+	
+    
+	
     
 	// Обработка ошибки инициализации шибера
-	if (cntDamperTime == 0) {
+	if (moveDamperToStartPositon() == false) {
 		// TODO: Вывести ошибку - шибер не достиг нулевого положения за время таймаута
 	}
     
@@ -115,9 +127,15 @@ void AppCore::taskControlInPins(void *p)
         
 		// Обработка нажатия кнопки START
 		if (gpio->isStartKey()) {
-			if (stateRun == StateRunIdle) {
+			if (stateRun == StateRunIdle) {//если находимся в состоянии простоя
 				display->switchPage(PageRun); // Переключаем на страницу выполнения
 				stateRun = StateRunStart; // Меняем состояние системы
+			}
+			else { // если печем - то это событие будет выполнятся как СТОП
+				if (stateRun != StateRunStop) { 
+					stateRun = StateRunStop;
+					xSemaphoreGive(xSemPeriodic);
+				}
 			}
 		}
         
@@ -179,7 +197,7 @@ float AppCore::selectTemperature() {
         float t2 =  adc->value2();
 		
         uint16_t len = sprintf(buff, "t1=%d, t2=%d", (int)t1, (int)t2);
-        display->sendToDisplay(addrStrTempTest, len, (uint8_t*)buff);
+        display->sendToDisplay(addrStrTempTest, len+1, (uint8_t*)buff);
     }
 	
     m_statesWork.currentTemp = adc->value2(); 

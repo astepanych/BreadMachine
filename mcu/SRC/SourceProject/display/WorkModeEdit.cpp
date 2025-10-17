@@ -62,6 +62,7 @@ Widget* WorkModeEdit::keyEvent(uint16_t key)
 			if (startIndex + maxItemDisplay >= pWModes->size() && startIndex != 0)
 				startIndex--;
 			updateDisplay();
+			saveWorkModes();
 			break;
 		}
 	case ReturnCodeKeySaveWorkMode:
@@ -72,6 +73,7 @@ Widget* WorkModeEdit::keyEvent(uint16_t key)
 		if (stateEdited == StateNew)
 		{
 			pWModes->push_back(tempWMode);
+			resetWidget();
 		}
 		saveWorkModes();
 		updateDisplay();
@@ -233,8 +235,9 @@ void WorkModeEdit::printAllTimeMode()
 	for (int i = 0; i < tempWMode.numStage; i++) {
 		commonDur += TO_SECONDS(tempWMode.stages[i].duration) ;
 	}
+	memset(buf, 0xff, 10);
 	int len = sprintf(buf, "%d", commonDur / 60);
-	m_display->sendToDisplay(AddrNumTimeModeEdit, len, (uint8_t*)buf);
+	m_display->sendToDisplay(AddrNumTimeModeEdit, len+1, (uint8_t*)buf);
 }
 
 void WorkModeEdit::paintSettingsWorkMode(bool isEdited_)

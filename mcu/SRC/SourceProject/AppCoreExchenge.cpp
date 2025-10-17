@@ -297,14 +297,14 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
             currentWorkMode.stages[currentStage].temperature = data[2] | (data[1] << 8);
             break;
         case AddrNumDamper:
-        /*currentWorkMode.stages[currentStage].damper = data[2] | (data[1] << 8);
-        if (currentWorkMode.stages[currentStage].damper > m_stateDamper) {
+        currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].state = data[2] | (data[1] << 8);
+	    /*if (currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].state > m_stateDamper) {
 	        m_signedStateDamper = 1;
             gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatePinOne));
             xTimerStart(timerDamper, 0);
             
         }
-        else if (currentWorkMode.stages[currentStage].damper < m_stateDamper)
+	    else if (currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].state < m_stateDamper)
         {
 	        m_signedStateDamper = -1;
             gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatePinOne));
@@ -314,7 +314,7 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 
             break;
         case AddrNumFan:
-            //currentWorkMode.stages[currentStage].fan ^= 1;
+	        currentWorkMode.stages[currentStage].fan[m_currentIndexFan].state = data[2] | (data[1] << 8);
             //gpio->setPin(GpioDriver::PinFanLowSpeed, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].fan);
             break;
         case addrCurrentSound:
@@ -407,10 +407,17 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
             m_rtc->setTime(data[5], data[6], data[7]);
             break;
     case addrIsIdleMode:
-	    m_statesWork.isMaintainTemperature = !((bool)data[2]);
-	    if (!m_statesWork.isMaintainTemperature) {
+	    m_statesWork.isModeIdleControlTemperature = ((bool)data[2]);
+	    if (m_statesWork.isModeIdleControlTemperature) {
 		    m_statesWork.cntContolDownTemperature = 20;
+		    gpio->setPin(GpioDriver::PinTemperatureUp, (GpioDriver::StatePinZero));
 		    gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatePinOne));
+	    }
+	    else {
+		    if (m_statesWork.cntContolDownTemperature) {
+			    gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatePinZero));
+			    m_statesWork.cntContolDownTemperature = 0;
+		    }
 	    }
 	    break;
     
@@ -554,8 +561,8 @@ void AppCore::updateParamStage() {
     display->sendToDisplay(AddrNumStage, currentStage + 1);
     display->sendToDisplay(AddrNumWater, currentWorkMode.stages[currentStage].waterVolume);
     display->sendToDisplay(AddrNumTemperature, currentWorkMode.stages[currentStage].temperature);
-   // display->sendToDisplay(AddrNumFan, currentWorkMode.stages[currentStage].fan);
-   // display->sendToDisplay(AddrNumDamper, currentWorkMode.stages[currentStage].damper);
+    display->sendToDisplay(AddrNumFan, currentWorkMode.stages[currentStage].fan[m_currentIndexFan].state);
+    display->sendToDisplay(AddrNumDamper, currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].state);
 	
 }
 
