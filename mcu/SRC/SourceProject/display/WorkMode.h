@@ -27,13 +27,11 @@ struct SettingsFanAndDamper
 {
 	SettingsFanAndDamper()
 	{
-		start = 1;
-		finish = 2;
+		interval = 2;
 		state = 0;
 	}
-	uint16_t start : 6;
-	uint16_t finish : 6;
-	uint16_t state : 4;
+	uint8_t interval;
+	uint8_t state;
 };
 #pragma pack(pop)
 

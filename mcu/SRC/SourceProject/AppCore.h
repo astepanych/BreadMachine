@@ -269,7 +269,9 @@ private:
     int32_t commonDuration;
     uint16_t currentStage;
 	uint16_t m_currentIndexFan;
+	uint16_t m_currentIntervalFanDuration;
 	uint16_t m_currentIndexDamper;
+	uint16_t m_prevsIntervalsDamperDuration;
     uint16_t stageDuration;
     uint16_t modeDuration;
     uint16_t allModeDuration;

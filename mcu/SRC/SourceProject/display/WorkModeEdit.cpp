@@ -121,8 +121,8 @@ void WorkModeEdit::sendSettings(const SettingsFanAndDamper  *sett, uint16_t addr
 	uint8_t mas[MAX_SETTINGS_FUN_AND_DAMP * 4];
 	memset(mas, 0, MAX_SETTINGS_FUN_AND_DAMP * 4);
 	for (int i = 0; i < MAX_SETTINGS_FUN_AND_DAMP; i++) {
-		mas[4*i] = sett[i].finish;
-		mas[4*i + 1] = sett[i].start;
+		mas[4*i] = 0;
+		mas[4*i + 1] = sett[i].interval;
 		mas[4*i + 3] = sett[i].state;
 	}
 	m_display->sendToDisplay(addr, MAX_SETTINGS_FUN_AND_DAMP * 4, mas);
@@ -130,8 +130,8 @@ void WorkModeEdit::sendSettings(const SettingsFanAndDamper  *sett, uint16_t addr
 void WorkModeEdit::applySettings(SettingsFanAndDamper  *sett, uint8_t *data)
 {
 	for (int i = 0; i < MAX_SETTINGS_FUN_AND_DAMP; i++) {
-		sett[i].finish = data[4*i];
-		sett[i].start = data[4*i + 1];
+		
+		sett[i].interval = data[4*i + 1];
 		sett[i].state = data[4*i + 3];
 	}
 }

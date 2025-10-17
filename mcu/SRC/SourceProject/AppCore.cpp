@@ -104,15 +104,6 @@ void AppCore::fillProgram(const std::string &name, const uint16_t numStages) {
 		el.stages[i].watertimeout = 40;
 		memset(el.stages[i].fan, 0, MAX_SETTINGS_FUN_AND_DAMP*sizeof(SettingsFanAndDamper));
 		memset(el.stages[i].damper, 0, MAX_SETTINGS_FUN_AND_DAMP*sizeof(SettingsFanAndDamper));
-		for (int j = 0; j < 3; j++) {
-			el.stages[i].fan[j].start = 0;
-			el.stages[i].fan[j].finish = 0;
-			el.stages[i].fan[j].state = 0;
-			el.stages[i].damper[j].start = 0;
-			el.stages[i].damper[j].finish = 0;
-			el.stages[i].damper[j].state = 0;
-		}
-
 	}
 	m_programs.insert(m_programs.end(), el);
 }
@@ -674,6 +665,8 @@ bool AppCore::handleStartState(float temperature) {
 	m_signedStateDamper = 0;
 	m_currentIndexDamper = 0;
 	m_currentIndexFan = 0;
+	m_currentIntervalFanDuration = 0;
+	m_prevsIntervalsDamperDuration = 0;
     
 	return true;
 }
@@ -737,25 +730,13 @@ void AppCore::handleWorkState(float temperature) {
 
 void AppCore::handleFanControl() {
 	//если текущее время больше времени завершения работы ветилятора, то наращиваем индекс 
-	if (currentWorkMode.stages[currentStage].fan[m_currentIndexFan].finish > 0 && stageDuration >= TO_SECONDS(currentWorkMode.stages[currentStage].fan[m_currentIndexFan].finish)) {
+	if (currentWorkMode.stages[currentStage].fan[m_currentIndexFan].interval > 0 && stageDuration >= m_currentIntervalFanDuration + TO_SECONDS(currentWorkMode.stages[currentStage].fan[m_currentIndexFan].interval)) {
+		m_currentIntervalFanDuration += TO_SECONDS(currentWorkMode.stages[currentStage].fan[m_currentIndexFan].interval);
 		m_currentIndexFan++;
 		display->sendToDisplay(AddrNumFan, currentWorkMode.stages[currentStage].fan[m_currentIndexFan].state);
 		return;
 	}
-	//есть в настройках работы вентилятора есть хотя бы один 0, то выключаем вентеляторы
-	if (currentWorkMode.stages[currentStage].fan[m_currentIndexFan].start == 0 || currentWorkMode.stages[currentStage].fan[m_currentIndexFan].finish == 0 || currentWorkMode.stages[currentStage].fan[m_currentIndexFan].state == FanOff) {
-		gpio->setPin(GpioDriver::PinFanLowSpeed, GpioDriver::StatePinZero);
-		gpio->setPin(GpioDriver::PinFanFastSpeed, GpioDriver::StatePinZero);
-		return;
-	}
-	int start = currentWorkMode.stages[currentStage].fan[m_currentIndexFan].start - 1;
-	//если текущее время меньше времени начала работы ветилятора, то вентилятор выключен
-	if (stageDuration < TO_SECONDS(start)) {
-		gpio->setPin(GpioDriver::PinFanLowSpeed, GpioDriver::StatePinZero);
-		gpio->setPin(GpioDriver::PinFanFastSpeed, GpioDriver::StatePinZero);
-		return;
-	}
-
+	
 	// в зависимости от настройки включаем вентилятор на нужную скорость
 	switch (currentWorkMode.stages[currentStage].fan[m_currentIndexFan].state) {
 	case FanX1:
@@ -776,20 +757,13 @@ void AppCore::handleFanControl() {
 void AppCore::handleDamperControl() {
 
 	//если текущее время больше времени завершения работы ветилятора, то наращиваем индекс 
-	if (currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].finish > 0 && stageDuration >= TO_SECONDS(currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].finish)) {
+	if (currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].interval > 0 && stageDuration >= m_prevsIntervalsDamperDuration + TO_SECONDS(currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].interval)) {
+		m_prevsIntervalsDamperDuration += TO_SECONDS(currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].interval);
 		m_currentIndexDamper++;
 		display->sendToDisplay(AddrNumDamper, currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].state);
 		return;
 	}
-	/*if (currentWorkMode.stages[currentStage].damper[m_currentIndexFan].start == 0 || currentWorkMode.stages[currentStage].damper[m_currentIndexFan].finish == 0 || currentWorkMode.stages[currentStage].damper[m_currentIndexFan].state == 0) {
 
-		return;
-	}
-	//если текущее время меньше времени начала работы ветилятора, то вентилятор выключен
-	if (stageDuration < TO_SECONDS(currentWorkMode.stages[currentStage].damper[m_currentIndexFan].start - 1)) {
-
-		return;
-	}*/
 
 	if (m_signedStateDamper == 0) {
 		int8_t targetDamper = currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].state;
@@ -830,6 +804,8 @@ void AppCore::handleStageCompletion() {
 	stageDuration = 0;
 	m_currentIndexDamper = 0;
 	m_currentIndexFan = 0;
+	m_currentIntervalFanDuration = 0;
+	m_prevsIntervalsDamperDuration = 0;
 	m_statesWork.cntH2O = currentWorkMode.stages[currentStage].waterVolume;
     
 	if (currentStage == currentWorkMode.numStage) {
