@@ -10,7 +10,7 @@
 
 #define OffsetAddrNumPrograms 4		// смещение в байтах , где хранится количество программ
 #define OffsetAddrPrograms 8		//смещение в байтах, откуда начинаются данные программ
-constexpr int MagicNumber = 0x09abcdf5; // признак, что данные программ в памяти валидны
+constexpr int MagicNumber = 0x07abc5f5; // признак, что данные программ в памяти валидны
 
 #define TO_SECONDS(x) (60 * (x))
 #define MAX_SETTINGS_FUN_AND_DAMP 6
@@ -68,6 +68,7 @@ struct WorkMode {
     uint8_t lenNameMode; //!< длина имени программы
     uint8_t numStage; //!< количество этапов
     StageWorkMode stages[MaxStageMode]; //!< настройки этапов
+	uint16_t crc;
     /**
         @brief произоводит сброс параметров рабочего режима 
     **/

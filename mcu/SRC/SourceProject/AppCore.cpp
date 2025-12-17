@@ -112,28 +112,34 @@ void AppCore::readPrograms() {
 #ifdef EEPROM_MEMORY
 	int delay = 20000;
 	while (delay--) ;
-	bool res = I2C3Interface::instance().read(EepromAddrProgramsAttribute, (uint8_t*)&magic, sizeof(int));
+	bool res = I2C3Interface::instance().readExt(EepromAddrProgramsAttribute, (uint8_t*)&magic, sizeof(int));
 	if (magic != MagicNumber || !res) {
 		initDefaultPrograms();
 		writProgramsToEeprom();
 	}
 	else {
-		res = I2C3Interface::instance().read(EepromAddrProgramsAttribute + OffsetAddrNumPrograms, (uint8_t*)&magic, sizeof(int));
+		res = I2C3Interface::instance().readExt(EepromAddrProgramsAttribute + OffsetAddrNumPrograms, (uint8_t*)&magic, sizeof(int));
 		if (!res)
 			return;
 		WorkMode mode;
 		m_programs.clear();
 		m_programs.resize(magic);
 		uint16_t stepAddr = 8;
+		int numPage = (sizeof(WorkMode) % EepromPageSize == 0) ? sizeof(WorkMode) / EepromPageSize : (sizeof(WorkMode) / EepromPageSize) + 1; 
 		for (int i = 0; i < magic; i++) {
 			
-			uint16_t addr = EepromAddrPrograms + i * EepromPageSize * 5;
+			uint16_t addr = EepromAddrPrograms + i * EepromPageSize * numPage;
 			uint8_t *p = (uint8_t*)&m_programs[i];
 				
 			for (int j = 0; j < sizeof(WorkMode); j += stepAddr) {
 				uint16_t size = (sizeof(WorkMode) - j >= stepAddr) ? stepAddr : sizeof(WorkMode) - j; 
-				I2C3Interface::instance().read(addr + j, p, size);
+				I2C3Interface::instance().readExt(addr + j, p, size);
 				p += stepAddr;
+			}
+			p = (uint8_t*)&m_programs[i];
+			if (m_programs[i].crc != calculateCRC16(p, sizeof(WorkMode) - sizeof(uint16_t))) {
+				asm(" nop");
+				
 			}
 		}
 	}
@@ -142,7 +148,7 @@ void AppCore::readPrograms() {
 	uint16_t size;
 	for (int i = 0; i < sizeof(gParams); i += EepromPageSize) {
 		size = (sizeof(gParams) - i >= EepromPageSize) ? EepromPageSize : sizeof(gParams) - i; 
-		I2C3Interface::instance().read(EepromAddrGlobalParams + i, p, size);
+		I2C3Interface::instance().readExt(EepromAddrGlobalParams + i, p, size);
 		p += EepromPageSize;
 	}
 	if (gParams.crc32 != CRC32_function((uint8_t*)&gParams.k1, sizeof(gParams) - sizeof(gParams.crc32))) {
@@ -212,29 +218,32 @@ void AppCore::writeParamsToEeprom() {
 	uint16_t size;
 	for (int i = 0; i < sizeof(gParams); i += EepromPageSize) {
 		size = (sizeof(gParams) - i >= EepromPageSize) ? EepromPageSize : sizeof(gParams) - i; 
-		I2C3Interface::instance().write(EepromAddrGlobalParams + i, p, size);
+		I2C3Interface::instance().writeExt(EepromAddrGlobalParams + i, p, size);
 		p += EepromPageSize;
 	}
 }
 
 void AppCore::writProgramsToEeprom() {
-	bool res = I2C3Interface::instance().write(EepromAddrProgramsAttribute, (uint8_t*)&MagicNumber, sizeof(int));
+	bool res = I2C3Interface::instance().writeExt(EepromAddrProgramsAttribute, (uint8_t*)&MagicNumber, sizeof(int));
 	if (!res)
 		return;
 	int val = m_programs.size();
-	res = I2C3Interface::instance().write(EepromAddrProgramsAttribute + OffsetAddrNumPrograms, (uint8_t*)&val, sizeof(int));
+	res = I2C3Interface::instance().writeExt(EepromAddrProgramsAttribute + OffsetAddrNumPrograms, (uint8_t*)&val, sizeof(int));
 	if (!res)
 		return;
 	uint8_t *p;
 	uint16_t size;
 
+	int numPage = (sizeof(WorkMode) % EepromPageSize == 0) ? sizeof(WorkMode) / EepromPageSize : (sizeof(WorkMode) / EepromPageSize) + 1; 
+
 	for (int i = 0; i < m_programs.size(); i++) {
 		p = (uint8_t*)&m_programs[i];
-		uint16_t addr = EepromAddrPrograms + i * EepromPageSize * 5;
+		m_programs[i].crc = calculateCRC16(p, sizeof(WorkMode) - sizeof(uint16_t));
+		uint16_t addr = EepromAddrPrograms + i * EepromPageSize * numPage;
 	
 		for (int j = 0; j < sizeof(WorkMode); j += EepromPageSize) {
 			size = (sizeof(WorkMode) - j >= EepromPageSize) ? EepromPageSize : sizeof(WorkMode) - j; 
-			if (I2C3Interface::instance().write(addr + j, p, size) == false)
+			if (I2C3Interface::instance().writeExt(addr + j, p, size) == false)
 				return;
 			p += EepromPageSize;
 		}
@@ -467,6 +476,10 @@ void AppCore::initText() {
 		vTaskDelay(10 / portTICK_PERIOD_MS);
 		display->sendToDisplay(addrNameProg, s);
 		currentWorkMode = m_programs.at(index);
+
+		if (currentWorkMode.crc !=  calculateCRC16((uint8_t*)&currentWorkMode, sizeof(WorkMode) - sizeof(uint16_t)))
+			display->showMessage(PageMessage, DataWorkModeBad);
+
 		m_statesWork.currentIndexProgramm = index;
 		m_statesWork.m_targetTemperature = m_programs.at(index).stages[0].temperature;
 	};
@@ -498,7 +511,9 @@ void AppCore::initText() {
 		std::string s = lstPrograms->text(m_statesWork.currentIndexProgramm);
 		display->sendToDisplay(addrMainItem, s);
 		currentWorkMode = m_programs.at(m_statesWork.currentIndexProgramm);
+		m_statesWork.m_targetTemperature = currentWorkMode.stages[0].temperature;
 		lstPrograms->resetWidget();
+
 	};
 	lstProgramsEdit->setAddrScrollValue(AddrScrolBar);
 	
@@ -544,6 +559,11 @@ void AppCore::taskPeriodic(void *p) {
 	m_statesWork.isModeIdleControlTemperature = false;
 	m_statesWork.cntContolDownTemperature = 0;
 	m_statesWork.prevTemp = selectTemperature();
+
+	//if () {
+		
+	//}
+
 	while (true) {
 		xSemaphoreTake(xSemPeriodic, pdMS_TO_TICKS(1000));
         
@@ -569,6 +589,7 @@ void AppCore::taskPeriodic(void *p) {
                 
 		case StateRunStop:
 			paintStageProgress();
+			display->switchPage(PageMain );
 			// Продолжаем в StateRunError
                 
 		case StateRunError:
@@ -623,8 +644,15 @@ void AppCore::handleIdleState(float temperature) {
 }
 
 bool AppCore::handleStartState(float temperature) {
+	if (currentWorkMode.crc !=  calculateCRC16((uint8_t*)&currentWorkMode, sizeof(WorkMode) - sizeof(uint16_t))) {
+		stateRun = StateRunIdle;
+		display->switchPage(PageMain);
+		display->showMessage(PageMessage, DataWorkModeBad);
+		return false;
+	}
 	if (checkTemperatureSensors() != 0) {
 		stateRun = StateRunIdle;
+		display->switchPage(PageMain);
 		display->showMessage(PageMessage, stateTemperatureSensor);
 
 		return true;
@@ -845,6 +873,26 @@ unsigned int AppCore::CRC32_function(unsigned char *buf, unsigned long len) {
 	while (len--)
 		crc = crc_table[(crc ^ *buf++) & 0xFF] ^ (crc >> 8);
 	return crc ^ 0xFFFFFFFFUL;
+}
+
+uint16_t AppCore::calculateCRC16(const uint8_t* data, size_t length) {
+	uint16_t crc = 0xFFFF; // Начальное значение
+    
+	for (size_t i = 0; i < length; i++) {
+		crc ^= static_cast<uint16_t>(data[i]) << 8; // Сдвиг байта в старшую часть
+        
+		for (uint8_t j = 0; j < 8; j++) {
+			if (crc & 0x8000) {
+				// Если старший бит установлен
+				crc = (crc << 1) ^ 0x1021; // Полином 0x1021
+			}
+			else {
+				crc <<= 1;
+			}
+		}
+	}
+    
+	return crc;
 }
 
 #define PERIOD_CORRECT (gParams.period)

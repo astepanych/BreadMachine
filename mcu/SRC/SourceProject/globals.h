@@ -6,7 +6,7 @@
 
 #define EepromAddrGlobalParams  0x0000
 #define EepromAddrProgramsAttribute  0x0100
-#define EepromPageSize  0x010
+#define EepromPageSize  0x040
 #define EepromAddrPrograms  (EepromAddrProgramsAttribute + EepromPageSize)
 
 

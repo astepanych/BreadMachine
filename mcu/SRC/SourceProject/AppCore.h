@@ -69,7 +69,9 @@ enum eMessages {
     FailureTemperatureSensor2,
     FailureTemperatureSensors,
     FailureWaterSensor,
-    DoorNoClosed
+    ReserveMessage,
+    DoorNoClosed,
+    DataWorkModeBad
 };
 
 
@@ -241,6 +243,9 @@ public:
         @retval     - значение контрольной суммы
     **/
     static unsigned int CRC32_function(unsigned char *buf, unsigned long len);
+
+
+	static uint16_t calculateCRC16(const uint8_t* data, size_t length);
     /**
         @brief  проверяет работоспособность датчиков температуры
         @retval  - возвращает маску несправности датчиков

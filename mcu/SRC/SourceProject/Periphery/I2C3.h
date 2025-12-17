@@ -43,7 +43,26 @@ public:
      * @param len Количество байт для чтения
      * @warning Буфер должен быть заранее выделен
      */
-    bool read(uint16_t addr, uint8_t* data, uint8_t len);    
+    bool read(uint16_t addr, uint8_t* data, uint8_t len);
+
+	/**
+ * @brief Запись данных по шине I2C
+ * @param addr Адрес устройства на шине (7-битный)
+ * @param data Указатель на буфер данных
+ * @param len Длина данных в байтах
+ * @note Адрес автоматически сдвигается влево на 1 бит
+ */
+	bool writeExt(uint16_t addr, uint8_t* data, uint8_t len);
+    
+	/**
+	 * @brief Чтение данных по шине I2C
+	 * @param addr Адрес устройства на шине (7-битный)
+	 * @param data Указатель на буфер для приема данных
+	 * @param len Количество байт для чтения
+	 * @warning Буфер должен быть заранее выделен
+	 */
+	bool readExt(uint16_t addr, uint8_t* data, uint8_t len); 
+    
     
 private:
     /**

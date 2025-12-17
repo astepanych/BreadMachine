@@ -2,6 +2,8 @@
 #include "stm32f4xx_gpio.h"
 #include "stm32f4xx_rcc.h"
 #define TIMEOUT_I2C 3000
+#define ADDR_EEPROM (0x50)
+
 I2C3Interface &I2C3Interface::instance()
 {
 	static I2C3Interface obj;
@@ -175,4 +177,124 @@ bool I2C3Interface::read(uint16_t addr, uint8_t* data, uint8_t len)
 	while (del--);
     return true;
 	
+}	
+
+bool I2C3Interface::writeExt(uint16_t addr, uint8_t* data, uint8_t len) {
+	int timeout = TIMEOUT_I2C;
+	while (I2C_GetFlagStatus(I2C3, I2C_FLAG_BUSY)) {
+		if (timeout-- <= 0)
+			return false;
+	}
+    
+	uint8_t *a = (uint8_t*)&addr;
+	/* Send I2C1 START condition */
+	timeout = TIMEOUT_I2C;
+	I2C_GenerateSTART(I2C3, ENABLE);
+	while (!I2C_CheckEvent(I2C3, I2C_EVENT_MASTER_MODE_SELECT)) {
+		if (timeout-- <= 0)
+			return false;
+	}
+	/* Test on I2C1 EV5 and clear it */
+
+	//  while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_MODE_SELECT));
+
+	 /* Send EEPROM slave Address for write */
+	uint8_t addrByte = (ADDR_EEPROM) << 1;
+	I2C_Send7bitAddress(I2C3, addrByte, I2C_Direction_Transmitter);
+	timeout = TIMEOUT_I2C;
+	while (!I2C_CheckEvent(I2C3, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) {
+		if (timeout-- <= 0)
+			return false; 
+	}
+
+	/* Test on I2C1 EV6 and clear it */
+
+	//  while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+
+	 /* Send I2C1 EEPROM internal address */
+	for (int i = 1; i >= 0; i--) {
+		I2C_SendData(I2C3, a[i]); // 0x02 is config register
+		timeout = TIMEOUT_I2C;
+		while (!I2C_CheckEvent(I2C3, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+			if (timeout-- <= 0)
+				return false; 
+		}
+	}
+	for (int i = 0; i < len; i++) {
+		I2C_SendData(I2C3, data[i]); // 0x02 is config register	
+		timeout = TIMEOUT_I2C;
+		while (!I2C_CheckEvent(I2C3, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+			if (timeout-- <= 0)
+				return false; 
+		}
+	}
+	I2C_GenerateSTOP(I2C3, ENABLE);
+	uint16_t del = 10000;
+	while (del--) ;
+	return true;
+}
+bool I2C3Interface::readExt(uint16_t addr, uint8_t* data, uint8_t len) {
+	int16_t del = 100;
+	uint8_t *a = (uint8_t*)&addr;
+	int timeout = TIMEOUT_I2C;
+	while (I2C_GetFlagStatus(I2C3, I2C_FLAG_BUSY)) {
+		if (timeout-- <= 0)
+			return false; 
+	}
+	
+	I2C_GenerateSTART(I2C3, ENABLE);
+	timeout = TIMEOUT_I2C;
+	while (!I2C_CheckEvent(I2C3, I2C_EVENT_MASTER_MODE_SELECT)) {
+		if (timeout-- <= 0)
+			return false; 
+	}
+	uint8_t addrByte = ((ADDR_EEPROM) << 1) | 1;
+	timeout = TIMEOUT_I2C;
+	I2C_Send7bitAddress(I2C3, addrByte, I2C_Direction_Transmitter);
+	while (!I2C_CheckEvent(I2C3, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) {
+		if (timeout-- <= 0)
+			return false; 
+	}
+
+
+	for (int i = 1; i >= 0; i--) {
+		I2C_SendData(I2C3, a[i]); // 0x02 is config register
+		timeout = TIMEOUT_I2C;
+		while (!I2C_CheckEvent(I2C3, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+			if (timeout-- <= 0)
+				return false; 
+		}
+	}
+	/*I2C_GenerateSTOP(I2C3, ENABLE);
+	while (I2C_GetFlagStatus(I2C3, I2C_FLAG_BUSY)) ;*/
+	I2C_GenerateSTART(I2C3, ENABLE);
+	timeout = TIMEOUT_I2C;
+	while (!I2C_CheckEvent(I2C3, I2C_EVENT_MASTER_MODE_SELECT)) {
+		if (timeout-- <= 0)
+			return false; 
+	}
+	I2C_Send7bitAddress(I2C3, addrByte, I2C_Direction_Receiver);
+	timeout = TIMEOUT_I2C;
+	while (!I2C_CheckEvent(I2C3, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED)) ;
+	
+	for (int i = 0; i < len; i++) {
+		I2C_AcknowledgeConfig(I2C3, ENABLE);
+		timeout = TIMEOUT_I2C;
+		while (!I2C_CheckEvent(I2C3, I2C_EVENT_MASTER_BYTE_RECEIVED)) {
+			if (timeout-- <= 0)
+				return false; 
+		}
+		data[i] = I2C_ReceiveData(I2C3); // 0x02 is config register	
+	}
+	I2C_AcknowledgeConfig(I2C3, DISABLE);
+	I2C_GenerateSTOP(I2C3, ENABLE);
+	/*	timeout = TIMEOUT_I2C;
+		while (!I2C_CheckEvent(I2C3, I2C_EVENT_MASTER_BYTE_RECEIVED)) {
+			if (timeout-- <= 0)
+				return false; 
+			}
+			//data[len - 1] = I2C_ReceiveData(I2C3); // 0x02 is config register	
+			del = 10000;
+			while (del--) ;*/
+	return true;
 }	
