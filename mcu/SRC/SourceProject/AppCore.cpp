@@ -664,7 +664,10 @@ bool AppCore::handleStartState(float temperature) {
 		return true;
 	}
     
-	gpio->disableIntDamperState();
+
+
+	//закоментировал перевод шибера в 0 положение, т.к. его механика не работает в печи
+	/*gpio->disableIntDamperState();
     
 	// Инициализация шибера
 	if (!gpio->isDamperStateStart()) {
@@ -675,8 +678,9 @@ bool AppCore::handleStartState(float temperature) {
 	}
 	gpio->setPin(GpioDriver::PinTemperatureDown, GpioDriver::StatePinZero);
 	gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
+	gpio->enableIntDamperState();*/
+
 	m_stateDamper = 0;
-	gpio->enableIntDamperState();
 	currentWorkMode = m_programs.at(m_statesWork.currentIndexProgramm);
 
 	LOG::instance().log("start"); 
