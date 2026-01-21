@@ -220,6 +220,19 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
                 display->sendToDisplay(addrStateWifiPassword, strlen(gParams.wifiPassword), (uint8_t*)gParams.wifiPassword);
             }
             break;
+	    case addrIconFailure: {
+		    uint16_t icon = data[2] | (data[1] << 8);
+		    m_ErrorCode = 0x5555;
+		    if (icon == 1) {
+			    if (!listError.empty()) {
+				    icon = listError.front();
+				    listError.pop();
+				    display->showMessage(PageMessage, icon);
+			    }
+		    }
+			    
+	    }
+	    break;
         case addrUpT:
             gpio->setPin(GpioDriver::PinTemperatureUp, (GpioDriver::StatesPin)data[2]);
             break;
@@ -471,6 +484,17 @@ void AppCore::keyEvent(uint16_t key) {
             break;
         case ReturnCodeKeyHideMsg :
             display->hideMessage();
+	    if (m_ErrorCode == 0x5555) {
+		    if (!listError.empty()) {
+			    int icon = listError.front();
+			    listError.pop();
+			    display->showMessage(PageMessage, icon);
+		    }
+		    else {
+			    m_ErrorCode = 0;
+			    display->sendToDisplay(addrIconFailure, 0);
+		    }
+	    }
             break;
         case ReturnCodeKeyMainSettings:
             m_pageExitSettings = PageMain;
