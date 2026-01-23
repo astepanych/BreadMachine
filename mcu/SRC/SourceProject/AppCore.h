@@ -14,6 +14,7 @@
 #include <globals.h>
 #include <Rtc.h>
 #include <log.h>
+#include <queue>
 
 #define NumItemList  (7)        //!< максимальное количество строчек в списке выбора программы
 #define NumItemListEdit  (5)    //!< максимальное количество строчек в редакторе программ
@@ -71,7 +72,8 @@ enum eMessages {
     FailureWaterSensor,
     ReserveMessage,
     DoorNoClosed,
-    DataWorkModeBad
+    DataWorkModeBad,//повреждены данные программы
+    DamperFailure//неисправность шибера
 };
 
 
@@ -288,7 +290,7 @@ private:
     uint16_t temperature;
     float prevTemperature;
 
-    void correctTemperature(float &currentTemp, uint16_t &targetTemp);
+    void correctTemperature(float &currentTemp, uint16_t targetTemp);
 	
     xSemaphoreHandle xSemPeriodic;
     xQueueHandle queExchange;
@@ -496,21 +498,9 @@ private:
 	void handleWaterSensorEvent(bool &flag);
 	void handleDamperSensorEvent(bool flag);
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
-	
-	
-	
+	uint16_t m_ErrorCode{0};
+	std::queue<uint16_t> listError;
+	void showIconError(uint16_t codeError);
 };
 
 

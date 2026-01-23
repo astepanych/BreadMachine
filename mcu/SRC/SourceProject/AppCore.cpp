@@ -563,7 +563,7 @@ void AppCore::taskPeriodic(void *p) {
 	//if () {
 		
 	//}
-
+	
 	while (true) {
 		xSemaphoreTake(xSemPeriodic, pdMS_TO_TICKS(1000));
         
@@ -594,7 +594,10 @@ void AppCore::taskPeriodic(void *p) {
                 
 		case StateRunError:
 			handleStopAndErrorState();
-			moveDamperToStartPositon();//переводим шибер в стартовое положение по просьбе заказчика
+			if (!moveDamperToStartPositon()) {
+				//переводим шибер в стартовое положение по просьбе заказчика
+				showIconError(DamperFailure);
+			}
 			stateRun = StateRunIdle;
 			break;
                 
@@ -622,7 +625,7 @@ void AppCore::handleSoundPlayback() {
 void AppCore::handleIdleState(float temperature) {
 	//если печь находится не в режиме простоя то поддерживаем температуру
 	if (!m_statesWork.isModeIdleControlTemperature && !isMenuTests) {
-		correctTemperature(temperature, m_statesWork.m_targetTemperature);
+		correctTemperature(temperature, currentWorkMode.stages[0].temperature);
 	}
 	else {//если печь в режиме простоя то 20 секунд с начала перевода печи в такой режим крутим насос температуры на уменьшение температуры
 		if (m_statesWork.cntContolDownTemperature!=0) {
@@ -644,6 +647,7 @@ void AppCore::handleIdleState(float temperature) {
 }
 
 bool AppCore::handleStartState(float temperature) {
+	currentWorkMode = m_programs.at(m_statesWork.currentIndexProgramm);
 	if (currentWorkMode.crc !=  calculateCRC16((uint8_t*)&currentWorkMode, sizeof(WorkMode) - sizeof(uint16_t))) {
 		stateRun = StateRunIdle;
 		display->switchPage(PageMain);
@@ -666,22 +670,20 @@ bool AppCore::handleStartState(float temperature) {
     
 
 
-	//закоментировал перевод шибера в 0 положение, т.к. его механика не работает в печи
-	/*gpio->disableIntDamperState();
-    
-	// Инициализация шибера
-	if (!gpio->isDamperStateStart()) {
-		gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinOne);
-		vTaskDelay(pdMS_TO_TICKS(100));
-		xSemaphoreGive(xSemPeriodic);
-		return false;
+	// Обработка ошибки инициализации шибера
+	if (moveDamperToStartPositon() == false) {
+		// TODO: Вывести ошибку - шибер не достиг нулевого положения за время таймаута
+		showIconError(DamperFailure);
+		
 	}
+	if (stateRun == StateRunStop) {
+		return true;
+	}
+	
 	gpio->setPin(GpioDriver::PinTemperatureDown, GpioDriver::StatePinZero);
-	gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
-	gpio->enableIntDamperState();*/
 
 	m_stateDamper = 0;
-	currentWorkMode = m_programs.at(m_statesWork.currentIndexProgramm);
+	
 
 	LOG::instance().log("start"); 
 	initializeWorkState();
@@ -766,6 +768,12 @@ void AppCore::handleFanControl() {
 		m_currentIntervalFanDuration += TO_SECONDS(currentWorkMode.stages[currentStage].fan[m_currentIndexFan].interval);
 		m_currentIndexFan++;
 		display->sendToDisplay(AddrNumFan, currentWorkMode.stages[currentStage].fan[m_currentIndexFan].state);
+		return;
+	}
+
+	if (currentWorkMode.stages[currentStage].fan[m_currentIndexFan].interval == 0) {
+		gpio->setPin(GpioDriver::PinFanLowSpeed, GpioDriver::StatePinZero);
+		gpio->setPin(GpioDriver::PinFanFastSpeed, GpioDriver::StatePinZero);
 		return;
 	}
 	
@@ -900,7 +908,7 @@ uint16_t AppCore::calculateCRC16(const uint8_t* data, size_t length) {
 }
 
 #define PERIOD_CORRECT (gParams.period)
-void AppCore::correctTemperature(float &currentTemp, uint16_t &targetTemp) {
+void AppCore::correctTemperature(float &currentTemp, uint16_t targetTemp) {
 	static int delta = 1;
 	static uint16_t period = 0;
 

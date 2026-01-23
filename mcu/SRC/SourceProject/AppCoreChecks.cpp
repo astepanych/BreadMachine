@@ -57,7 +57,7 @@ bool AppCore::moveDamperToStartPositon()
 		do {
 			vTaskDelay(delayControlDamper / portTICK_PERIOD_MS);
 			cntDamperTime -= delayControlDamper;
-			if (cntDamperTime <= 0)
+			if (cntDamperTime <= 0 || stateRun == StateRunStop)
 				break;
 		} while (!gpio->isDamperStateStart());
         
@@ -94,7 +94,9 @@ void AppCore::taskControlInPins(void *p)
     
 	// Обработка ошибки инициализации шибера
 	if (moveDamperToStartPositon() == false) {
+        
 		// TODO: Вывести ошибку - шибер не достиг нулевого положения за время таймаута
+		showIconError(DamperFailure);
 	}
     
 	m_stateDamper = 0; // Сброс состояния шибера
@@ -308,5 +310,11 @@ void AppCore::controlTestPins()
     checkPinState(gpio->levelStopLoadKey(), EventStop, addrIconKeyStop);
         
 
+}
+
+void AppCore::showIconError(uint16_t codeError)
+{
+	listError.push(codeError);
+	display->sendToDisplay(addrIconFailure, 1);
 }
 
