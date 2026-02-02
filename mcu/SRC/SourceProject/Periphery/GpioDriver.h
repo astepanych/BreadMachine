@@ -32,6 +32,7 @@ public:
         PinFanFastSpeed, 
         PinLoadBread,       ///< 1        
         PinDownloadBread,   ///< 2
+        
     };
     enum PinsGpioIn {
         InputPinWater,

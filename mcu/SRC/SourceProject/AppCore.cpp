@@ -24,12 +24,7 @@ struct FanState {
 }gFan;
 
 
-static void tskPeriodic(void *p) {
-	AppCore::instance().taskPeriodic();
-}
-static void tskControlInPins(void *p) {
-	AppCore::instance().taskControlInPins();
-}
+
 
 AppCore &AppCore::instance() {
 	static AppCore obj;
@@ -60,22 +55,7 @@ AppCore::AppCore() {
 void AppCore::initOsal() {
 
 	timerDamper = xTimerCreate("timerDamp", (30000 / portTICK_PERIOD_MS), pdFALSE, (void*)2, vTimerCallback);
-	xSemPeriodic = xSemaphoreCreateBinary();
-	xReturned = xTaskCreate(
-	                        tskPeriodic,       /* Function that implements the task. */
-		"NAME",          /* Text name for the task. */
-		512,      /* Stack size in words, not bytes. */
-		(void *) 1,    /* Parameter passed into the task. */
-		tskIDLE_PRIORITY,/* Priority at which the task is created. */
-		&xHandle); /* Used to pass out the created task's handle. */
-    
-	xReturned = xTaskCreate(
-	tskControlInPins,       /* Function that implements the task. */
-		"NAME1",          /* Text name for the task. */
-		256,      /* Stack size in words, not bytes. */
-		(void *) 1,    /* Parameter passed into the task. */
-		tskIDLE_PRIORITY,/* Priority at which the task is created. */
-		&xHandlePull); /* Used to pass out the created task's handle. */
+	initTasks();
 		
 }
 
@@ -559,13 +539,10 @@ void AppCore::taskPeriodic(void *p) {
 	m_statesWork.isModeIdleControlTemperature = false;
 	m_statesWork.cntContolDownTemperature = 0;
 	m_statesWork.prevTemp = selectTemperature();
-
-	//if () {
-		
-	//}
+	m_statesWork.timeoutPeriodicTask = pdMS_TO_TICKS(1000);
 	
 	while (true) {
-		xSemaphoreTake(xSemPeriodic, pdMS_TO_TICKS(1000));
+		xSemaphoreTake(xSemPeriodic, m_statesWork.timeoutPeriodicTask );
         
 		handleSoundPlayback();
         
@@ -627,15 +604,27 @@ void AppCore::handleIdleState(float temperature) {
 	if (!m_statesWork.isModeIdleControlTemperature && !isMenuTests) {
 		correctTemperature(temperature, currentWorkMode.stages[0].temperature);
 	}
-	else {//если печь в режиме простоя то 20 секунд с начала перевода печи в такой режим крутим насос температуры на уменьшение температуры
-		if (m_statesWork.cntContolDownTemperature!=0) {
+	else {//если печь в режиме простоя то 30 секунд с начала перевода печи в такой режим крутим насос температуры на уменьшение температуры
+		if (m_statesWork.cntContolDownTemperature != 0) {
 			m_statesWork.cntContolDownTemperature--;
 			if (m_statesWork.cntContolDownTemperature == 0) {
 				gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatePinZero));
+				gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatePinZero));
+				gpio->setPin(GpioDriver::MainHood, GpioDriver::StatePinZero);
+				gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinZero));
+				m_statesWork.timeoutOffMachine = 40 * 60;//будем 40 минут ожидать выключения
 			}
 		}
+		else {
+			m_statesWork.timeoutOffMachine--;//отсчитываем 40 минут
+			//если вышли 40 минут или ьемпература в печи опустилась до ниже 150 градусов, то переходим в спящий режим
+			if (m_statesWork.timeoutOffMachine == 0 || temperature < 149) {
+				//m_statesWork.timeoutPeriodicTask = portMAX_DELAY;	
+			}
+		}
+
 	}
-	if (timeBlinkYellow >= 0) {    
+	/*if (timeBlinkYellow >= 0) {    
 		if (timeBlinkYellow % 2 == 0) {
 			gpio->disableYellowLed();
 		}
@@ -643,7 +632,7 @@ void AppCore::handleIdleState(float temperature) {
 			gpio->enableYellowLed();
 		}
 		timeBlinkYellow--;
-	}
+	}*/
 }
 
 bool AppCore::handleStartState(float temperature) {
@@ -690,7 +679,7 @@ bool AppCore::handleStartState(float temperature) {
     
 	stateRun = StateRunWork;
 	updateParamStage();
-	gpio->enableYellowLed();
+	//gpio->enableYellowLed();
 	timeBlinkYellow = 0;
 	gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinOne);
     

@@ -44,6 +44,9 @@ struct StateWork {
 	uint16_t m_targetTemperature;
 	bool isModeIdleControlTemperature;
 	uint16_t cntContolDownTemperature;
+	uint16_t timeoutOffMachine;
+	bool isOffMachine;
+	int timeoutPeriodicTask;
 	
 };
 
@@ -146,6 +149,8 @@ public:
     void taskPeriodic(void *p = 0);
 
     void taskControlInPins(void *p = 0);
+	void taskControlLeds(void *p = 0);
+	void taskControlSound(void *p = 0);
     /**
         @brief поток обработки данных от ESP
         @param p - не используется
@@ -178,6 +183,8 @@ public:
         @brief производит инициализацию переменных для работы операционной системы
     **/
     void initOsal();
+
+	void initTasks();
     /**
         @brief производит инициализацию списков рабочих программ выпечки
     **/
@@ -305,6 +312,10 @@ private:
     TaskHandle_t xHandle = NULL;
     TaskHandle_t xHandlePull = NULL;
     TaskHandle_t xHandleExchange = NULL;
+	TaskHandle_t xHandleTaskCtrlLeds = NULL;
+	xSemaphoreHandle xSemTaskCtrlLeds;
+	TaskHandle_t xHandleTaksCtrlSound = NULL;
+	xSemaphoreHandle xSemTaskCtrlSound;
 
     uint8_t helperBuf[256];
 	

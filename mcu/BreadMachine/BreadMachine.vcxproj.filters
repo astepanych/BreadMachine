@@ -203,6 +203,9 @@
     <ClCompile Include="..\..\common\dataexchenge.cpp">
       <Filter>Source files\EXCHANGE</Filter>
     </ClCompile>
+    <ClCompile Include="AppCoreTasks.cpp">
+      <Filter>Source files\APP</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\SRC\SourceProject\AppCore.h">

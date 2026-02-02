@@ -422,15 +422,23 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
     case addrIsIdleMode:
 	    m_statesWork.isModeIdleControlTemperature = ((bool)data[2]);
 	    if (m_statesWork.isModeIdleControlTemperature) {
-		    m_statesWork.cntContolDownTemperature = 20;
+		    m_statesWork.cntContolDownTemperature = 30;
 		    gpio->setPin(GpioDriver::PinTemperatureUp, (GpioDriver::StatePinZero));
 		    gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatePinOne));
+		    gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatePinOne));
+		    gpio->setPin(GpioDriver::MainHood, GpioDriver::StatePinOne);
+		    gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinOne));
 	    }
 	    else {
 		    if (m_statesWork.cntContolDownTemperature) {
 			    gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatePinZero));
 			    m_statesWork.cntContolDownTemperature = 0;
 		    }
+		    if (m_statesWork.timeoutPeriodicTask == portMAX_DELAY) {
+			    m_statesWork.timeoutPeriodicTask = pdMS_TO_TICKS(1000);
+			    xSemaphoreGive(xSemPeriodic);
+		    }
+		    	
 	    }
 	    break;
     

@@ -13,27 +13,29 @@ struct GpioPin
 	GPIO_TypeDef *port;
 	const uint16_t pin;
 	const uint32_t clock;
+	GPIOSpeed_TypeDef speed;
+	GPIOMode_TypeDef mode;
 	GpioDriver::StatesPin state;
 };
 
 const GpioPin settingsPins[] = { 
-		{GpioDriver::PinFanLowSpeed, GPIOA, GPIO_Pin_0, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinOne},//23
-		{GpioDriver::PinH2O, GPIOA, GPIO_Pin_1, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinOne},//24
-		{GpioDriver::PinTemperatureUp, GPIOA, GPIO_Pin_2, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinOne},//25
-		{GpioDriver::PinTemperatureDown, GPIOA, GPIO_Pin_3, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinOne},//26
-		{GpioDriver::PinShiberX, GPIOA, GPIO_Pin_4, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinOne},
-		{GpioDriver::PinShiberO, GPIOA, GPIO_Pin_5, RCC_AHB1Periph_GPIOA, GpioDriver::StatePinOne},
+		{GpioDriver::PinFanLowSpeed, GPIOA, GPIO_Pin_0, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne},//23
+		{GpioDriver::PinH2O, GPIOA, GPIO_Pin_1, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne},//24
+		{GpioDriver::PinTemperatureUp, GPIOA, GPIO_Pin_2, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne},//25
+		{GpioDriver::PinTemperatureDown, GPIOA, GPIO_Pin_3, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne},//26
+		{GpioDriver::PinShiberX, GPIOA, GPIO_Pin_4, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne},
+		{GpioDriver::PinShiberO, GPIOA, GPIO_Pin_5, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne},
 		
-		{GpioDriver::PinGreen, GPIOD, GPIO_Pin_12, RCC_AHB1Periph_GPIOD, GpioDriver::StatePinOne },//59
-		{GpioDriver::PinYellow,	GPIOD, GPIO_Pin_13, RCC_AHB1Periph_GPIOD,GpioDriver::StatePinOne },//60
+		{GpioDriver::PinGreen, GPIOD, GPIO_Pin_12, RCC_AHB1Periph_GPIOD, GPIO_Speed_2MHz, GPIO_Mode_AF, GpioDriver::StatePinOne },//59
+		{GpioDriver::PinYellow, GPIOD, GPIO_Pin_13, RCC_AHB1Periph_GPIOD, GPIO_Speed_2MHz, GPIO_Mode_AF, GpioDriver::StatePinOne },//60
 		
-		{GpioDriver::GlobalEnable, GPIOD, GPIO_Pin_14, RCC_AHB1Periph_GPIOD, GpioDriver::StatePinOne },//61
-		{GpioDriver::HoodVisor, GPIOD, GPIO_Pin_15, RCC_AHB1Periph_GPIOD, GpioDriver::StatePinOne },//62
-		{GpioDriver::MainHood, GPIOE, GPIO_Pin_4, RCC_AHB1Periph_GPIOE, GpioDriver::StatePinOne }, //3
-		{GpioDriver::EnableLightDoorLight, GPIOE, GPIO_Pin_5, RCC_AHB1Periph_GPIOE, GpioDriver::StatePinOne }, //4
-		{GpioDriver::PinFanFastSpeed, GPIOE, GPIO_Pin_6, RCC_AHB1Periph_GPIOE, GpioDriver::StatePinOne }, //5
-		{GpioDriver::PinLoadBread, GPIOE, GPIO_Pin_2, RCC_AHB1Periph_GPIOE, GpioDriver::StatePinOne }, //1
-		{GpioDriver::PinDownloadBread, GPIOE, GPIO_Pin_3, RCC_AHB1Periph_GPIOE, GpioDriver::StatePinOne }, //2
+		{GpioDriver::GlobalEnable, GPIOD, GPIO_Pin_14, RCC_AHB1Periph_GPIOD, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne },//61
+		{GpioDriver::HoodVisor, GPIOD, GPIO_Pin_15, RCC_AHB1Periph_GPIOD, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne },//62
+		{GpioDriver::MainHood, GPIOE, GPIO_Pin_4, RCC_AHB1Periph_GPIOE, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne }, //3
+		{GpioDriver::EnableLightDoorLight, GPIOE, GPIO_Pin_5, RCC_AHB1Periph_GPIOE, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne }, //4
+		{GpioDriver::PinFanFastSpeed, GPIOE, GPIO_Pin_6, RCC_AHB1Periph_GPIOE, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne }, //5
+		{GpioDriver::PinLoadBread, GPIOE, GPIO_Pin_2, RCC_AHB1Periph_GPIOE, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne }, //1
+		{GpioDriver::PinDownloadBread, GPIOE, GPIO_Pin_3, RCC_AHB1Periph_GPIOE, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne }, //2
 };
 const int sizeSettingsPins = sizeof(settingsPins) / sizeof(settingsPins[0]);
 
@@ -81,14 +83,11 @@ void GpioDriver::initModule()
 		RCC_AHB1PeriphClockCmd(settingsPins[i].clock, ENABLE);	
 		ini.GPIO_Pin = settingsPins[i].pin;
 		
-		ini.GPIO_Mode = GPIO_Mode_OUT;	
+		ini.GPIO_Mode = settingsPins[i].mode;	
 		ini.GPIO_OType = GPIO_OType_PP;
-		ini.GPIO_Speed = GPIO_Speed_50MHz;
+		ini.GPIO_Speed = settingsPins[i].speed;
 		ini.GPIO_PuPd = GPIO_PuPd_DOWN;
-		if (settingsPins[i].indexPin == GpioDriver::PinGreen || settingsPins[i].indexPin == GpioDriver::PinYellow) {
-			ini.GPIO_Mode = GPIO_Mode_AF;
-			ini.GPIO_Speed = GPIO_Speed_2MHz;
-		}
+		
 		GPIO_Init(settingsPins[i].port, &ini);
 	}
 	GPIO_PinAFConfig(GPIOD, GPIO_PinSource12, GPIO_AF_TIM4);
