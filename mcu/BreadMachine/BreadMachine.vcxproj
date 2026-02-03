@@ -79,6 +79,7 @@
     <ClCompile Include="..\SRC\SourceProject\AppCore.cpp" />
     <ClCompile Include="..\SRC\SourceProject\AppCoreChecks.cpp" />
     <ClCompile Include="..\SRC\SourceProject\AppCoreExchenge.cpp" />
+    <ClCompile Include="..\SRC\SourceProject\AppCoreTasks.cpp" />
     <ClCompile Include="..\SRC\SourceProject\DisplayDriver.cpp" />
     <ClCompile Include="..\SRC\SourceProject\display\MyList.cpp" />
     <ClCompile Include="..\SRC\SourceProject\display\Widget.cpp" />
@@ -117,7 +118,6 @@
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_syscfg.c" />
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_tim.c" />
     <ClCompile Include="..\SRC\STM\STM32F4xxxx\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_usart.c" />
-    <ClCompile Include="AppCoreTasks.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

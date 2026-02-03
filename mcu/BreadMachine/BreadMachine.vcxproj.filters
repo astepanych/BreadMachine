@@ -203,7 +203,7 @@
     <ClCompile Include="..\..\common\dataexchenge.cpp">
       <Filter>Source files\EXCHANGE</Filter>
     </ClCompile>
-    <ClCompile Include="AppCoreTasks.cpp">
+    <ClCompile Include="..\SRC\SourceProject\AppCoreTasks.cpp">
       <Filter>Source files\APP</Filter>
     </ClCompile>
   </ItemGroup>
