@@ -507,7 +507,6 @@ private:
 	void initRtc();
 	void handleGpioEvent(int pin, bool flag);
 	void handleWaterSensorEvent(bool &flag);
-	void handleDamperSensorEvent(bool flag);
 	
 	uint16_t m_ErrorCode{0};
 	std::queue<uint16_t> listError;

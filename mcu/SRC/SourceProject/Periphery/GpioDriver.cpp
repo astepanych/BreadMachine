@@ -170,28 +170,7 @@ void GpioDriver::initModule()
     GPIO_Init(GPIOD, &ini);
   
    
-    //датчик позиционный шибера
-    SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOB, EXTI_PinSource15);
-    exti.EXTI_Line = EXTI_Line15;
-    /* Enable interrupt */
-    exti.EXTI_LineCmd = ENABLE;
-    /* Interrupt mode */
-    exti.EXTI_Mode = EXTI_Mode_Interrupt;
-    /* Triggers on rising and falling edge */
-    exti.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
-    EXTI_Init(&exti);
-	
-    /* Add IRQ vector to NVIC */
-    /* PA3 is connected to EXTI_Line3, which has EXTI3_IRQn vector */
-    nvic.NVIC_IRQChannel = EXTI15_10_IRQn;
-    /* Set priority */
-    nvic.NVIC_IRQChannelPreemptionPriority = 0x09;
-    /* Set sub priority */
-    nvic.NVIC_IRQChannelSubPriority = 0x09;
-    /* Enable interrupt */
-    nvic.NVIC_IRQChannelCmd = ENABLE;
-    /* Add to NVIC */
-    NVIC_Init(&nvic);
+
 
 }
 
@@ -404,10 +383,5 @@ void EXTI15_10_IRQHandler() {
         GpioDriver::instace()->pinEvent(GpioDriver::InputPinWater, GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_13));
         EXTI_ClearITPendingBit(EXTI_Line13);
     }
-    if (EXTI_GetITStatus(EXTI_Line15)) {
-        GpioDriver::instace()->pinEvent(GpioDriver::InputPinDamperState, GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_15));
-        EXTI_ClearITPendingBit(EXTI_Line15);
-    }
-
 }
 

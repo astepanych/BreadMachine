@@ -326,11 +326,6 @@ void AppCore::handleGpioEvent(int pin, bool flag) {
 	case GpioDriver::InputPinWater:
 		handleWaterSensorEvent(flag);
 		break;
-            
-	case GpioDriver::InputPinDamperState:
-		handleDamperSensorEvent(flag);
-		break;
-            
 	default:
 		// Игнорируем неизвестные пины
 		break;
@@ -368,51 +363,7 @@ void AppCore::handleWaterSensorEvent(bool &flag) {
 	}
 }
 
-/**
- * @brief Обработчик событий датчика положения заслонки
- * 
- * @param flag Состояние датчика заслонки
- */
-void AppCore::handleDamperSensorEvent(bool flag) {
-	if (isMenuTests) {
-		display->sendToDisplay(addrIconDamperPos, !flag);
-		return;
-	}
-    
-	// Проверка на неинициализированное состояние заслонки
-	if (m_stateDamper == 0xFFFF) {
-		return;
-	}
-    
-	// Обработка срабатывания датчика (активный низкий уровень)
-	if (!flag) {
-		// Останавливаем движение заслонки
-		gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
-		gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
-        
-		// Обновляем текущее положение заслонки
-		m_stateDamper += m_signedStateDamper;
-        
-		// Проверяем, достигли ли целевого положения или границ
-		bool isTargetPosition = (currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].state == m_stateDamper);
-		bool isMinPosition = (m_stateDamper == 0);
-		bool isMaxPosition = (m_stateDamper == 8);
-        
-		if (isTargetPosition || isMinPosition || isMaxPosition) {
-			// Достигли целевой позиции или границы - останавливаемся
-			m_signedStateDamper = 0;
-		}
-		else {
-			// Продолжаем движение в заданном направлении
-			if (m_signedStateDamper == 1) {
-				gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinOne);
-			}
-			else {
-				gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinOne);
-			}
-		}
-	}
-}
+
 
 /**
  * @brief Инициализация драйвера дисплея
