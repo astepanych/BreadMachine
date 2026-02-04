@@ -272,7 +272,7 @@ void DisplayDriver::sendToDisplayF(uint16_t id, float &data)
 	uart.write(buf, 10);
 }
 
-void DisplayDriver::showMessage(uint16_t idPage, uint16_t ipMessage)
+void DisplayDriver::showMessage(uint16_t idPage, uint16_t ipMessage, uint16_t addr)
 {
 	
 	uint8_t buff[4] = {0x5a, 0x01, 0,0 };
@@ -280,7 +280,7 @@ void DisplayDriver::showMessage(uint16_t idPage, uint16_t ipMessage)
 	*p = idPage;
 	sendToDisplay(AddrOverlay, sizeof(buff), buff);
 	
-	sendToDisplay(AddrMessage, ipMessage);
+	sendToDisplay(addr, ipMessage);
 }
 
 void DisplayDriver::hideMessage()

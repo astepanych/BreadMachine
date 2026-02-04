@@ -41,6 +41,7 @@ enum ReturnCodeKey {
     /// @name Команды сообщений (группа 0x2000)
     /// @{
     ReturnCodeKeyHideMsg = 0x2000, ///< Скрыть сообщение
+    ReturnCodeKeyHideMsg1, ///< Скрыть сообщение
     /// @}
 
     /// @name Команды управления режимами работы (группа 0x8000)

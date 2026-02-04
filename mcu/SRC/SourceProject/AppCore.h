@@ -60,6 +60,7 @@ enum ePages {
     PageSettings       = 2, //!< страница настроек
     PageMessage        = 8, //!< страница показа сообщений
     PageExternSettings = 23,//!< страница расширенных настроек
+    PageMessage1       = 26, //!< страница показа сообщений
     PageWifiMenu       = 27 //!< страница настроек беспроводной сети
 };
 
@@ -511,6 +512,8 @@ private:
 	uint16_t m_ErrorCode{0};
 	std::queue<uint16_t> listError;
 	void showIconError(uint16_t codeError);
+
+	bool isBreadmashineDone;
 };
 
 

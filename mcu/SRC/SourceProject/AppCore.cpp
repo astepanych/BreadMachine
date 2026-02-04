@@ -412,6 +412,7 @@ void AppCore::initText() {
 			display->showMessage(PageMessage, DataWorkModeBad);
 
 		m_statesWork.currentIndexProgramm = index;
+		isBreadmashineDone = false;
 		m_statesWork.m_targetTemperature = m_programs.at(index).stages[0].temperature;
 	};
 	lstPrograms->setAddrScrollValue(AddrScrollMainList);
@@ -491,7 +492,10 @@ void AppCore::taskPeriodic(void *p) {
 	m_statesWork.cntContolDownTemperature = 0;
 	m_statesWork.prevTemp = selectTemperature();
 	m_statesWork.timeoutPeriodicTask = pdMS_TO_TICKS(1000);
-	
+	isBreadmashineDone = false;
+	//display->showMessage(PageMessage1, 1, AddrMessageDone);
+	//display->switchPage(26);
+	//display->sendToDisplay(AddrMessageDone, 1);
 	while (true) {
 		xSemaphoreTake(xSemPeriodic, m_statesWork.timeoutPeriodicTask );
         
@@ -554,9 +558,16 @@ void AppCore::handleIdleState(float temperature) {
 	//если печь находится не в режиме простоя то поддерживаем температуру
 	if (!m_statesWork.isModeIdleControlTemperature && !isMenuTests) {
 		correctTemperature(temperature, currentWorkMode.stages[0].temperature);
+		if (!isBreadmashineDone) {
+			if (temperature > currentWorkMode.stages[0].temperature  && temperature < currentWorkMode.stages[0].temperature + 4) {
+				isBreadmashineDone = true;
+				display->showMessage(PageMessage1, 1, AddrMessageDone);
+			}
+		}
 	}
 	else {//если печь в режиме простоя то 30 секунд с начала перевода печи в такой режим крутим насос температуры на уменьшение температуры
 		if (m_statesWork.cntContolDownTemperature != 0) {
+			isBreadmashineDone = false;
 			m_statesWork.cntContolDownTemperature--;
 			if (m_statesWork.cntContolDownTemperature == 0) {
 				gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatePinZero));

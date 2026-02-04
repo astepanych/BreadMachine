@@ -56,6 +56,7 @@ constexpr uint16_t AddrNumDurationNew = 0x4028;
 constexpr uint16_t AddrMessage = 0x4040;
 constexpr uint16_t AddrNumTimeMode = 0x4080;
 constexpr uint16_t AddrNumTimeModeEdit = 0x40a0;
+constexpr uint16_t AddrMessageDone = 0x4100;
 
 constexpr uint16_t AddrStages = 0x7000;
 constexpr uint16_t CmdPaintFillRectangle = 0x0004;	
@@ -228,7 +229,7 @@ public:
      * @param idPage Идентификатор страницы
      * @param ipMessage Идентификатор сообщения
      */
-    static void showMessage(uint16_t idPage, uint16_t ipMessage);
+	static void showMessage(uint16_t idPage, uint16_t ipMessage, uint16_t addr = AddrMessage);
     
     /**
      * @brief Скрыть сообщение на дисплее

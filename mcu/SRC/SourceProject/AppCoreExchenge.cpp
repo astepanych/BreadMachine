@@ -490,6 +490,9 @@ void AppCore::keyEvent(uint16_t key) {
             display->switchPage(currentPage);
 			
             break;
+	    case ReturnCodeKeyHideMsg1 :
+	    display->hideMessage();
+	    break;
         case ReturnCodeKeyHideMsg :
             display->hideMessage();
 	    if (m_ErrorCode == 0x5555) {
