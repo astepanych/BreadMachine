@@ -41,6 +41,7 @@ struct StateWork {
     uint16_t periodWater;
     uint16_t currentIndexProgramm;
     int cntPlaySignal;
+	int timeoutPlayAfterRun;
 	uint16_t m_targetTemperature;
 	bool isModeIdleControlTemperature;
 	uint16_t cntContolDownTemperature;

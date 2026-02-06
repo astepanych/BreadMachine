@@ -5,6 +5,41 @@ Version=0
 ProVersion=647
 SCREENDSIZE=600X800
 SPADDRESS=5000
+[CMD]
+CMD0=1000=Key start
+CMD1=1001=cansel settings
+CMD2=1002=aplly settings
+CMD3=1003=stop
+CMD4=1004=Save programs
+CMD5=1005=UpSelectProgram
+CMD6=1006=DownSelectProgram
+CMD7=1007=InMenuListProgramms
+CMD8=1008=SettingProgram
+CMD9=1009=ExitFromMenu
+CMD10=100A=viewWorkMode
+CMD11=8001=SwitchWorkModeUp
+CMD12=8002=SwitchWorkModeDown
+CMD13=100B=EditWorkMode
+CMD14=100C=AddWorkMode
+CMD15=100D=DeleteWorkMode
+CMD16=8003=SaveWorkMode
+CMD17=8004=AddStageWorkMode
+CMD18=8005=DeleteStageWorkMode
+CMD19=1010=WifiMenu
+CMD20=1011=WifiMenuExit
+CMD21=100E=MainSettings
+CMD22=100F=RunSettings
+CMD23=2000=hideMessage
+CMD24=1012=ExitMenuTest
+CMD25=1014=CheckSound
+CMD26=1015=InMenuTests
+CMD27=1016=PlaySoundTest
+CMD28=8010=EditDamper
+CMD29=8011=EditFan
+CMD30=8012=ViewDamper
+CMD31=8013=ViewFan
+CMD32=8020=PowerUp
+CMD33=2001=hideMessage_1
 [IMG]
 00=00_main.jpg
 01=01_main.jpg
@@ -41,38 +76,3 @@ SPADDRESS=5000
 32=32.jpg
 33=33.jpg
 34=34_sleep.jpg
-[CMD]
-CMD0=1000=Key start
-CMD1=1001=cansel settings
-CMD2=1002=aplly settings
-CMD3=1003=stop
-CMD4=1004=Save programs
-CMD5=1005=UpSelectProgram
-CMD6=1006=DownSelectProgram
-CMD7=1007=InMenuListProgramms
-CMD8=1008=SettingProgram
-CMD9=1009=ExitFromMenu
-CMD10=100A=viewWorkMode
-CMD11=8001=SwitchWorkModeUp
-CMD12=8002=SwitchWorkModeDown
-CMD13=100B=EditWorkMode
-CMD14=100C=AddWorkMode
-CMD15=100D=DeleteWorkMode
-CMD16=8003=SaveWorkMode
-CMD17=8004=AddStageWorkMode
-CMD18=8005=DeleteStageWorkMode
-CMD19=1010=WifiMenu
-CMD20=1011=WifiMenuExit
-CMD21=100E=MainSettings
-CMD22=100F=RunSettings
-CMD23=2000=hideMessage
-CMD24=1012=ExitMenuTest
-CMD25=1014=CheckSound
-CMD26=1015=InMenuTests
-CMD27=1016=PlaySoundTest
-CMD28=8010=EditDamper
-CMD29=8011=EditFan
-CMD30=8012=ViewDamper
-CMD31=8013=ViewFan
-CMD32=8020=PowerUp
-CMD33=2001=hideMessage_1

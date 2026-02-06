@@ -10,7 +10,7 @@
 
 #define OffsetAddrNumPrograms 4		// смещение в байтах , где хранится количество программ
 #define OffsetAddrPrograms 8		//смещение в байтах, откуда начинаются данные программ
-constexpr int MagicNumber = 0x07abc5f5; // признак, что данные программ в памяти валидны
+constexpr int MagicNumber = 0x07ab45f5; // признак, что данные программ в памяти валидны
 
 #define TO_SECONDS(x) (60 * (x))
 #define MAX_SETTINGS_FUN_AND_DAMP 6
@@ -46,17 +46,19 @@ struct StageWorkMode {
         temperature = 250;
         waterVolume2 = 1000;
         watertimeout = 40;
-	    memset(fan, 0, sizeof(SettingsFanAndDamper)*MAX_SETTINGS_FUN_AND_DAMP);
-	    memset(damper, 0, sizeof(SettingsFanAndDamper)*MAX_SETTINGS_FUN_AND_DAMP);
+	   // memset(fan, 0, sizeof(SettingsFanAndDamper)*MAX_SETTINGS_FUN_AND_DAMP);
+	   // memset(damper, 0, sizeof(SettingsFanAndDamper)*MAX_SETTINGS_FUN_AND_DAMP);
     };
     uint16_t duration: 6; //!< продолжительность этапа
 	uint16_t temperature : 10; //!< температура для текущего этапа
     int16_t waterVolume;  //!< объем выливаемой воды
     int16_t waterVolume2; //!< объем выливаемой воды
     int16_t watertimeout; //!< таймаут выливаемой воды
+	int8_t fan;
+	int8_t damper;
     
-	SettingsFanAndDamper damper[MAX_SETTINGS_FUN_AND_DAMP];
-	SettingsFanAndDamper fan[MAX_SETTINGS_FUN_AND_DAMP];
+	//SettingsFanAndDamper damper[MAX_SETTINGS_FUN_AND_DAMP];
+	//SettingsFanAndDamper fan[MAX_SETTINGS_FUN_AND_DAMP];
 };
 /**
     @struct WorkMode
@@ -87,8 +89,12 @@ struct WorkMode {
         stages[0].duration = 8;
         stages[0].waterVolume = 2000;
         stages[0].temperature = 200;
+#ifdef EXTENDED_SETTINGS
 	    memset(stages[0].fan, 0, sizeof(SettingsFanAndDamper)*MAX_SETTINGS_FUN_AND_DAMP);
 	    memset(stages[0].damper, 0, sizeof(SettingsFanAndDamper)*MAX_SETTINGS_FUN_AND_DAMP);
+#else
+	    stages[0].fan = stages[0].damper = 0;
+#endif
 
     }
 };

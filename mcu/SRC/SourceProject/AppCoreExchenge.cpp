@@ -310,7 +310,11 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
             currentWorkMode.stages[currentStage].temperature = data[2] | (data[1] << 8);
             break;
         case AddrNumDamper:
+#ifdef EXTENDED_SETTINGS
         currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].state = data[2] | (data[1] << 8);
+#else
+        currentWorkMode.stages[currentStage].damper = data[2] | (data[1] << 8);
+#endif
 	    /*if (currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].state > m_stateDamper) {
 	        m_signedStateDamper = 1;
             gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatePinOne));
@@ -327,8 +331,12 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 
             break;
         case AddrNumFan:
+#ifdef EXTENDED_SETTINGS
 	        currentWorkMode.stages[currentStage].fan[m_currentIndexFan].state = data[2] | (data[1] << 8);
-            //gpio->setPin(GpioDriver::PinFanLowSpeed, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].fan);
+#else
+            currentWorkMode.stages[currentStage].fan = data[2] | (data[1] << 8);
+            gpio->setPin(GpioDriver::PinFanLowSpeed, (GpioDriver::StatesPin)currentWorkMode.stages[currentStage].fan);
+#endif
             break;
         case addrCurrentSound:
             gParams.numSound = data[1];
@@ -596,8 +604,13 @@ void AppCore::updateParamStage() {
     display->sendToDisplay(AddrNumStage, currentStage + 1);
     display->sendToDisplay(AddrNumWater, currentWorkMode.stages[currentStage].waterVolume);
     display->sendToDisplay(AddrNumTemperature, currentWorkMode.stages[currentStage].temperature);
+#ifdef EXTENDED_SETTINGS
     display->sendToDisplay(AddrNumFan, currentWorkMode.stages[currentStage].fan[m_currentIndexFan].state);
     display->sendToDisplay(AddrNumDamper, currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].state);
+#else 
+    display->sendToDisplay(AddrNumFan, currentWorkMode.stages[currentStage].fan);
+    display->sendToDisplay(AddrNumDamper, currentWorkMode.stages[currentStage].damper);
+#endif
 	
 }
 

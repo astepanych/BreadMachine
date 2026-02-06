@@ -377,8 +377,10 @@ void EXTI0_IRQHandler() {
 extern "C" 
 void EXTI15_10_IRQHandler() {
 	cntInt++;
-	int32_t delay = 100000;
-	while (delay--); 
+	int32_t delay = 5000;
+	while (delay--) {
+		asm(" nop");
+	}
     if (EXTI_GetITStatus(EXTI_Line13)) {
         GpioDriver::instace()->pinEvent(GpioDriver::InputPinWater, GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_13));
         EXTI_ClearITPendingBit(EXTI_Line13);
