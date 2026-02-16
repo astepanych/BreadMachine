@@ -16,15 +16,15 @@ eFailSensorTemperature AppCore::checkTemperatureSensors()
     if (adc->value2() > thresholdErrorTemperature)
     {
         curState = FailSensorTemperature2;
-        LOG::instance().log("err temp sen2"); 
+        //LOG::instance().log("err temp sen2"); 
     }
     else
     {
         curState = NoFailSensorTemperature;		
     }
     if (adc->value1() > thresholdErrorTemperature) {
-        curState = static_cast<eFailSensorTemperature>(curState | FailSensorTemperature1);
-        LOG::instance().log("err temp sen1"); 
+	    curState = static_cast<eFailSensorTemperature>(curState | NoFailSensorTemperature);
+        //LOG::instance().log("err temp sen1"); 
     }
     else
     {	
@@ -111,6 +111,7 @@ void AppCore::taskControlInPins(void *p)
 			continue; // Пропускаем остальную логику в тестовом режиме
 		}
         
+		continue;
 		// Обработка события загрузки хлеба
 		if (gpio->isEventLoadBread()) {
 			if (gpio->isDoorOpen() && !isMenuTests && !isRunLoad) {
@@ -232,14 +233,14 @@ void AppCore::addWater()
             if (!m_statesWork.isWaterStage2) {
                 if ((stageDuration == gParams.timeoutAddWater + 5) && (m_statesWork.cntH2O == currentWorkMode.stages[currentStage].waterVolume)) {
                     gpio->setPin(GpioDriver::GpioDriver::PinH2O, GpioDriver::StatePinZero);
-                    LOG::instance().log("err water sen"); 
+                    //LOG::instance().log("err water sen"); 
                     display->showMessage(PageMessage, 4);
                 }
             }
             else {
                 if ((stageDuration == timeEndAddWater + currentWorkMode.stages[currentStage].watertimeout + 5) && (m_statesWork.cntH2O == currentWorkMode.stages[currentStage].waterVolume2)) {
                     gpio->setPin(GpioDriver::GpioDriver::PinH2O, GpioDriver::StatePinZero);
-                    LOG::instance().log("err water sen"); 
+                    //LOG::instance().log("err water sen"); 
                     display->showMessage(PageMessage, 4);
                 }
             }
@@ -266,7 +267,7 @@ void AppCore::addWater()
             //проверяем что вода пошла
             if ((stageDuration == timeEndAddWater + currentWorkMode.stages[currentStage].watertimeout + 5) && (m_statesWork.cntH2O == currentWorkMode.stages[currentStage].waterVolume2)) {
                 gpio->setPin(GpioDriver::GpioDriver::PinH2O, GpioDriver::StatePinZero);
-                LOG::instance().log("err water sen"); 
+                //LOG::instance().log("err water sen"); 
                 display->showMessage(PageMessage, 4);
             }
             //обновляем воду на дисплее

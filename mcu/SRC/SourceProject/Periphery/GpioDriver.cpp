@@ -26,8 +26,8 @@ const GpioPin settingsPins[] = {
 		{GpioDriver::PinShiberX, GPIOA, GPIO_Pin_4, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne},
 		{GpioDriver::PinShiberO, GPIOA, GPIO_Pin_5, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne},
 		
-		{GpioDriver::PinGreen, GPIOD, GPIO_Pin_12, RCC_AHB1Periph_GPIOD, GPIO_Speed_2MHz, GPIO_Mode_AF, GpioDriver::StatePinOne },//59
-		{GpioDriver::PinYellow, GPIOD, GPIO_Pin_13, RCC_AHB1Periph_GPIOD, GPIO_Speed_2MHz, GPIO_Mode_AF, GpioDriver::StatePinOne },//60
+		{GpioDriver::PinGreen, GPIOD, GPIO_Pin_12, RCC_AHB1Periph_GPIOD, GPIO_Speed_2MHz, GPIO_Mode_AF, GpioDriver::StatePinZero },//59
+		{GpioDriver::PinYellow, GPIOD, GPIO_Pin_13, RCC_AHB1Periph_GPIOD, GPIO_Speed_2MHz, GPIO_Mode_AF, GpioDriver::StatePinZero },//60
 		
 		{GpioDriver::GlobalEnable, GPIOD, GPIO_Pin_14, RCC_AHB1Periph_GPIOD, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne },//61
 		{GpioDriver::HoodVisor, GPIOD, GPIO_Pin_15, RCC_AHB1Periph_GPIOD, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne },//62
@@ -104,12 +104,12 @@ void GpioDriver::initModule()
 	
 	TIM_OCInitTypeDef timerPWM;
 	TIM_OCStructInit(&timerPWM);
-	timerPWM.TIM_Pulse = 2;
+	timerPWM.TIM_Pulse = 1;
 	timerPWM.TIM_OCMode = TIM_OCMode_PWM1;
 	timerPWM.TIM_OutputState = TIM_OutputState_Enable;
 	timerPWM.TIM_OCPolarity = TIM_OCPolarity_High; 
 	TIM_OC1Init(TIM4, &timerPWM);
-	timerPWM.TIM_Pulse = 2;
+	timerPWM.TIM_Pulse = 9;
 	TIM_OC2Init(TIM4, &timerPWM);
 	
 	TIM_SetCounter(TIM4, 0);
@@ -169,6 +169,9 @@ void GpioDriver::initModule()
     ini.GPIO_PuPd = GPIO_PuPd_UP;
     GPIO_Init(GPIOD, &ini);
   
+
+	disableGreenLed();
+	disableYellowLed();
    
 
 

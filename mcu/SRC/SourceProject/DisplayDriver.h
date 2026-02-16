@@ -110,6 +110,7 @@ constexpr uint16_t addrIconRotor1 = 0x6b80;
 constexpr uint16_t addrIconRotor2 = 0x6b90;
 constexpr uint16_t addrIconRotor3 = 0x6ba0;
 constexpr uint16_t addrIconFailure = 0x6c00;
+constexpr uint16_t addrIconDone = 0x6c08;
 
 constexpr uint16_t addrWaterOneVolume = 0x6a10;
 constexpr uint16_t addrAmpSensTem = 0x6a20;

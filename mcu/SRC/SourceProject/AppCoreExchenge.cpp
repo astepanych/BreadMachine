@@ -48,132 +48,15 @@ void AppCore::taskExchange(void *p) {
     PackageNetworkFormat package;
     while (true) {
         xQueueReceive(queExchange, &package, portMAX_DELAY);
-        procUartData(package);
     }
 }
 
 
 
-
-void AppCore::procUartData(const PackageNetworkFormat&p) {
-	
-    switch (p.cmdId) {
-        case IdGetLog: {
-                uint32_t current = FlashAddLog;
-                uint8_t data[32];
-                while (current < FlashAddLog + LOG::instance().getLogBufLength()) {
-                    memcpy(data, (void*)current, 32);
-                    int len =  (FlashAddLog + LOG::instance().getLogBufLength() - current) > 32 ? 32 : FlashAddLog + LOG::instance().getLogBufLength() - current; 
-                    objDataExchenge.sendPackage(IdDataLog, 1, 32, data);
-                    current += 32;
-                    vTaskDelay(20 / portTICK_PERIOD_MS);
-                }
-                objDataExchenge.sendPackage(IdEndLog, 1, 0, nullptr);
-                LOG::instance().eraseLog();
-                break;
-            }
-        case IdSoftVersion:
-            objDataExchenge.sendPackage(IdSoftVersion, p.msgType, sizeof(versionSoft), (uint8_t*)&versionSoft);
-            break;
-        case IdStartBootloader: {
-                typedef void(*fnc_ptr)(void);
-                /* Function pointer to the address of the user application. */
-                fnc_ptr jump_to_app;
- 
-                jump_to_app = (fnc_ptr)(*(volatile uint32_t*)(BOOT_ADDRESS + 4u));
- 
-                //HAL_DeInit();
-                RCC->APB1RSTR = 0xFFFFFFFFU;
-                RCC->APB1RSTR = 0x00;
-                RCC->APB2RSTR = 0xFFFFFFFFU;
-                RCC->APB2RSTR = 0x00;
- 
-                //SysTick DeInit
-                SysTick->CTRL = 0;
-                SysTick->VAL = 0;
-                SysTick->LOAD = 0;
- 
-                __disable_irq();
- 
-                //NVIC DeInit
-                __set_BASEPRI(0);
-                __set_CONTROL(0);
-                NVIC->ICER[0] = 0xFFFFFFFF;
-                NVIC->ICPR[0] = 0xFFFFFFFF;
-                NVIC->ICER[1] = 0xFFFFFFFF;
-                NVIC->ICPR[1] = 0xFFFFFFFF;
-                NVIC->ICER[2] = 0xFFFFFFFF;
-                NVIC->ICPR[2] = 0xFFFFFFFF;
- 
-                __enable_irq();
- 
-                /* Change the main and local  stack pointer. */
-                __set_MSP(*(volatile uint32_t*)BOOT_ADDRESS);
-                SCB->VTOR = *(volatile uint32_t*)BOOT_ADDRESS;
- 
-                jump_to_app();
-                break;
-            }
-        case IdNumPrograms: {
-            if (p.msgType == MessageTypeGet) {
-                uint16_t var = m_programs.size();
-                objDataExchenge.sendPackage(IdNumPrograms, 1, sizeof(var), (uint8_t*)&var);
-                break;
-            } else {
-                m_programs.resize(p.data[0]);
-            }
-            }
-        case IdReadPrograms: {
-                uint16_t index = p.data[0];
-                uint16_t curLen = BODY_BYTE_COUNT;
-                uint8_t *pData = (uint8_t*)&m_programs[index];
-                uint16_t curPos = 0;
-                objDataExchenge.sendPackage(IdStartCopyPrograms, 1, sizeof(uint16_t), (uint8_t*)&index);
-                while (curPos < sizeof(WorkMode)) {
-                    curLen = ((sizeof(WorkMode) - curPos) < BODY_BYTE_COUNT) ? sizeof(WorkMode) - curPos : BODY_BYTE_COUNT;
-                    objDataExchenge.sendPackage(IdDataPrograms, 1, curLen, pData + curPos);
-                    curPos += curLen;
-                }
-                uint32_t crc = DataExchenge::CRC_Calc_s16_CCITT((uint16_t*)pData, sizeof(WorkMode) / sizeof(uint16_t));
-                objDataExchenge.sendPackage(IdCrcPrograms, 1, sizeof(uint32_t), (uint8_t*)&crc);
-            }
-            break;
-        case IdWritePrograms:{
-            indexProgrammsData = 0;
-            indexProgramms = p.data[0];
-            
-            break;
-        }
-        case IdDataPrograms:{
-            uint8_t *pData = (uint8_t*)&m_programs[indexProgramms];
-            memcpy(pData+indexProgrammsData, p.data, p.dataSize);
-            indexProgrammsData += p.dataSize;
-            break;
-        }
-        case IdCrcPrograms: {
-            uint32_t crc = DataExchenge::CRC_Calc_s16_CCITT((uint16_t*)&m_programs[indexProgramms], sizeof(WorkMode) / sizeof(uint16_t));
-            objDataExchenge.sendPackage(IdCrcPrograms, 1, sizeof(uint32_t), (uint8_t*)&crc);
-        }break;
-        case IdStartCopyPrograms: {
-            writProgramsToEeprom();
-        }
-        break;
-        default:
-            break;
-    }
-	
-
-}
 
 void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
     uint8_t cmd = data[0];
     switch (id) {
-        case AddrPopupDamper:
-            //display->getDataFromDisplay(AddrCurrentPage, 0, 2); 
-        break;
-        case IndexPopupDamper:
-            
-        break;
         case addrStateWifiSSID: {
                 int l = 0;
                 uint8_t *pName = data + 1;
@@ -314,6 +197,7 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
         currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].state = data[2] | (data[1] << 8);
 #else
         currentWorkMode.stages[currentStage].damper = data[2] | (data[1] << 8);
+	    m_stateDamper = 0;
 #endif
 	    /*if (currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].state > m_stateDamper) {
 	        m_signedStateDamper = 1;
@@ -467,7 +351,7 @@ void AppCore::keyEvent(uint16_t key) {
             LOG::instance().log("stop");
             break;
         case ReturnCodeKeyExitMenuTest:
-            gpio->enableGreenLed();
+            //gpio->enableGreenLed();
             if (stateRun == StateRunStart || stateRun == StateRunWork) {
                 gpio->enableYellowLed();
             }
@@ -503,6 +387,13 @@ void AppCore::keyEvent(uint16_t key) {
 	    break;
         case ReturnCodeKeyHideMsg :
             display->hideMessage();
+	    if (m_statesWork.timeoutPlayAfterRun == SOUND_ON) {
+		    xSemaphoreTake(xSemAccessCtrlSound, portMAX_DELAY);
+		    m_statesWork.timeoutPlayAfterRun = SOUND_OFF;
+		    gpio->disableGreenLed();
+		    xSemaphoreGive(xSemAccessCtrlSound);
+	    }
+
 	    if (m_ErrorCode == 0x5555) {
 		    if (!listError.empty()) {
 			    int icon = listError.front();

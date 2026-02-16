@@ -91,7 +91,7 @@ DataExchenge::DataExchenge() {
 	//xTimerStart(timerWaitPacket,0);
 	
 	//инициализируем счетчик принятых сообщений значением, которого не может быть, т.к. на счетчик сообщений отведено только 2 бита в заголовке
-	countMessageRx = 260;
+	countMessageRx = 7;
 }
 
 DataExchenge &DataExchenge::instance() {
