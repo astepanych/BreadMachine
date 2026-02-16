@@ -100,6 +100,7 @@ Widget* WorkModeEdit::keyEvent(uint16_t key)
 		}
 		
 		break;
+#ifdef EXTENDED_SETTINGS
 	case ReturnCodeKeyEditFan:
 	case ReturnCodeKeyViewFan: {
 		sendSettings(tempWMode.stages[currentStage].fan, AddrSettingsFan);
@@ -110,6 +111,7 @@ Widget* WorkModeEdit::keyEvent(uint16_t key)
 		sendSettings(tempWMode.stages[currentStage].damper, AddrSettingsDamper);
 	}
 		break;
+#endif
 	default:
 		break;
 	}
@@ -173,26 +175,30 @@ void WorkModeEdit::changeParams(const uint16_t id, uint8_t len, uint8_t* data)
 	case AddrWaterStageE: 
 		tempWMode.stages[currentStage].waterVolume = val;
 	break;	
+#ifndef EXTENDED_SETTINGS
 	case AddrDamperStageE: 
-		//tempWMode.stages[currentStage].damper = val;
-	break;
+		tempWMode.stages[currentStage].damper = val;
+		break;
 	case AddrFanStageE: 
-		//tempWMode.stages[currentStage].fan = val;
-		
+		tempWMode.stages[currentStage].fan = val;
 	break;	
+#endif	
     case AddrWaterStageE2 :
     	tempWMode.stages[currentStage].waterVolume2 = val;
 	break;
 	case AddrWaterTimeoutE:
     	tempWMode.stages[currentStage].watertimeout = val;
 	break;
+#ifdef EXTENDED_SETTINGS
 	case AddrSettingsFan:
 		applySettings(tempWMode.stages[currentStage].fan, data + 1);
 		break;
 	case AddrSettingsDamper:
 		applySettings(tempWMode.stages[currentStage].damper, data + 1);
 		break;
+#endif
 	}
+
 }
 
 void WorkModeEdit::paintNameWorkMode(uint16_t addrItem)
@@ -254,8 +260,10 @@ void WorkModeEdit::paintSettingsWorkMode(bool isEdited_)
 	m_display->sendToDisplay(AddrTimeStageV + offeset, tempWMode.stages[currentStage].duration);
 	m_display->sendToDisplay(AddrTempStageV + offeset, tempWMode.stages[currentStage].temperature);
 	m_display->sendToDisplay(AddrWaterStageV + offeset, tempWMode.stages[currentStage].waterVolume);
-	//m_display->sendToDisplay(AddrDamperStageV + offeset, tempWMode.stages[currentStage].damper);
-	//m_display->sendToDisplay(AddrFanStageV + offeset, tempWMode.stages[currentStage].fan);
+#ifndef EXTENDED_SETTINGS
+	m_display->sendToDisplay(AddrDamperStageV + offeset, tempWMode.stages[currentStage].damper);
+	m_display->sendToDisplay(AddrFanStageV + offeset, tempWMode.stages[currentStage].fan);
+#endif
     m_display->sendToDisplay(AddrWaterStageV2 + offeset, tempWMode.stages[currentStage].waterVolume2);
     m_display->sendToDisplay(AddrWaterTimeoutV + offeset, tempWMode.stages[currentStage].watertimeout);
 		

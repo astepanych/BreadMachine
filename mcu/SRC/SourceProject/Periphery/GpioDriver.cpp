@@ -26,8 +26,8 @@ const GpioPin settingsPins[] = {
 		{GpioDriver::PinShiberX, GPIOA, GPIO_Pin_4, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne},
 		{GpioDriver::PinShiberO, GPIOA, GPIO_Pin_5, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne},
 		
-		{GpioDriver::PinGreen, GPIOD, GPIO_Pin_12, RCC_AHB1Periph_GPIOD, GPIO_Speed_2MHz, GPIO_Mode_AF, GpioDriver::StatePinOne },//59
-		{GpioDriver::PinYellow, GPIOD, GPIO_Pin_13, RCC_AHB1Periph_GPIOD, GPIO_Speed_2MHz, GPIO_Mode_AF, GpioDriver::StatePinOne },//60
+		{GpioDriver::PinGreen, GPIOD, GPIO_Pin_12, RCC_AHB1Periph_GPIOD, GPIO_Speed_2MHz, GPIO_Mode_AF, GpioDriver::StatePinZero },//59
+		{GpioDriver::PinYellow, GPIOD, GPIO_Pin_13, RCC_AHB1Periph_GPIOD, GPIO_Speed_2MHz, GPIO_Mode_AF, GpioDriver::StatePinZero },//60
 		
 		{GpioDriver::GlobalEnable, GPIOD, GPIO_Pin_14, RCC_AHB1Periph_GPIOD, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne },//61
 		{GpioDriver::HoodVisor, GPIOD, GPIO_Pin_15, RCC_AHB1Periph_GPIOD, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne },//62
@@ -398,8 +398,10 @@ void EXTI0_IRQHandler() {
 extern "C" 
 void EXTI15_10_IRQHandler() {
 	cntInt++;
-	int32_t delay = 100000;
-	while (delay--); 
+	int32_t delay = 5000;
+	while (delay--) {
+		asm(" nop");
+	}
     if (EXTI_GetITStatus(EXTI_Line13)) {
         GpioDriver::instace()->pinEvent(GpioDriver::InputPinWater, GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_13));
         EXTI_ClearITPendingBit(EXTI_Line13);

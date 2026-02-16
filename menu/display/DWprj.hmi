@@ -39,6 +39,7 @@ CMD29=8011=EditFan
 CMD30=8012=ViewDamper
 CMD31=8013=ViewFan
 CMD32=8020=PowerUp
+CMD33=2001=hideMessage_1
 [IMG]
 00=00_main.jpg
 01=01_main.jpg

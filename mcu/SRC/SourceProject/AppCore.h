@@ -19,6 +19,9 @@
 #define NumItemList  (7)        //!< максимальное количество строчек в списке выбора программы
 #define NumItemListEdit  (5)    //!< максимальное количество строчек в редакторе программ
 
+#define SOUND_OFF (0)
+#define SOUND_ON_3      (3)
+#define SOUND_ON (100)
 
 constexpr uint16_t xProgresStage = 17;       //!< позиция по оси x на дисплее, с которой начинает отрисовываться прогресс бар выполения программы
 constexpr uint16_t yProgresStage = 175;      //!< позиция по оси y на дисплее, с которой начинает отрисовываться прогресс бар выполения программы
@@ -41,6 +44,7 @@ struct StateWork {
     uint16_t periodWater;
     uint16_t currentIndexProgramm;
     int cntPlaySignal;
+	int timeoutPlayAfterRun;
 	uint16_t m_targetTemperature;
 	bool isModeIdleControlTemperature;
 	uint16_t cntContolDownTemperature;
@@ -60,6 +64,7 @@ enum ePages {
     PageSettings       = 2, //!< страница настроек
     PageMessage        = 8, //!< страница показа сообщений
     PageExternSettings = 23,//!< страница расширенных настроек
+    PageMessage1       = 26, //!< страница показа сообщений
     PageWifiMenu       = 27 //!< страница настроек беспроводной сети
 };
 
@@ -272,7 +277,6 @@ private:
         @brief производит обработку данны
         @param p - 
     **/
-    void procUartData(const PackageNetworkFormat&p);
     void initExchange();
     void checkPinState(bool state, uint16_t mask, uint16_t addrIcon);
     TimerHandle_t timerYellow;
@@ -316,6 +320,7 @@ private:
 	xSemaphoreHandle xSemTaskCtrlLeds;
 	TaskHandle_t xHandleTaksCtrlSound = NULL;
 	xSemaphoreHandle xSemTaskCtrlSound;
+	xSemaphoreHandle xSemAccessCtrlSound;
 
     uint8_t helperBuf[256];
 	
@@ -368,7 +373,7 @@ private:
 	 * За сколько секунд до окончания работы начать воспроизводить
 	 * звуковое оповещение о скором завершении процесса.
 	 */
-	const int preFinishSoundTime = 40;
+	const int preFinishSoundTime = 30;
 
 	/**
 	 * @brief Время включения вытяжки перед завершением (в секундах)
@@ -378,16 +383,6 @@ private:
 	 */
 	const int preFinishVentTime = 300;
 
-	/**
-	 * @brief Отправка начальных данных на внешние устройства
-	 * 
-	 * Инициализирует обмен данными с внешними устройствами, отправляя:
-	 * - Идентификатор загрузчика
-	 * - Параметры WiFi (SSID, пароль, состояние)
-	 * 
-	 * Вызывается однократно при инициализации системы.
-	 */
-	void sendInitialData();
 
 	/**
 	 * @brief Инициализация состояния работы
@@ -401,14 +396,6 @@ private:
 	 */
 	void initializeWorkState();
 
-	/**
-	 * @brief Обработка воспроизведения звуковых сигналов
-	 * 
-	 * Управляет счетчиком воспроизведения звуковых сигналов.
-	 * При достижении нулевого значения счетчика инициирует
-	 * воспроизведение звука с заданными параметрами.
-	 */
-	void handleSoundPlayback();
 
 	/**
 	 * @brief Обработка состояния простоя (Idle)
@@ -500,6 +487,8 @@ private:
 	 * - Обновление параметров этапа
 	 * - Обработка завершения всего процесса
 	 */
+
+	void controlHoodVisor();
 	void handleStageCompletion();
 	void initGpio();
 	void initDisplay();
@@ -512,6 +501,10 @@ private:
 	uint16_t m_ErrorCode{0};
 	std::queue<uint16_t> listError;
 	void showIconError(uint16_t codeError);
+
+	bool isBreadmashineDone;
+	bool isBreadmashineHot {false};
+    int timeoutWokrHoodVisor{0};
 };
 
 
