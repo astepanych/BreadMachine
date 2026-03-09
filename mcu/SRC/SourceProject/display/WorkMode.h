@@ -14,7 +14,7 @@
 
 #define OffsetAddrNumPrograms 4		// смещение в байтах , где хранится количество программ
 #define OffsetAddrPrograms 8		//смещение в байтах, откуда начинаются данные программ
-constexpr int MagicNumber = 0x07ab4595; // признак, что данные программ в памяти валидны
+constexpr int MagicNumber = 0x27ab4595; // признак, что данные программ в памяти валидны
 
 #define TO_SECONDS(x) (60 * (x))
 #define MAX_SETTINGS_FUN_AND_DAMP 6
@@ -54,8 +54,8 @@ struct StageWorkMode {
 	fan = 0;
 	damper = 0;
   #else
-	   // memset(fan, 0, sizeof(SettingsFanAndDamper)*MAX_SETTINGS_FUN_AND_DAMP);
-	   // memset(damper, 0, sizeof(SettingsFanAndDamper)*MAX_SETTINGS_FUN_AND_DAMP);
+	    memset(fan, 0, sizeof(SettingsFanAndDamper)*MAX_SETTINGS_FUN_AND_DAMP);
+	    memset(damper, 0, sizeof(SettingsFanAndDamper)*MAX_SETTINGS_FUN_AND_DAMP);
 #endif
     };
     uint16_t duration: 6; //!< продолжительность этапа
@@ -67,8 +67,8 @@ struct StageWorkMode {
 	int8_t fan;
 	int8_t damper;
   #else  
-	//SettingsFanAndDamper damper[MAX_SETTINGS_FUN_AND_DAMP];
-	//SettingsFanAndDamper fan[MAX_SETTINGS_FUN_AND_DAMP];
+	SettingsFanAndDamper damper[MAX_SETTINGS_FUN_AND_DAMP];
+	SettingsFanAndDamper fan[MAX_SETTINGS_FUN_AND_DAMP];
 #endif
 };
 /**

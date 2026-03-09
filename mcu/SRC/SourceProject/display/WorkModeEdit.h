@@ -134,5 +134,6 @@ private:
     WorkMode tempWMode;              ///< Временный рабочий режим для редактирования
     int16_t currentStage;            ///< Текущий этап редактирования
     StateEditWorkMode stateEdited;   ///< Текущее состояние редактора
+	int16_t m_indexEditDamper;
 };
 

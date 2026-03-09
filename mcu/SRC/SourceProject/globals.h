@@ -25,6 +25,10 @@ struct RomParams {
 	uint8_t volume;
     uint16_t waterOneVolume;
     float ampSensTemp;
+	uint16_t timeOpenDamper;
+	uint16_t timeCloseDamper;
+	uint16_t positionDamper;
+	int16_t temperatureDelta;
 	
 };
 #pragma pack(pop)

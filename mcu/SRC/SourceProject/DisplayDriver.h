@@ -8,24 +8,24 @@
 
 /**
  * @file display_driver.h
- * @brief Заголовочный файл для работы с дисплеем
+ * @brief Р—Р°РіРѕР»РѕРІРѕС‡РЅС‹Р№ С„Р°Р№Р» РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ РґРёСЃРїР»РµРµРј
  * 
- * Содержит константы адресов, команды и класс для управления дисплеем.
+ * РЎРѕРґРµСЂР¶РёС‚ РєРѕРЅСЃС‚Р°РЅС‚С‹ Р°РґСЂРµСЃРѕРІ, РєРѕРјР°РЅРґС‹ Рё РєР»Р°СЃСЃ РґР»СЏ СѓРїСЂР°РІР»РµРЅРёСЏ РґРёСЃРїР»РµРµРј.
  */
 
-/** @defgroup display_consts Константы дисплея
+/** @defgroup display_consts РљРѕРЅСЃС‚Р°РЅС‚С‹ РґРёСЃРїР»РµСЏ
  *  @{
  */
 
-/// Адрес текущей страницы дисплея
+/// РђРґСЂРµСЃ С‚РµРєСѓС‰РµР№ СЃС‚СЂР°РЅРёС†С‹ РґРёСЃРїР»РµСЏ
 constexpr uint16_t AddrCurrentPage = 0x0014;
 
-/// Адрес оверлея дисплея
+/// РђРґСЂРµСЃ РѕРІРµСЂР»РµСЏ РґРёСЃРїР»РµСЏ
 constexpr uint16_t AddrOverlay = 0x00e8;
 
 /**
- * @brief Адрес версии ПО МКУ
- * @details Адрес в памяти дисплея, в которой хранится номер версии ПО МКУ для отображения
+ * @brief РђРґСЂРµСЃ РІРµСЂСЃРёРё РџРћ РњРљРЈ
+ * @details РђРґСЂРµСЃ РІ РїР°РјСЏС‚Рё РґРёСЃРїР»РµСЏ, РІ РєРѕС‚РѕСЂРѕР№ С…СЂР°РЅРёС‚СЃСЏ РЅРѕРјРµСЂ РІРµСЂСЃРёРё РџРћ РњРљРЈ РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ
  */
 constexpr uint16_t CmdSoftVersion = 0x2000;
 
@@ -39,6 +39,7 @@ constexpr uint16_t AddrSettingsFan = 0x1300;
 constexpr uint16_t AddrSettingsDamper = 0x1320;
 
 constexpr uint16_t CmdDateTime = 0x2014;
+constexpr uint16_t EditorDamper = 0x2a00;
 constexpr uint16_t CmdSetDateTime = 0x009c;
 constexpr uint16_t CmdNumProgramm = 0x4000;
 constexpr uint16_t AddrScrollMainList = 0x4002;
@@ -57,6 +58,7 @@ constexpr uint16_t AddrMessage = 0x4040;
 constexpr uint16_t AddrNumTimeMode = 0x4080;
 constexpr uint16_t AddrNumTimeModeEdit = 0x40a0;
 constexpr uint16_t AddrMessageDone = 0x4100;
+constexpr uint16_t AddrEditorDamper = 0x4102;
 
 constexpr uint16_t AddrStages = 0x7000;
 constexpr uint16_t CmdPaintFillRectangle = 0x0004;	
@@ -115,183 +117,211 @@ constexpr uint16_t addrIconDone = 0x6c08;
 constexpr uint16_t addrWaterOneVolume = 0x6a10;
 constexpr uint16_t addrAmpSensTem = 0x6a20;
 
+constexpr uint16_t addrTimeOpenDamper   = 0x5b40;
+constexpr uint16_t addrTimeCloseDamper  = 0x5b41;
+constexpr uint16_t addrPosDamper        = 0x5b42;
+constexpr uint16_t addrDeltaTem         = 0x5b43;
+
 constexpr uint16_t CmdCofirm = 0x4f4b;
 
 /**
- * @brief Структура прямоугольника для отрисовки
+ * @brief РЎС‚СЂСѓРєС‚СѓСЂР° РїСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРєР° РґР»СЏ РѕС‚СЂРёСЃРѕРІРєРё
  * 
- * Используется для команд отрисовки на дисплее
+ * РСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РґР»СЏ РєРѕРјР°РЅРґ РѕС‚СЂРёСЃРѕРІРєРё РЅР° РґРёСЃРїР»РµРµ
  */
 struct Rectangle {
-    u16be beginX; ///< Начальная координата X
-    u16be beginY; ///< Начальная координата Y
-    u16be endX; ///< Конечная координата X
-    u16be endY; ///< Конечная координата Y
-    u16be color; ///< Цвет прямоугольника
+    u16be beginX; ///< РќР°С‡Р°Р»СЊРЅР°СЏ РєРѕРѕСЂРґРёРЅР°С‚Р° X
+    u16be beginY; ///< РќР°С‡Р°Р»СЊРЅР°СЏ РєРѕРѕСЂРґРёРЅР°С‚Р° Y
+    u16be endX; ///< РљРѕРЅРµС‡РЅР°СЏ РєРѕРѕСЂРґРёРЅР°С‚Р° X
+    u16be endY; ///< РљРѕРЅРµС‡РЅР°СЏ РєРѕРѕСЂРґРёРЅР°С‚Р° Y
+    u16be color; ///< Р¦РІРµС‚ РїСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРєР°
+};
+
+/**
+    @enum  ePages
+    @brief РїРµСЂРµС‡РёСЃР»РµРЅРёРµ РѕРїРёСЃС‹РІР°РµС‚ РЅРѕРјРµСЂР° СЃС‚СЂР°РЅРёС† РЅР° РґРёСЃРїР»РµРµ
+**/
+enum ePages {
+	PageMain = 0,
+	//!< СЃС‚Р°СЂС‚РѕРІР°СЏ СЃС‚СЂР°РЅРёС†Р°
+	PageRun = 6,
+	//!< СЃС‚СЂР°РЅРёС†Р° РІС‹РїРѕР»РЅРµРЅРёСЏ РїСЂРѕРіСЂР°РјРјС‹
+	PageSettings = 2,
+	//!< СЃС‚СЂР°РЅРёС†Р° РЅР°СЃС‚СЂРѕРµРє
+	PageMessage = 8,
+	//!< СЃС‚СЂР°РЅРёС†Р° РїРѕРєР°Р·Р° СЃРѕРѕР±С‰РµРЅРёР№
+	PageEditDamper = 16,
+	PageExternSettings = 23, 
+	//!< СЃС‚СЂР°РЅРёС†Р° СЂР°СЃС€РёСЂРµРЅРЅС‹С… РЅР°СЃС‚СЂРѕРµРє
+	PageMessage1 = 26,
+	//!< СЃС‚СЂР°РЅРёС†Р° РїРѕРєР°Р·Р° СЃРѕРѕР±С‰РµРЅРёР№
+	PageWifiMenu = 27, //!< СЃС‚СЂР°РЅРёС†Р° РЅР°СЃС‚СЂРѕРµРє Р±РµСЃРїСЂРѕРІРѕРґРЅРѕР№ СЃРµС‚Рё
+    PageSleep = 34
+
 };
 
 
 
 /**
  * @class DisplayDriver
- * @brief Драйвер для работы с дисплеем
+ * @brief Р”СЂР°Р№РІРµСЂ РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ РґРёСЃРїР»РµРµРј
  * 
- * Класс предоставляет функционал для отправки команд и данных на дисплей,
- * обработки входящих данных и управления состоянием дисплея.
+ * РљР»Р°СЃСЃ РїСЂРµРґРѕСЃС‚Р°РІР»СЏРµС‚ С„СѓРЅРєС†РёРѕРЅР°Р» РґР»СЏ РѕС‚РїСЂР°РІРєРё РєРѕРјР°РЅРґ Рё РґР°РЅРЅС‹С… РЅР° РґРёСЃРїР»РµР№,
+ * РѕР±СЂР°Р±РѕС‚РєРё РІС…РѕРґСЏС‰РёС… РґР°РЅРЅС‹С… Рё СѓРїСЂР°РІР»РµРЅРёСЏ СЃРѕСЃС‚РѕСЏРЅРёРµРј РґРёСЃРїР»РµСЏ.
  */
 class DisplayDriver {
     /**
      * @enum StateParcePacketDisplay
-     * @brief Состояния парсинга пакетов от дисплея
+     * @brief РЎРѕСЃС‚РѕСЏРЅРёСЏ РїР°СЂСЃРёРЅРіР° РїР°РєРµС‚РѕРІ РѕС‚ РґРёСЃРїР»РµСЏ
      */
     enum StateParcePacketDisplay {
-        StateWaitByte1, ///< Ожидание первого байта пакета
-        StateWaitByte2, ///< Ожидание второго байта пакета
-        StateWaitLen, ///< Ожидание байта длины пакета
-        StateReadByte       ///< Чтение данных пакета
+        StateWaitByte1, ///< РћР¶РёРґР°РЅРёРµ РїРµСЂРІРѕРіРѕ Р±Р°Р№С‚Р° РїР°РєРµС‚Р°
+        StateWaitByte2, ///< РћР¶РёРґР°РЅРёРµ РІС‚РѕСЂРѕРіРѕ Р±Р°Р№С‚Р° РїР°РєРµС‚Р°
+        StateWaitLen, ///< РћР¶РёРґР°РЅРёРµ Р±Р°Р№С‚Р° РґР»РёРЅС‹ РїР°РєРµС‚Р°
+        StateReadByte       ///< Р§С‚РµРЅРёРµ РґР°РЅРЅС‹С… РїР°РєРµС‚Р°
     };
 
 public:
     /**
-     * @brief Конструктор драйвера дисплея
+     * @brief РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ РґСЂР°Р№РІРµСЂР° РґРёСЃРїР»РµСЏ
      */
     DisplayDriver();
     
     /**
-     * @brief Получить экземпляр драйвера (синглтон)
-     * @return Указатель на экземпляр DisplayDriver
+     * @brief РџРѕР»СѓС‡РёС‚СЊ СЌРєР·РµРјРїР»СЏСЂ РґСЂР°Р№РІРµСЂР° (СЃРёРЅРіР»С‚РѕРЅ)
+     * @return РЈРєР°Р·Р°С‚РµР»СЊ РЅР° СЌРєР·РµРјРїР»СЏСЂ DisplayDriver
      */
     static DisplayDriver* instance() {return m_instance;};
     
     /**
-     * @brief Инициализация дисплея
+     * @brief РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РґРёСЃРїР»РµСЏ
      */
     static void initDisplay();    
     
     /**
-     * @brief Отправить байт на дисплей
-     * @param byte Байт для отправки
+     * @brief РћС‚РїСЂР°РІРёС‚СЊ Р±Р°Р№С‚ РЅР° РґРёСЃРїР»РµР№
+     * @param byte Р‘Р°Р№С‚ РґР»СЏ РѕС‚РїСЂР°РІРєРё
      */
     static void putByte(const uint8_t byte); 
     
     /**
-     * @brief Отправить данные на дисплей
-     * @param id Идентификатор команды/адреса
-     * @param len Длина данных
-     * @param data Указатель на данные
+     * @brief РћС‚РїСЂР°РІРёС‚СЊ РґР°РЅРЅС‹Рµ РЅР° РґРёСЃРїР»РµР№
+     * @param id РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РєРѕРјР°РЅРґС‹/Р°РґСЂРµСЃР°
+     * @param len Р”Р»РёРЅР° РґР°РЅРЅС‹С…
+     * @param data РЈРєР°Р·Р°С‚РµР»СЊ РЅР° РґР°РЅРЅС‹Рµ
      */
     static void sendToDisplay(uint16_t id, uint8_t len, uint8_t *data);
     
     /**
-     * @brief Отправить строку на дисплей
-     * @param id Идентификатор команды/адреса
-     * @param str Строка для отправки
+     * @brief РћС‚РїСЂР°РІРёС‚СЊ СЃС‚СЂРѕРєСѓ РЅР° РґРёСЃРїР»РµР№
+     * @param id РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РєРѕРјР°РЅРґС‹/Р°РґСЂРµСЃР°
+     * @param str РЎС‚СЂРѕРєР° РґР»СЏ РѕС‚РїСЂР°РІРєРё
      */
     static void sendToDisplay(const uint16_t id, const std::string &str);
     
     /**
-     * @brief Отправить строку на дисплей (C-style)
-     * @param id Идентификатор команды/адреса
-     * @param len Длина строки
-     * @param data Указатель на строку
+     * @brief РћС‚РїСЂР°РІРёС‚СЊ СЃС‚СЂРѕРєСѓ РЅР° РґРёСЃРїР»РµР№ (C-style)
+     * @param id РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РєРѕРјР°РЅРґС‹/Р°РґСЂРµСЃР°
+     * @param len Р”Р»РёРЅР° СЃС‚СЂРѕРєРё
+     * @param data РЈРєР°Р·Р°С‚РµР»СЊ РЅР° СЃС‚СЂРѕРєСѓ
      */
     static void sendToDisplayStr(uint16_t id, uint8_t len, char *data);
 
     /**
-     * @brief Отправить 16-битное значение на дисплей
-     * @param id Идентификатор команды/адреса
-     * @param data Значение для отправки
+     * @brief РћС‚РїСЂР°РІРёС‚СЊ 16-Р±РёС‚РЅРѕРµ Р·РЅР°С‡РµРЅРёРµ РЅР° РґРёСЃРїР»РµР№
+     * @param id РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РєРѕРјР°РЅРґС‹/Р°РґСЂРµСЃР°
+     * @param data Р—РЅР°С‡РµРЅРёРµ РґР»СЏ РѕС‚РїСЂР°РІРєРё
      */
     static void sendToDisplay(uint16_t id, uint16_t data);
     
     /**
-     * @brief Получить данные с дисплея
-     * @param id Идентификатор команды/адреса
-     * @param data Буфер для данных
-     * @param len Ожидаемая длина данных
+     * @brief РџРѕР»СѓС‡РёС‚СЊ РґР°РЅРЅС‹Рµ СЃ РґРёСЃРїР»РµСЏ
+     * @param id РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РєРѕРјР°РЅРґС‹/Р°РґСЂРµСЃР°
+     * @param data Р‘СѓС„РµСЂ РґР»СЏ РґР°РЅРЅС‹С…
+     * @param len РћР¶РёРґР°РµРјР°СЏ РґР»РёРЅР° РґР°РЅРЅС‹С…
      */
     static void getDataFromDisplay(uint16_t id, uint16_t data, uint8_t len);
     
     /**
-     * @brief Отправить float значение на дисплей
-     * @param id Идентификатор команды/адреса
-     * @param data Значение для отправки
+     * @brief РћС‚РїСЂР°РІРёС‚СЊ float Р·РЅР°С‡РµРЅРёРµ РЅР° РґРёСЃРїР»РµР№
+     * @param id РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РєРѕРјР°РЅРґС‹/Р°РґСЂРµСЃР°
+     * @param data Р—РЅР°С‡РµРЅРёРµ РґР»СЏ РѕС‚РїСЂР°РІРєРё
      */
     static void sendToDisplayF(uint16_t id, float &data);
     
     /**
-     * @brief Переключить страницу дисплея
-     * @param page Номер страницы
+     * @brief РџРµСЂРµРєР»СЋС‡РёС‚СЊ СЃС‚СЂР°РЅРёС†Сѓ РґРёСЃРїР»РµСЏ
+     * @param page РќРѕРјРµСЂ СЃС‚СЂР°РЅРёС†С‹
      */
     static void switchPage(uint16_t page);
     
     /**
-     * @brief Показать сообщение на дисплее
-     * @param idPage Идентификатор страницы
-     * @param ipMessage Идентификатор сообщения
+     * @brief РџРѕРєР°Р·Р°С‚СЊ СЃРѕРѕР±С‰РµРЅРёРµ РЅР° РґРёСЃРїР»РµРµ
+     * @param idPage РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ СЃС‚СЂР°РЅРёС†С‹
+     * @param ipMessage РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ СЃРѕРѕР±С‰РµРЅРёСЏ
      */
 	static void showMessage(uint16_t idPage, uint16_t ipMessage, uint16_t addr = AddrMessage);
     
     /**
-     * @brief Скрыть сообщение на дисплее
+     * @brief РЎРєСЂС‹С‚СЊ СЃРѕРѕР±С‰РµРЅРёРµ РЅР° РґРёСЃРїР»РµРµ
      */
     static void hideMessage();
     
     /**
-     * @brief Колбэк для новых команд от дисплея
+     * @brief РљРѕР»Р±СЌРє РґР»СЏ РЅРѕРІС‹С… РєРѕРјР°РЅРґ РѕС‚ РґРёСЃРїР»РµСЏ
      * 
-     * Функция будет вызвана при получении новой команды от дисплея
+     * Р¤СѓРЅРєС†РёСЏ Р±СѓРґРµС‚ РІС‹Р·РІР°РЅР° РїСЂРё РїРѕР»СѓС‡РµРЅРёРё РЅРѕРІРѕР№ РєРѕРјР°РЅРґС‹ РѕС‚ РґРёСЃРїР»РµСЏ
      */
     static std::function<void(const uint16_t, uint8_t, uint8_t*)> newCmd;
     
     /**
-     * @brief Сброс дисплея
+     * @brief РЎР±СЂРѕСЃ РґРёСЃРїР»РµСЏ
      */
     static void reset();
     
     /**
-     * @brief Воспроизвести звук
-     * @param numSound Номер звука
-     * @param volume Громкость (0-255)
+     * @brief Р’РѕСЃРїСЂРѕРёР·РІРµСЃС‚Рё Р·РІСѓРє
+     * @param numSound РќРѕРјРµСЂ Р·РІСѓРєР°
+     * @param volume Р“СЂРѕРјРєРѕСЃС‚СЊ (0-255)
      */
     void playSound(uint8_t numSound, uint8_t volume);
     
 private:
-    static DisplayDriver *m_instance; ///< Указатель на экземпляр (синглтон)
+    static DisplayDriver *m_instance; ///< РЈРєР°Р·Р°С‚РµР»СЊ РЅР° СЌРєР·РµРјРїР»СЏСЂ (СЃРёРЅРіР»С‚РѕРЅ)
     
-    /// Начальный байт пакета 1
+    /// РќР°С‡Р°Р»СЊРЅС‹Р№ Р±Р°Р№С‚ РїР°РєРµС‚Р° 1
     static const uint8_t startByte1 = 0x5a;
     
-    /// Начальный байт пакета 2
+    /// РќР°С‡Р°Р»СЊРЅС‹Р№ Р±Р°Р№С‚ РїР°РєРµС‚Р° 2
     static const uint8_t startByte2 = 0xa5;
     
-    /// Байт команды записи
+    /// Р‘Р°Р№С‚ РєРѕРјР°РЅРґС‹ Р·Р°РїРёСЃРё
     static const uint8_t cmdByteWrite = 0x82;
     
-    /// Байт команды чтения
+    /// Р‘Р°Р№С‚ РєРѕРјР°РЅРґС‹ С‡С‚РµРЅРёСЏ
     static const uint8_t cmdByteRead = 0x83;
     
-    static uint8_t bufParce[SizeBuffer]; ///< Буфер для парсинга пакетов
-    static uint8_t lenPacket; ///< Длина текущего пакета
-    static uint8_t currentIndex; ///< Текущий индекс в буфере
+    static uint8_t bufParce[SizeBuffer]; ///< Р‘СѓС„РµСЂ РґР»СЏ РїР°СЂСЃРёРЅРіР° РїР°РєРµС‚РѕРІ
+    static uint8_t lenPacket; ///< Р”Р»РёРЅР° С‚РµРєСѓС‰РµРіРѕ РїР°РєРµС‚Р°
+    static uint8_t currentIndex; ///< РўРµРєСѓС‰РёР№ РёРЅРґРµРєСЃ РІ Р±СѓС„РµСЂРµ
     
     /**
-     * @brief Задача для работы с дисплеем
-     * @param p Параметры задачи (не используется)
+     * @brief Р—Р°РґР°С‡Р° РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ РґРёСЃРїР»РµРµРј
+     * @param p РџР°СЂР°РјРµС‚СЂС‹ Р·Р°РґР°С‡Рё (РЅРµ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ)
      */
     static void taskDisplay(void *p);
     
     /**
-     * @brief Парсинг пакета от дисплея
-     * @param len Длина пакета
-     * @param data Данные пакета
+     * @brief РџР°СЂСЃРёРЅРі РїР°РєРµС‚Р° РѕС‚ РґРёСЃРїР»РµСЏ
+     * @param len Р”Р»РёРЅР° РїР°РєРµС‚Р°
+     * @param data Р”Р°РЅРЅС‹Рµ РїР°РєРµС‚Р°
      */
     static void parsePackFromDisplay(uint8_t len, uint8_t *data);
         
-    static int cntPutByte; ///< Счетчик отправленных байт
-    static xQueueHandle xQueueDisplay; ///< Очередь для дисплея
-    static xSemaphoreHandle xSemDisplay; ///< Семафор для дисплея
-    TaskHandle_t xHandleDisplay = NULL; ///< Хэндл задачи дисплея
-    static StateParcePacketDisplay statePacket; ///< Текущее состояние парсера
+    static int cntPutByte; ///< РЎС‡РµС‚С‡РёРє РѕС‚РїСЂР°РІР»РµРЅРЅС‹С… Р±Р°Р№С‚
+    static xQueueHandle xQueueDisplay; ///< РћС‡РµСЂРµРґСЊ РґР»СЏ РґРёСЃРїР»РµСЏ
+    static xSemaphoreHandle xSemDisplay; ///< РЎРµРјР°С„РѕСЂ РґР»СЏ РґРёСЃРїР»РµСЏ
+    TaskHandle_t xHandleDisplay = NULL; ///< РҐСЌРЅРґР» Р·Р°РґР°С‡Рё РґРёСЃРїР»РµСЏ
+    static StateParcePacketDisplay statePacket; ///< РўРµРєСѓС‰РµРµ СЃРѕСЃС‚РѕСЏРЅРёРµ РїР°СЂСЃРµСЂР°
 };
 

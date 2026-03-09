@@ -28,6 +28,13 @@ constexpr uint16_t yProgresStage = 175;      //!< позиция по оси y �
 constexpr uint16_t hProgresStage = 60;       //!< высота прогресс бара выполения программы
 constexpr uint16_t wProgresStage = 568;      //!< ширина прогресс бара выполения программы
 
+enum StatesLeds
+{
+	LedOff,
+    LedOn,
+    LedBlink
+};
+
 struct StateWork {
     bool isStart;
     bool isDownTemp;
@@ -38,6 +45,8 @@ struct StateWork {
     float prevTemp;
     uint16_t newPeriodCorrect;
     uint16_t cntH2O;
+	int cntPulse;
+	const int cntPulseToLiter = 855;
     bool isWaterStart;
     bool isWaterStage2; // флаг отвечающий за номер этапа добавления воды
     int cntIntWater;
@@ -54,19 +63,7 @@ struct StateWork {
 	
 };
 
-/**
-    @enum  ePages
-    @brief перечисление описывает номера страниц на дисплее
-**/
-enum ePages {
-    PageMain           = 0, //!< стартовая страница
-    PageRun            = 6, //!< страница выполнения программы
-    PageSettings       = 2, //!< страница настроек
-    PageMessage        = 8, //!< страница показа сообщений
-    PageExternSettings = 23,//!< страница расширенных настроек
-    PageMessage1       = 26, //!< страница показа сообщений
-    PageWifiMenu       = 27 //!< страница настроек беспроводной сети
-};
+
 
 /**
     @enum  ePages
@@ -295,6 +292,9 @@ private:
     uint16_t allModeDuration;
     uint16_t currentPage;
     uint16_t newPage;
+	StatesLeds yellowLed{LedOff};
+	StatesLeds redLed{LedOff};
+	void enableMashine();
 	
     float Utemp1;
     float Utemp2;
@@ -311,6 +311,7 @@ private:
     AdcDriver *adc;
 
     DisplayDriver *display;
+	int m_indexEditDamper;
 	
     BaseType_t xReturned;
     TaskHandle_t xHandle = NULL;
@@ -343,11 +344,12 @@ private:
     const float thresholdErrorTemperature = 330;
 	
     xTimerHandle timerDamper; ///< таймер отключения шибера
-    int16_t timeBlinkYellow{0};
+    int16_t IsEndProgramm{0};
     bool isMenuTests{false};
     uint16_t indexProgramms;
     uint16_t indexProgrammsData;
     uint16_t m_stateDamper;
+	int16_t targetDamper;
     int16_t m_signedStateDamper;
     StateWork m_statesWork;
     int m_stateInpinTestMenu;
@@ -467,7 +469,7 @@ private:
 	 * шибером при необходимости изменения положения.
 	 */
 	void handleDamperControl();
-
+	void startMoveDamper();
 	/**
 	 * @brief Обработка предварительных действий перед завершением
 	 * 
@@ -487,9 +489,9 @@ private:
 	 * - Обновление параметров этапа
 	 * - Обработка завершения всего процесса
 	 */
-
+    void handleStageCompletion();
 	void controlHoodVisor();
-	void handleStageCompletion();
+	void controlDamperEndProgramm();
 	void initGpio();
 	void initDisplay();
 	void initAdc();
@@ -505,6 +507,7 @@ private:
 	bool isBreadmashineDone;
 	bool isBreadmashineHot {false};
     int timeoutWokrHoodVisor{0};
+	int timeoutDamperEndMode{-10};
 };
 
 

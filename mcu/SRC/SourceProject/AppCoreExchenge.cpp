@@ -240,6 +240,11 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
                     display->sendToDisplay(addrWaterOneVolume, gParams.waterOneVolume);
                     display->sendToDisplayF(addrAmpSensTem, gParams.ampSensTemp);
 
+	                display->sendToDisplay(addrTimeOpenDamper, gParams.timeOpenDamper);
+	                display->sendToDisplay(addrTimeCloseDamper, gParams.timeCloseDamper);
+	                display->sendToDisplay(addrPosDamper, gParams.positionDamper);
+	                display->sendToDisplay(addrDeltaTem, gParams.temperatureDelta);
+
                 }
                 break;
             }
@@ -272,6 +277,15 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
             adc->setCoeff(gParams.ampSensTemp);
             break;
         }
+	    case addrTimeOpenDamper: gParams.timeOpenDamper = data[2] | (data[1] << 8); break;
+	    case addrTimeCloseDamper:gParams.timeCloseDamper = data[2] | (data[1] << 8); break;
+	    case addrPosDamper:      gParams.positionDamper = data[2] | (data[1] << 8);
+	    if (gParams.positionDamper > 10 || gParams.positionDamper < 0) {
+		    gParams.positionDamper = 6;
+	    }
+        
+        break;
+	    case addrDeltaTem:       gParams.temperatureDelta = data[2] | (data[1] << 8); break;
 
         case addrAddWater:
             gParams.timeoutAddWater = data[2] | (data[1] << 8);
@@ -322,15 +336,7 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 		    gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinOne));
 	    }
 	    else {
-		    if (m_statesWork.cntContolDownTemperature) {
-			    gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatePinZero));
-			    m_statesWork.cntContolDownTemperature = 0;
-		    }
-		    if (m_statesWork.timeoutPeriodicTask == portMAX_DELAY) {
-			    m_statesWork.timeoutPeriodicTask = pdMS_TO_TICKS(1000);
-			    xSemaphoreGive(xSemPeriodic);
-		    }
-		    	
+		    enableMashine();
 	    }
 	    break;
     
@@ -338,6 +344,18 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
             p_widget->changeParams(id, len, data);
             break;
     }
+}
+
+void AppCore::enableMashine()
+{
+	if (m_statesWork.cntContolDownTemperature) {
+		gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatePinZero));
+		m_statesWork.cntContolDownTemperature = 0;
+	}
+	if (m_statesWork.timeoutPeriodicTask == portMAX_DELAY) {
+		m_statesWork.timeoutPeriodicTask = pdMS_TO_TICKS(1000);
+		xSemaphoreGive(xSemPeriodic);
+	}
 }
 
 void AppCore::keyEvent(uint16_t key) {
@@ -382,8 +400,9 @@ void AppCore::keyEvent(uint16_t key) {
             display->switchPage(currentPage);
 			
             break;
-	    case ReturnCodeKeyHideMsg1 :
-	    display->hideMessage();
+	    case ReturnCodeKeyHideMsg2:
+	    case ReturnCodeKeyHideMsg1:
+	        display->hideMessage();
 	    break;
         case ReturnCodeKeyHideMsg :
             display->hideMessage();
@@ -404,6 +423,10 @@ void AppCore::keyEvent(uint16_t key) {
 			    m_ErrorCode = 0;
 			    display->sendToDisplay(addrIconFailure, 0);
 		    }
+	    }
+	    if (IsEndProgramm) {
+		    IsEndProgramm = 0;
+		    redLed = LedOff;
 	    }
             break;
         case ReturnCodeKeyMainSettings:
@@ -430,6 +453,12 @@ void AppCore::keyEvent(uint16_t key) {
 				
                 break;
             }
+	    
+	    case ReturnCodeKeyUp:
+	    m_statesWork.isModeIdleControlTemperature = false;
+	    enableMashine();
+	    display->sendToDisplay(addrIsIdleMode, 0);
+	    break;
         default: 
             p_widget = p_widget->keyEvent(key);
             break;

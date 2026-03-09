@@ -112,6 +112,37 @@ Widget* WorkModeEdit::keyEvent(uint16_t key)
 	}
 		break;
 #endif
+
+		case ReturnCodeDamper1:
+		m_display->showMessage(PageEditDamper, 0, AddrEditorDamper);
+		m_indexEditDamper = 0;
+		m_display->sendToDisplay(EditorDamper, tempWMode.stages[currentStage].damper[m_indexEditDamper].state);
+		break;
+		case ReturnCodeDamper2:
+		m_display->showMessage(PageEditDamper, 0, AddrEditorDamper);
+		m_indexEditDamper = 1;
+		m_display->sendToDisplay(EditorDamper, tempWMode.stages[currentStage].damper[m_indexEditDamper].state);
+		break;
+		case ReturnCodeDamper3:
+		m_display->showMessage(PageEditDamper, 0, AddrEditorDamper);
+		m_indexEditDamper = 2;
+		m_display->sendToDisplay(EditorDamper, tempWMode.stages[currentStage].damper[m_indexEditDamper].state);
+		break;
+		case ReturnCodeDamper4:
+		m_display->showMessage(PageEditDamper, 0, AddrEditorDamper);
+		m_indexEditDamper = 3;
+		m_display->sendToDisplay(EditorDamper, tempWMode.stages[currentStage].damper[m_indexEditDamper].state);
+		break;
+		case ReturnCodeDamper5:
+		m_display->showMessage(PageEditDamper, 0, AddrEditorDamper);
+		m_indexEditDamper = 4;
+		m_display->sendToDisplay(EditorDamper, tempWMode.stages[currentStage].damper[m_indexEditDamper].state);
+		break;
+		case ReturnCodeDamper6:
+		m_display->showMessage(PageEditDamper, 0, AddrEditorDamper);
+		m_indexEditDamper = 5;
+		m_display->sendToDisplay(EditorDamper, tempWMode.stages[currentStage].damper[m_indexEditDamper].state);
+		break;
 	default:
 		break;
 	}
@@ -145,6 +176,12 @@ void WorkModeEdit::changeParams(const uint16_t id, uint8_t len, uint8_t* data)
 	uint16_t val = (uint16_t)valBe;
 	
 	switch(id) {
+	case EditorDamper:
+		tempWMode.stages[currentStage].damper[m_indexEditDamper].state = val;
+		m_display->hideMessage();
+		//sendSettings(tempWMode.stages[currentStage].damper, AddrSettingsDamper);
+		m_display->sendToDisplay(AddrSettingsDamper + 1 + 2*m_indexEditDamper, val);
+	break;
 	case AddrNameE: {
 		tempWMode.lenNameMode = 0;
 		uint8_t *pName = data + 1;

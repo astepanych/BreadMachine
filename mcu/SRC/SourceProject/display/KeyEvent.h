@@ -38,10 +38,18 @@ enum ReturnCodeKey {
     ReturnCodeKeyPlaySoundTest, ///< Воспроизвести тестовый звук
     /// @}
 
+    ReturnCodeDamper1 = 0x1321,
+    ReturnCodeDamper2 = 0x1323,
+    ReturnCodeDamper3 = 0x1325,
+    ReturnCodeDamper4 = 0x1327,
+    ReturnCodeDamper5 = 0x1329,
+    ReturnCodeDamper6 = 0x132a,
+
     /// @name Команды сообщений (группа 0x2000)
     /// @{
     ReturnCodeKeyHideMsg = 0x2000, ///< Скрыть сообщение
     ReturnCodeKeyHideMsg1, ///< Скрыть сообщение
+    ReturnCodeKeyHideMsg2, ///< Скрыть сообщение
     /// @}
 
     /// @name Команды управления режимами работы (группа 0x8000)
@@ -57,6 +65,7 @@ enum ReturnCodeKey {
     ReturnCodeKeyViewDamper,               ///< Удалить этап из режима работы (0x8005)
     ReturnCodeKeyViewFan,               ///<
 
+    ReturnCodeKeyUp = 0x8020,
 
     /// @}
 };

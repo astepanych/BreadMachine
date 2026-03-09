@@ -19,23 +19,22 @@ struct GpioPin
 };
 
 const GpioPin settingsPins[] = { 
-		{GpioDriver::PinFanLowSpeed, GPIOA, GPIO_Pin_0, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne},//23
-		{GpioDriver::PinH2O, GPIOA, GPIO_Pin_1, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne},//24
-		{GpioDriver::PinTemperatureUp, GPIOA, GPIO_Pin_2, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne},//25
-		{GpioDriver::PinTemperatureDown, GPIOA, GPIO_Pin_3, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne},//26
-		{GpioDriver::PinShiberX, GPIOA, GPIO_Pin_4, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne},
-		{GpioDriver::PinShiberO, GPIOA, GPIO_Pin_5, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne},
-		
-		{GpioDriver::PinGreen, GPIOD, GPIO_Pin_12, RCC_AHB1Periph_GPIOD, GPIO_Speed_2MHz, GPIO_Mode_AF, GpioDriver::StatePinZero },//59
-		{GpioDriver::PinYellow, GPIOD, GPIO_Pin_13, RCC_AHB1Periph_GPIOD, GPIO_Speed_2MHz, GPIO_Mode_AF, GpioDriver::StatePinZero },//60
-		
-		{GpioDriver::GlobalEnable, GPIOD, GPIO_Pin_14, RCC_AHB1Periph_GPIOD, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne },//61
-		{GpioDriver::HoodVisor, GPIOD, GPIO_Pin_15, RCC_AHB1Periph_GPIOD, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne },//62
-		{GpioDriver::MainHood, GPIOE, GPIO_Pin_4, RCC_AHB1Periph_GPIOE, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne }, //3
-		{GpioDriver::EnableLightDoorLight, GPIOE, GPIO_Pin_5, RCC_AHB1Periph_GPIOE, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne }, //4
-		{GpioDriver::PinFanFastSpeed, GPIOE, GPIO_Pin_6, RCC_AHB1Periph_GPIOE, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne }, //5
-		{GpioDriver::PinLoadBread, GPIOE, GPIO_Pin_2, RCC_AHB1Periph_GPIOE, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne }, //1
-		{GpioDriver::PinDownloadBread, GPIOE, GPIO_Pin_3, RCC_AHB1Periph_GPIOE, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne }, //2
+		{GpioDriver::PinFanLowSpeed, GPIOA, GPIO_Pin_0, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz,		GPIO_Mode_OUT, GpioDriver::StatePinOne },//23
+		{GpioDriver::PinH2O, GPIOA, GPIO_Pin_1, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz,				GPIO_Mode_OUT, GpioDriver::StatePinOne },//24
+		{GpioDriver::PinTemperatureUp, GPIOA, GPIO_Pin_2, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz,	GPIO_Mode_OUT, GpioDriver::StatePinOne },//25
+		{GpioDriver::PinTemperatureDown, GPIOA, GPIO_Pin_3, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz, GPIO_Mode_OUT, GpioDriver::StatePinOne },//26
+		{GpioDriver::PinShiberX, GPIOA, GPIO_Pin_4, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz,			GPIO_Mode_OUT, GpioDriver::StatePinOne },
+		{GpioDriver::PinShiberO, GPIOA, GPIO_Pin_5, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz,			GPIO_Mode_OUT, GpioDriver::StatePinOne },
+		{GpioDriver::PinGreen, GPIOD, GPIO_Pin_12, RCC_AHB1Periph_GPIOD, GPIO_Speed_2MHz,			GPIO_Mode_AF, GpioDriver::StatePinZero },//59
+		{GpioDriver::PinYellow, GPIOD, GPIO_Pin_13, RCC_AHB1Periph_GPIOD, GPIO_Speed_2MHz,			GPIO_Mode_AF, GpioDriver::StatePinZero },//60
+		{GpioDriver::GlobalEnable, GPIOD, GPIO_Pin_14, RCC_AHB1Periph_GPIOD, GPIO_Speed_50MHz,		GPIO_Mode_OUT, GpioDriver::StatePinOne },//61
+		{GpioDriver::HoodVisor, GPIOD, GPIO_Pin_15, RCC_AHB1Periph_GPIOD, GPIO_Speed_50MHz,			GPIO_Mode_OUT, GpioDriver::StatePinOne },//62
+		{GpioDriver::MainHood, GPIOE, GPIO_Pin_4, RCC_AHB1Periph_GPIOE, GPIO_Speed_50MHz,			GPIO_Mode_OUT, GpioDriver::StatePinOne }, //3
+		{GpioDriver::EnableLightDoorLight, GPIOE, GPIO_Pin_5, RCC_AHB1Periph_GPIOE,GPIO_Speed_50MHz,GPIO_Mode_OUT, GpioDriver::StatePinOne }, //4
+		{GpioDriver::PinFanFastSpeed, GPIOE, GPIO_Pin_6, RCC_AHB1Periph_GPIOE, GPIO_Speed_50MHz,	GPIO_Mode_OUT, GpioDriver::StatePinOne }, //5
+		{GpioDriver::PinLoadBread, GPIOE, GPIO_Pin_2, RCC_AHB1Periph_GPIOE, GPIO_Speed_50MHz,		GPIO_Mode_OUT, GpioDriver::StatePinOne }, //1
+		{GpioDriver::PinDownloadBread, GPIOE, GPIO_Pin_3, RCC_AHB1Periph_GPIOE, GPIO_Speed_50MHz,	GPIO_Mode_OUT, GpioDriver::StatePinOne }, //2
+		{GpioDriver::PinEnableH2O, GPIOE, GPIO_Pin_7, RCC_AHB1Periph_GPIOE, GPIO_Speed_50MHz,		GPIO_Mode_OUT, GpioDriver::StatePinOne }, //38
 };
 const int sizeSettingsPins = sizeof(settingsPins) / sizeof(settingsPins[0]);
 
@@ -60,14 +59,7 @@ void GpioDriver::setPin(PinsGpioOut pin, StatesPin state) {
 		}
 	}
 	
-	/*if (pin == GpioDriver::PinShiberX) {
-		if (state == StatePinOne) {
-			enableIntDamperState();
-		}
-		else { 
-			disableIntDamperState();
-		}
-	}*/
+	
 		
 	
 }
@@ -83,13 +75,14 @@ void GpioDriver::initModule()
 		RCC_AHB1PeriphClockCmd(settingsPins[i].clock, ENABLE);	
 		ini.GPIO_Pin = settingsPins[i].pin;
 		
-		ini.GPIO_Mode = settingsPins[i].mode;	
+		ini.GPIO_Mode = settingsPins[i].mode;
 		ini.GPIO_OType = GPIO_OType_PP;
 		ini.GPIO_Speed = settingsPins[i].speed;
 		ini.GPIO_PuPd = GPIO_PuPd_DOWN;
 		
 		GPIO_Init(settingsPins[i].port, &ini);
 	}
+	GPIO_WriteBit(GPIOE, GPIO_Pin_7, Bit_SET);
 	GPIO_PinAFConfig(GPIOD, GPIO_PinSource12, GPIO_AF_TIM4);
 	GPIO_PinAFConfig(GPIOD, GPIO_PinSource13, GPIO_AF_TIM4);
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
@@ -120,7 +113,7 @@ void GpioDriver::initModule()
 	ini.GPIO_Pin = GPIO_Pin_13;
 	ini.GPIO_OType = GPIO_OType_PP;
 	ini.GPIO_Mode = GPIO_Mode_IN;
-	ini.GPIO_Speed = GPIO_Speed_2MHz;
+	ini.GPIO_Speed = GPIO_Speed_25MHz;
 	ini.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_Init(GPIOC, &ini);
 	
@@ -157,15 +150,15 @@ void GpioDriver::initModule()
     ini.GPIO_Pin = GPIO_Pin_13 | GPIO_Pin_12 | GPIO_Pin_14 | GPIO_Pin_15;
     ini.GPIO_OType = GPIO_OType_PP;
     ini.GPIO_Mode = GPIO_Mode_IN;
-    ini.GPIO_Speed = GPIO_Speed_2MHz;
-    ini.GPIO_PuPd = GPIO_PuPd_UP;
+    ini.GPIO_Speed = GPIO_Speed_50MHz;
+	ini.GPIO_PuPd = GPIO_PuPd_UP;
     GPIO_Init(GPIOB, &ini);
 
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);	
     ini.GPIO_Pin = GPIO_Pin_7 | GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_3 | GPIO_Pin_4;
     ini.GPIO_OType = GPIO_OType_PP;
     ini.GPIO_Mode = GPIO_Mode_IN;
-    ini.GPIO_Speed = GPIO_Speed_2MHz;
+    ini.GPIO_Speed = GPIO_Speed_50MHz;
     ini.GPIO_PuPd = GPIO_PuPd_UP;
     GPIO_Init(GPIOD, &ini);
   
@@ -187,7 +180,7 @@ void GpioDriver::initModule()
     /* Set priority */
     nvic.NVIC_IRQChannelPreemptionPriority = 0x09;
     /* Set sub priority */
-    nvic.NVIC_IRQChannelSubPriority = 0x09;
+    nvic.NVIC_IRQChannelSubPriority = 0x0a;
     /* Enable interrupt */
     nvic.NVIC_IRQChannelCmd = ENABLE;
     /* Add to NVIC */
@@ -249,14 +242,20 @@ void GpioDriver::enableYellowLed()
 {
 	TIM4->CCER |= TIM_CCER_CC1E;
 }
+bool GpioDriver::isEnableYellowLed()
+{
+	return (TIM4->CCER & (TIM_CCER_CC1E)) ? true:false;
+}
 void GpioDriver::disableYellowLed()
 {
 	TIM4->CCER &= (~TIM_CCER_CC1E);
-	
 }
 
 void GpioDriver::enableGreenLed() {
 	TIM4->CCER |= TIM_CCER_CC2E;
+}
+bool GpioDriver::isEnableGreenLed() {
+	return (TIM4->CCER & (TIM_CCER_CC2E)) ? true : false;
 }
 void GpioDriver::disableGreenLed() {
 	TIM4->CCER &= (~TIM_CCER_CC2E);
@@ -380,7 +379,7 @@ bool GpioDriver::levelStopLoadKey()
 }
 
 bool GpioDriver::isDamperStateStart() {
-    return GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_0) == Bit_RESET ? true : false;
+    return GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_15) == Bit_RESET ? true : false;
 }
 bool GpioDriver::isDoorOpen() {
     return GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_3) == Bit_RESET ? true : false;
@@ -395,20 +394,24 @@ void EXTI0_IRQHandler() {
     EXTI_ClearITPendingBit(EXTI_Line0);
 }
 
+int cntHwi = 0;
 extern "C" 
 void EXTI15_10_IRQHandler() {
 	cntInt++;
-	int32_t delay = 5000;
-	while (delay--) {
-		asm(" nop");
-	}
+	//int32_t delay = 2;
+	//while (delay--) {
+	//	asm(" nop");
+	//}
     if (EXTI_GetITStatus(EXTI_Line13)) {
         GpioDriver::instace()->pinEvent(GpioDriver::InputPinWater, GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_13));
+	    
         EXTI_ClearITPendingBit(EXTI_Line13);
     }
     if (EXTI_GetITStatus(EXTI_Line15)) {
-        GpioDriver::instace()->pinEvent(GpioDriver::InputPinDamperState, GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_15));
+	    bool flag =  GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_15) ? true: false;
+	    GpioDriver::instace()->pinEvent(GpioDriver::InputPinDamperState, flag);
         EXTI_ClearITPendingBit(EXTI_Line15);
+	    cntHwi++;
     }
 
 }

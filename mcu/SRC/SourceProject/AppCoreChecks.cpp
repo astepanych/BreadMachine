@@ -45,25 +45,46 @@ eFailSensorTemperature AppCore::checkTemperatureSensors()
 
 bool AppCore::moveDamperToStartPositon()
 {
-	const int delayControlDamper = 100; // Период проверки положения шибера (мс)
-	int cntDamperTime = 20000; // Таймаут инициализации шибера (20 секунд)
+	const int delayControlDamper = 90; // Период проверки положения шибера (мс)
+	int cntDamperTime = 30000; // Таймаут инициализации шибера (30 секунд)
+	int cntAppemts = 0;
+	const int number = 10;
+	bool state = gpio->isDamperStateStart();
+	bool isStart = false;
 	// Инициализация шибера - приведение в нулевое положение
 	gpio->disableIntDamperState();
-	if (!gpio->isDamperStateStart()) {
+    //откроем шибер, чтобы при его закрытии определить его несиправность
+	gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinOne);
+	vTaskDelay(600 / portTICK_PERIOD_MS);
+	gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
+	vTaskDelay(100 / portTICK_PERIOD_MS);
+	//!gpio->isDamperStateStart()
 		// Активируем привод шибера
-		gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinOne);
+	gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinOne);
         
-		// Ожидаем пока шибер достигнет начального положения или сработает таймаут
-		do {
-			vTaskDelay(delayControlDamper / portTICK_PERIOD_MS);
-			cntDamperTime -= delayControlDamper;
-			if (cntDamperTime <= 0 || stateRun == StateRunStop)
+	// Ожидаем пока шибер достигнет начального положения или сработает таймаут
+	do {
+		vTaskDelay(delayControlDamper / portTICK_PERIOD_MS);
+		cntDamperTime -= delayControlDamper;
+		if (state != gpio->isDamperStateStart()) {
+			isStart = true;
+			cntAppemts = 0;
+			state = gpio->isDamperStateStart();
+		}
+		if (isStart) {
+			cntAppemts++;
+			if (cntAppemts == number) {
 				break;
-		} while (!gpio->isDamperStateStart());
+			}
+		}
+
+		if (cntDamperTime <= 0 /*|| stateRun == StateRunStop*/)
+			break;
+	} while (true);
         
-		// Отключаем привод шибера
-		gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
-	}
+	// Отключаем привод шибера
+	gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
+	
 	gpio->enableIntDamperState();
 	m_stateDamper = 0;
 	if (cntDamperTime <= 0 && !gpio->isDamperStateStart())
@@ -202,7 +223,7 @@ float AppCore::selectTemperature() {
         display->sendToDisplay(addrStrTempTest, len+1, (uint8_t*)buff);
     }
 	
-    m_statesWork.currentTemp = adc->value2(); 
+    m_statesWork.currentTemp = adc->value2()+gParams.temperatureDelta; 
     m_statesWork.currentTemp1 = thresholdErrorTemperature + 1; //adc->value1();
     if (m_statesWork.currentTemp < thresholdErrorTemperature && m_statesWork.currentTemp1 < thresholdErrorTemperature) {
         return (m_statesWork.currentTemp + m_statesWork.currentTemp1) / 2;		
@@ -219,31 +240,30 @@ float AppCore::selectTemperature() {
 void AppCore::addWater()
 {
     static int timeEndAddWater = 0;
+	static int prevCntInt = 0;
     if (m_statesWork.isWaterStage2 == false) {//первый этам добавления воды
         //Добавляем воду если она должна быть добавлена
         if ((stageDuration >= gParams.timeoutAddWater) && (currentWorkMode.stages[currentStage].waterVolume != 0) && (m_statesWork.isWaterStart == false)) {
             m_statesWork.cntH2O = currentWorkMode.stages[currentStage].waterVolume;
+	        m_statesWork.cntPulse = m_statesWork.cntH2O * 1000 / m_statesWork.cntPulseToLiter;
             m_statesWork.cntIntWater = 0;
+	        prevCntInt = 0;
             gpio->setPin(GpioDriver::GpioDriver::PinH2O, GpioDriver::StatePinOne);
             m_statesWork.isWaterStart = true;
         }		
         if (m_statesWork.isWaterStart == true) {
             //проверяем что вода пошла
             if (!m_statesWork.isWaterStage2) {
-                if ((stageDuration == gParams.timeoutAddWater + 5) && (m_statesWork.cntH2O == currentWorkMode.stages[currentStage].waterVolume)) {
-                    gpio->setPin(GpioDriver::GpioDriver::PinH2O, GpioDriver::StatePinZero);
-                    //LOG::instance().log("err water sen"); 
-                    display->showMessage(PageMessage, 4);
-                }
-            }
-            else {
-                if ((stageDuration == timeEndAddWater + currentWorkMode.stages[currentStage].watertimeout + 5) && (m_statesWork.cntH2O == currentWorkMode.stages[currentStage].waterVolume2)) {
-                    gpio->setPin(GpioDriver::GpioDriver::PinH2O, GpioDriver::StatePinZero);
-                    //LOG::instance().log("err water sen"); 
-                    display->showMessage(PageMessage, 4);
-                }
-            }
-            
+                //если после запуска води прошло больше 5 секунд и количество прерываний не изменилось, то выводим ошибку по датчику воды
+	            if ((stageDuration >= gParams.timeoutAddWater + 5) && (prevCntInt == m_statesWork.cntIntWater)) {
+		            gpio->setPin(GpioDriver::GpioDriver::PinH2O, GpioDriver::StatePinZero);
+		            //LOG::instance().log("err water sen"); 
+		            display->showMessage(PageMessage, 4);
+	            }
+	            else {
+		            prevCntInt =  m_statesWork.cntIntWater;
+	            }
+            }            
             //обновляем воду на дисплее
             display->sendToDisplay(AddrNumWater, m_statesWork.cntH2O);
             if (m_statesWork.cntH2O <= 0) {
@@ -258,17 +278,21 @@ void AppCore::addWater()
         //Добавляем воду если она должна быть добавлена
         if ((stageDuration >= timeEndAddWater + currentWorkMode.stages[currentStage].watertimeout) && (currentWorkMode.stages[currentStage].waterVolume2 != 0) && (m_statesWork.isWaterStart == false)) {
             m_statesWork.cntH2O = currentWorkMode.stages[currentStage].waterVolume2;
+	        m_statesWork.cntPulse = m_statesWork.cntH2O * 1000 / m_statesWork.cntPulseToLiter;
             m_statesWork.cntIntWater = 0;
+	        prevCntInt = 0;
             gpio->setPin(GpioDriver::GpioDriver::PinH2O, GpioDriver::StatePinOne);
             m_statesWork.isWaterStart = true;
         }		
         if (m_statesWork.isWaterStart == true) {
             //проверяем что вода пошла
-            if ((stageDuration == timeEndAddWater + currentWorkMode.stages[currentStage].watertimeout + 5) && (m_statesWork.cntH2O == currentWorkMode.stages[currentStage].waterVolume2)) {
+	        if ((stageDuration == timeEndAddWater + currentWorkMode.stages[currentStage].watertimeout + 5) &&(prevCntInt == m_statesWork.cntIntWater)) {
                 gpio->setPin(GpioDriver::GpioDriver::PinH2O, GpioDriver::StatePinZero);
                 //LOG::instance().log("err water sen"); 
                 display->showMessage(PageMessage, 4);
-            }
+	        } else {
+		        prevCntInt =  m_statesWork.cntIntWater;
+	        }
             //обновляем воду на дисплее
             display->sendToDisplay(AddrNumWater1, m_statesWork.cntH2O);
             if (m_statesWork.cntH2O <= 0) {

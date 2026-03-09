@@ -32,6 +32,7 @@ public:
         PinFanFastSpeed, 
         PinLoadBread,       ///< 1        
         PinDownloadBread,   ///< 2
+        PinEnableH2O,
         
     };
     enum PinsGpioIn {
@@ -81,6 +82,7 @@ public:
      */
     void enableYellowLed();
 
+	bool isEnableYellowLed();
     /**
      * @brief Выключение желтого светодиода
      */
@@ -90,7 +92,7 @@ public:
      * @brief Включение зеленого светодиода
      */
     void enableGreenLed();
-
+	bool isEnableGreenLed();
     /**
      * @brief Выключение зеленого светодиода
      */

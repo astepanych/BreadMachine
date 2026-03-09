@@ -61,8 +61,44 @@ void AppCore::taskControlLeds(void *p)
 {
 	int timeout = 0;
 	while (true) {
-		xSemaphoreTake(xSemTaskCtrlLeds, portMAX_DELAY);
+		xSemaphoreTake(xSemTaskCtrlLeds, pdMS_TO_TICKS(1000));
+		switch (yellowLed) {
+			case LedOff:
+			if (gpio->isEnableYellowLed())
+				gpio->disableYellowLed();
+			break;
+			case LedOn:
+			if (!gpio->isEnableYellowLed())
+				gpio->enableYellowLed();
+			break;
+			case LedBlink:
+			if (gpio->isEnableYellowLed()) {
+				gpio->disableYellowLed();
+			}
+			else {
+				gpio->enableYellowLed();
+			}
+			break;
+		}
 
+		switch (redLed) {
+			case LedOff:
+			if (gpio->isEnableGreenLed())
+				gpio->disableGreenLed();
+			break;
+			case LedOn:
+			if (!gpio->isEnableGreenLed())
+				gpio->enableGreenLed();
+			break;
+			case LedBlink:
+			if (gpio->isEnableGreenLed()) {
+				gpio->disableGreenLed();
+			}
+			else {
+				gpio->enableGreenLed();
+			}
+			break;
+		}
 	}
 }
 
@@ -75,26 +111,7 @@ void AppCore::taskControlSound(void *p)
 		xSemaphoreTake(xSemTaskCtrlSound, pdMS_TO_TICKS(500));
 
 		xSemaphoreTake(xSemAccessCtrlSound, portMAX_DELAY);
-		timeout++;
-		if (m_statesWork.timeoutPlayAfterRun == SOUND_ON) {
-			if (timeout % 2)
-				gpio->disableGreenLed();
-			else 
-				gpio->enableGreenLed();
-		}
-		else {
-			if (m_statesWork.timeoutPlayAfterRun == SOUND_ON_3) {
-				m_statesWork.cntPlaySignal--;
-				if (m_statesWork.cntPlaySignal%2) {
-					gpio->enableGreenLed();
-				}
-				else {
-					gpio->disableGreenLed();
-				}
-				if (m_statesWork.cntPlaySignal == 0)
-					m_statesWork.timeoutPlayAfterRun = SOUND_OFF;
-			}
-		}
+		
 		xSemaphoreGive(xSemAccessCtrlSound);
 	}
 
