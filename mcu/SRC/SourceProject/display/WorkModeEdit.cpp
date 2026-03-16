@@ -91,7 +91,7 @@ Widget* WorkModeEdit::keyEvent(uint16_t key)
 		
 		break;
 	case ReturnCodeKeyDeleteStageWorkMode:
-		if (tempWMode.numStage > 0) {
+		if (tempWMode.numStage > 1) {
 			memmove(&tempWMode.stages[currentStage], &tempWMode.stages[currentStage + 1], sizeof(StageWorkMode)*(MaxStageMode - currentStage - 1));
 			tempWMode.numStage--;
 			if (currentStage == tempWMode.numStage)

@@ -181,11 +181,11 @@ void AppCore::taskControlInPins(void *p)
 		}
         
 		// Управление подсветкой в зависимости от состояния двери
-		if (!isMenuTests)
+		/*if (!isMenuTests && )
 			gpio->setPin(GpioDriver::EnableLightDoorLight, (GpioDriver::StatesPin)gpio->isDoorOpen());
-        
+        */
 		// Сброс счетчика воспроизведения звука при открытой двери
-		if (gpio->isDoorOpen())
+		if (!gpio->isDoorOpen())
 			m_statesWork.cntPlaySignal = -1; // Признак, что не надо продолжать воспроизводить звук
 	}
 }

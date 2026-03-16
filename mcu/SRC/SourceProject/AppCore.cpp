@@ -351,7 +351,6 @@ void AppCore::handleGpioEvent(int pin, bool flag) {
 void AppCore::handleWaterSensorEvent(bool &flag) {
 	if (isMenuTests) {
 		display->sendToDisplay(addrIconWaterPin, flag);
-		gpio->togglePin(GpioDriver::PinFanLowSpeed);
 		return;
 	}
     
@@ -637,54 +636,64 @@ void AppCore::controlDamperEndProgramm()
 
 void AppCore::handleIdleState(float temperature) {
 	static bool isOff =  false;
+
 	//если печь находится не в режиме простоя то поддерживаем температуру
-	if (!m_statesWork.isModeIdleControlTemperature && !isMenuTests) {
-		isOff = false;
-		correctTemperature(temperature, currentWorkMode.stages[0].temperature);
-		gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinOne);
-		if (!isBreadmashineDone) {
-			if (temperature > currentWorkMode.stages[0].temperature - 4  && temperature < currentWorkMode.stages[0].temperature + 4) {
-				isBreadmashineDone = true;
-				yellowLed = LedBlink;
-				if (!isBreadmashineHot) {
-					display->showMessage(PageMessage1, 1, AddrMessageDone);
-					isBreadmashineHot = true;
+	if (!isMenuTests) {
+		if (!m_statesWork.isModeIdleControlTemperature) {
+			isOff = false;
+			correctTemperature(temperature, currentWorkMode.stages[0].temperature);
+			gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinOne);
+			gpio->setPin(GpioDriver::EnableLightDoorLight, GpioDriver::StatePinOne);
+			gpio->setPin(GpioDriver::HoodVisor, GpioDriver::StatePinOne);
+			if (!isBreadmashineDone) {
+				if (temperature > currentWorkMode.stages[0].temperature - 4  && temperature < currentWorkMode.stages[0].temperature + 4) {
+					isBreadmashineDone = true;
+					yellowLed = LedBlink;
+					if (!isBreadmashineHot) {
+						display->showMessage(PageMessage1, 1, AddrMessageDone);
+						isBreadmashineHot = true;
+					}
+					display->sendToDisplay(addrIconDone, 2);
 				}
-				display->sendToDisplay(addrIconDone, 2);
-			}
-		}
-	}
-	else {//если печь в режиме простоя то 30 секунд с начала перевода печи в такой режим крутим насос температуры на уменьшение температуры
-		if (temperature < currentWorkMode.stages[0].temperature - 4 && isBreadmashineDone) {
-			isBreadmashineDone = false;
-			display->sendToDisplay(addrIconDone, 0);
-			gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinZero);
-			yellowLed = LedOff;
-		
-		}
-		if (m_statesWork.cntContolDownTemperature != 0) {
-			
-			m_statesWork.cntContolDownTemperature--;
-			if (m_statesWork.cntContolDownTemperature == 0) {
-				gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatePinZero));
-				gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatePinZero));
-				gpio->setPin(GpioDriver::MainHood, GpioDriver::StatePinZero);
-				gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinZero));
-				m_statesWork.timeoutOffMachine = 40 * 60;//будем 40 минут ожидать выключения
-				isBreadmashineHot = false;
 			}
 		}
 		else {
-			if (isOff)
-				return;
-			m_statesWork.timeoutOffMachine--;//отсчитываем 40 минут
+			//если печь в режиме простоя то 30 секунд с начала перевода печи в такой режим крутим насос температуры на уменьшение температуры
+			if (temperature < currentWorkMode.stages[0].temperature - 4 && isBreadmashineDone) {
+				isBreadmashineDone = false;
+				display->sendToDisplay(addrIconDone, 0);
+				gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinZero);
+				yellowLed = LedOff;
+		
+			}
+			if (m_statesWork.cntContolDownTemperature != 0) {
+			
+				m_statesWork.cntContolDownTemperature--;
+				if (m_statesWork.cntContolDownTemperature == 0) {
+					
+					gpio->setPin(GpioDriver::EnableLightDoorLight, (GpioDriver::StatePinZero));
+					gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatePinZero));
+					gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatePinZero));
+					gpio->setPin(GpioDriver::MainHood, GpioDriver::StatePinZero);
+					gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinZero));
+					gpio->setPin(GpioDriver::HoodVisor, GpioDriver::StatePinZero);
+					gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinZero);
+					m_statesWork.timeoutOffMachine = 40 * 60; //будем 40 минут ожидать выключения
+					isBreadmashineHot = false;
+				}
+			}
+			else {
+				if (isOff)
+					return;
+				m_statesWork.timeoutOffMachine--; //отсчитываем 40 минут
 
-			//если вышли 40 минут или ьемпература в печи опустилась до ниже 150 градусов, то переходим в спящий режим
-			if (m_statesWork.timeoutOffMachine == 0 || temperature < 149) {
-				//m_statesWork.timeoutPeriodicTask = portMAX_DELAY;	
-				isOff = true;
-				display->switchPage(PageSleep);
+				//если вышли 40 минут или ьемпература в печи опустилась до ниже 150 градусов, то переходим в спящий режим
+				if (m_statesWork.timeoutOffMachine == 0 || temperature < 149) {
+					//m_statesWork.timeoutPeriodicTask = portMAX_DELAY;	
+					isOff = true;
+					display->switchPage(PageSleep);
 
+				}
 			}
 		}
 	}
@@ -692,6 +701,8 @@ void AppCore::handleIdleState(float temperature) {
 
 void AppCore::controlHoodVisor()
 {
+	//if()
+	/*
 	if (timeoutWokrHoodVisor > 0) {
 		if (timeoutWokrHoodVisor == 300) {
 			gpio->setPin(GpioDriver::HoodVisor, GpioDriver::StatePinOne);
@@ -703,7 +714,7 @@ void AppCore::controlHoodVisor()
 			timeoutWokrHoodVisor = -1;
 			gpio->setPin(GpioDriver::HoodVisor, GpioDriver::StatePinZero);
 		}
-	}
+	}*/
 }
 bool AppCore::handleStartState(float temperature) {
 	currentWorkMode = m_programs.at(m_statesWork.currentIndexProgramm);
@@ -721,7 +732,7 @@ bool AppCore::handleStartState(float temperature) {
 		return true;
 	}
     
-	if (gpio->isDoorOpen()) {
+	if (!gpio->isDoorOpen()) {
 		stateRun = StateRunIdle;
 		display->showMessage(PageMessage, DoorNoClosed);
 		return true;
@@ -964,9 +975,9 @@ void AppCore::handleStopAndErrorState() {
 	gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
 	gpio->setPin(GpioDriver::PinH2O, GpioDriver::StatePinZero);
 //	gpio->disableYellowLed();
-	gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinZero);
+	//gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinZero);
 	display->sendToDisplay(addrIconDone, 0);
-	gpio->setPin(GpioDriver::EnableLightDoorLight, GpioDriver::StatePinZero);
+	//gpio->setPin(GpioDriver::EnableLightDoorLight, GpioDriver::StatePinZero);
 	isBreadmashineDone = false;
 }
 

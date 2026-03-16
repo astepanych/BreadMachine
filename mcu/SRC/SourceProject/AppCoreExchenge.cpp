@@ -376,7 +376,7 @@ void AppCore::keyEvent(uint16_t key) {
             else {
                 gpio->disableYellowLed();
             }
-            gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinZero);
+            gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinOne);
             isMenuTests = false;
             break;
         case ReturnCodeKeySoundTest:
