@@ -58,6 +58,7 @@ struct StateWork {
 	bool isModeIdleControlTemperature;
 	uint16_t cntContolDownTemperature;
 	uint16_t timeoutOffMachine;
+	uint16_t timeoutOffDamper;
 	bool isOffMachine;
 	int timeoutPeriodicTask;
 	
@@ -132,6 +133,19 @@ enum StateRun {
     StateRunStop,       //!< состояние завершения программы
     StateRunError,      //!< состояние ошибки
 };
+
+/**
+    @enum  Перечисление StateRun
+    @brief Определяет состояния выполнения программы выпечки
+**/
+enum StatesDamper { 
+	StateDamperIdle, //!< состояние простоя
+	StateDamperWork, //!< состояние начала выполения 
+	StateDamperEndProgram, //!< состояние выполнения
+	StateDamperClose, //!< состояние завершения программы
+
+};
+
 /**
 
     @class   AppCore
@@ -344,6 +358,8 @@ private:
     const float thresholdErrorTemperature = 330;
 	
     xTimerHandle timerDamper; ///< таймер отключения шибера
+
+	xTimerHandle timerPeriodic; ///< таймер отключения шибера
     int16_t IsEndProgramm{0};
     bool isMenuTests{false};
     uint16_t indexProgramms;
@@ -499,6 +515,9 @@ private:
 	void handleGpioEvent(int pin, bool flag);
 	void handleWaterSensorEvent(bool &flag);
 	void handleDamperSensorEvent(bool flag);
+
+	void openDamper();
+	void closeDamper();
 	
 	uint16_t m_ErrorCode{0};
 	std::queue<uint16_t> listError;
@@ -508,6 +527,7 @@ private:
 	bool isBreadmashineHot {false};
     int timeoutWokrHoodVisor{0};
 	int timeoutDamperEndMode{-10};
+	uint16_t stateDamper;
 };
 
 

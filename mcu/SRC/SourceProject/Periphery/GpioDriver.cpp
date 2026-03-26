@@ -27,7 +27,7 @@ const GpioPin settingsPins[] = {
 		{GpioDriver::PinShiberO, GPIOA, GPIO_Pin_5, RCC_AHB1Periph_GPIOA, GPIO_Speed_50MHz,			GPIO_Mode_OUT, GpioDriver::StatePinOne },
 		{GpioDriver::PinGreen, GPIOD, GPIO_Pin_12, RCC_AHB1Periph_GPIOD, GPIO_Speed_2MHz,			GPIO_Mode_AF, GpioDriver::StatePinZero },//59
 		{GpioDriver::PinYellow, GPIOD, GPIO_Pin_13, RCC_AHB1Periph_GPIOD, GPIO_Speed_2MHz,			GPIO_Mode_AF, GpioDriver::StatePinZero },//60
-		{GpioDriver::GlobalEnable, GPIOD, GPIO_Pin_14, RCC_AHB1Periph_GPIOD, GPIO_Speed_50MHz,		GPIO_Mode_OUT, GpioDriver::StatePinOne },//61
+		{GpioDriver::CirculationPump, GPIOD, GPIO_Pin_14, RCC_AHB1Periph_GPIOD, GPIO_Speed_50MHz,		GPIO_Mode_OUT, GpioDriver::StatePinOne },//61
 		{GpioDriver::HoodVisor, GPIOD, GPIO_Pin_15, RCC_AHB1Periph_GPIOD, GPIO_Speed_50MHz,			GPIO_Mode_OUT, GpioDriver::StatePinOne },//62
 		{GpioDriver::MainHood, GPIOE, GPIO_Pin_4, RCC_AHB1Periph_GPIOE, GPIO_Speed_50MHz,			GPIO_Mode_OUT, GpioDriver::StatePinOne }, //3
 		{GpioDriver::EnableLightDoorLight, GPIOE, GPIO_Pin_5, RCC_AHB1Periph_GPIOE,GPIO_Speed_50MHz,GPIO_Mode_OUT, GpioDriver::StatePinOne }, //4

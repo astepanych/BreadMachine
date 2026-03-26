@@ -36,9 +36,18 @@ void vTimerCallback(TimerHandle_t xTimer) {
 }
 
 void AppCore::eventTimeoutDamper(TimerHandle_t timer) {
-	gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatePinZero));
-	gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatePinZero));
-	m_signedStateDamper = 0;
+	uint32_t id = (uint32_t)pvTimerGetTimerID(timer);
+	if (id == 2) {
+		gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatePinZero));
+		gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatePinZero));
+		m_signedStateDamper = 0;
+		return;
+	}
+	if (id == 3) {
+		xSemaphoreGive(xSemPeriodic);
+		return;
+	}
+	
 }
 
 AppCore::AppCore() {
@@ -55,6 +64,8 @@ AppCore::AppCore() {
 void AppCore::initOsal() {
 
 	timerDamper = xTimerCreate("timerDamp", (30000 / portTICK_PERIOD_MS), pdFALSE, (void*)2, vTimerCallback);
+	timerPeriodic = xTimerCreate("timPeriodic", (1000 / portTICK_PERIOD_MS), pdTRUE, (void*)3, vTimerCallback);
+	xTimerStart(timerPeriodic, 0);
 	initTasks();
 		
 }
@@ -82,9 +93,11 @@ void AppCore::fillProgram(const std::string &name, const uint16_t numStages) {
 		el.stages[i].waterVolume = 0;
 		el.stages[i].waterVolume2 = 0;
 		el.stages[i].watertimeout = 40;
+		
 #ifdef EXTENDED_SETTINGS
 		memset(el.stages[i].fan, 0, MAX_SETTINGS_FUN_AND_DAMP*sizeof(SettingsFanAndDamper));
 		memset(el.stages[i].damper, 0, MAX_SETTINGS_FUN_AND_DAMP*sizeof(SettingsFanAndDamper));
+		el.stages[i].fan[0].interval = el.stages[i].damper[0].interval = el.stages[i].duration;
 #else
 		el.stages[i].damper = el.stages[i].fan = 0;
 #endif
@@ -110,8 +123,8 @@ void AppCore::readPrograms() {
 		m_programs.resize(magic);
 		uint16_t stepAddr = 8;
 		int numPage = (sizeof(WorkMode) % EepromPageSize == 0) ? sizeof(WorkMode) / EepromPageSize : (sizeof(WorkMode) / EepromPageSize) + 1; 
-		for (int i = 0; i < magic; i++) {
-			
+		int i = 0;
+		while (i<magic) {
 			uint16_t addr = EepromAddrPrograms + i * EepromPageSize * numPage;
 			uint8_t *p = (uint8_t*)&m_programs[i];
 				
@@ -120,10 +133,10 @@ void AppCore::readPrograms() {
 				I2C3Interface::instance().readExt(addr + j, p, size);
 				p += stepAddr;
 			}
+			
 			p = (uint8_t*)&m_programs[i];
-			if (m_programs[i].crc != calculateCRC16(p, sizeof(WorkMode) - sizeof(uint16_t))) {
-				asm(" nop");
-				
+			if (m_programs[i].crc == calculateCRC16(p, sizeof(WorkMode) - sizeof(uint16_t)) &&  m_programs[i].numStage != 0) {
+				i++;
 			}
 		}
 	}
@@ -224,6 +237,9 @@ void AppCore::writProgramsToEeprom() {
 	int numPage = (sizeof(WorkMode) % EepromPageSize == 0) ? sizeof(WorkMode) / EepromPageSize : (sizeof(WorkMode) / EepromPageSize) + 1; 
 
 	for (int i = 0; i < m_programs.size(); i++) {
+		//если невалидное число этапов, то данную программу не сохраняем
+		if (m_programs[i].numStage == 0 || m_programs[i].numStage > MaxStageMode)
+			continue;
 		p = (uint8_t*)&m_programs[i];
 		m_programs[i].crc = calculateCRC16(p, sizeof(WorkMode) - sizeof(uint16_t));
 		uint16_t addr = EepromAddrPrograms + i * EepromPageSize * numPage;
@@ -413,6 +429,7 @@ void AppCore::handleDamperSensorEvent(bool flag) {
 			gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
 			// Достигли целевой позиции или границы - останавливаемся
 			m_signedStateDamper = 0;
+			targetDamper = -1;
 		}
 		else {
 			// Продолжаем движение в заданном направлении
@@ -426,6 +443,18 @@ void AppCore::handleDamperSensorEvent(bool flag) {
 	}
 }
 
+void AppCore::openDamper()
+{
+	gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
+	m_signedStateDamper = 1;
+	gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinOne);
+}
+void AppCore::closeDamper()
+{
+	gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
+	m_signedStateDamper = -1;
+	gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinOne);
+}
 
 
 /**
@@ -560,10 +589,11 @@ void AppCore::taskPeriodic(void *p) {
 	//display->showMessage(PageMessage1, 1, AddrMessageDone);
 	//display->switchPage(26);
 	display->sendToDisplay(addrIconDone, 0);
-	gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinOne);
+	gpio->setPin(GpioDriver::CirculationPump, GpioDriver::StatePinOne);
+	gpio->setPin(GpioDriver::HoodVisor, GpioDriver::StatePinOne);
 	//gpio->setPin(GpioDriver::GpioDriver::PinH2O, GpioDriver::StatePinOne);
 	while (true) {
-		xSemaphoreTake(xSemPeriodic, m_statesWork.timeoutPeriodicTask );
+		xSemaphoreTake(xSemPeriodic, portMAX_DELAY);
         
         
 		float temperature = selectTemperature();
@@ -613,6 +643,8 @@ void AppCore::taskPeriodic(void *p) {
 
 void AppCore::controlDamperEndProgramm()
 {
+	if (m_statesWork.isModeIdleControlTemperature) 
+		return;		
 	if (commonDuration - modeDuration == gParams.timeOpenDamper && timeoutDamperEndMode == -10) {
 		gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
 		gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
@@ -623,28 +655,32 @@ void AppCore::controlDamperEndProgramm()
 		return;
 	}
 
-	if (timeoutDamperEndMode > 0) {
-		
-		timeoutDamperEndMode--;
-	}
-	else if (timeoutDamperEndMode == 0) {
-		moveDamperToStartPositon();
-		gpio->setPin(GpioDriver::MainHood, GpioDriver::StatePinZero);
-		timeoutDamperEndMode = -10;
+	if (commonDuration - modeDuration < gParams.timeOpenDamper) {
+		if (timeoutDamperEndMode > 0) {
+			timeoutDamperEndMode--;
+		}
+		else if (timeoutDamperEndMode == 0) {
+			moveDamperToStartPositon();
+			gpio->setPin(GpioDriver::MainHood, GpioDriver::StatePinZero);
+			timeoutDamperEndMode = -10;
+		}
 	}
 }
 
 void AppCore::handleIdleState(float temperature) {
 	static bool isOff =  false;
-
-	//если печь находится не в режиме простоя то поддерживаем температуру
 	if (!isMenuTests) {
+		//если печь находится не в режиме простоя то поддерживаем температуру
 		if (!m_statesWork.isModeIdleControlTemperature) {
-			isOff = false;
+			if (isOff) {
+				isOff = false;
+				gpio->setPin(GpioDriver::CirculationPump, GpioDriver::StatePinOne);
+				gpio->setPin(GpioDriver::EnableLightDoorLight, GpioDriver::StatePinOne);
+				gpio->setPin(GpioDriver::HoodVisor, GpioDriver::StatePinOne);
+			}
 			correctTemperature(temperature, currentWorkMode.stages[0].temperature);
-			gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinOne);
-			gpio->setPin(GpioDriver::EnableLightDoorLight, GpioDriver::StatePinOne);
-			gpio->setPin(GpioDriver::HoodVisor, GpioDriver::StatePinOne);
+			
+			
 			if (!isBreadmashineDone) {
 				if (temperature > currentWorkMode.stages[0].temperature - 4  && temperature < currentWorkMode.stages[0].temperature + 4) {
 					isBreadmashineDone = true;
@@ -662,23 +698,27 @@ void AppCore::handleIdleState(float temperature) {
 			if (temperature < currentWorkMode.stages[0].temperature - 4 && isBreadmashineDone) {
 				isBreadmashineDone = false;
 				display->sendToDisplay(addrIconDone, 0);
-				gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinZero);
 				yellowLed = LedOff;
-		
 			}
-			if (m_statesWork.cntContolDownTemperature != 0) {
-			
-				m_statesWork.cntContolDownTemperature--;
-				if (m_statesWork.cntContolDownTemperature == 0) {
-					
-					gpio->setPin(GpioDriver::EnableLightDoorLight, (GpioDriver::StatePinZero));
-					gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatePinZero));
-					gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatePinZero));
+			//контроль открытия шибера и работы вытяжкм, вентилятора
+			if (m_statesWork.timeoutOffDamper != 0) {
+				m_statesWork.timeoutOffDamper--;
+				if (m_statesWork.timeoutOffDamper == 0) {
 					gpio->setPin(GpioDriver::MainHood, GpioDriver::StatePinZero);
 					gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinZero));
 					gpio->setPin(GpioDriver::HoodVisor, GpioDriver::StatePinZero);
-					gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinZero);
-					m_statesWork.timeoutOffMachine = 40 * 60; //будем 40 минут ожидать выключения
+					closeDamper();
+				}
+			}
+			
+			if (m_statesWork.cntContolDownTemperature != 0) {
+				m_statesWork.cntContolDownTemperature--;
+				if (m_statesWork.cntContolDownTemperature == 0) {
+					gpio->setPin(GpioDriver::EnableLightDoorLight, (GpioDriver::StatePinZero));
+					gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatePinZero));
+					gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatePinZero));
+					
+					m_statesWork.timeoutOffMachine = 2; //будем 40 минут ожидать выключения
 					isBreadmashineHot = false;
 				}
 			}
@@ -686,12 +726,14 @@ void AppCore::handleIdleState(float temperature) {
 				if (isOff)
 					return;
 				m_statesWork.timeoutOffMachine--; //отсчитываем 40 минут
-
-				//если вышли 40 минут или ьемпература в печи опустилась до ниже 150 градусов, то переходим в спящий режим
-				if (m_statesWork.timeoutOffMachine == 0 || temperature < 149) {
+				//если вышли 40 минут или температура в печи опустилась до ниже 150 градусов, то переходим в спящий режим
+				if (m_statesWork.timeoutOffMachine == 0 || temperature < 150) {
 					//m_statesWork.timeoutPeriodicTask = portMAX_DELAY;	
 					isOff = true;
 					display->switchPage(PageSleep);
+					gpio->setPin(GpioDriver::EnableLightDoorLight, (GpioDriver::StatePinZero));
+					gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatePinZero));
+					gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatePinZero));
 
 				}
 			}
@@ -876,14 +918,13 @@ void AppCore::handleFanControl() {
 void AppCore::startMoveDamper()
 {
 	if (targetDamper > m_stateDamper) {
-		gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinOne);
+		openDamper();
 		xTimerStart(timerDamper, 0);
-		m_signedStateDamper = 1;
 	}
 	else if (targetDamper < m_stateDamper) {
-		gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinOne);
+		closeDamper();
 		xTimerStart(timerDamper, 0);
-		m_signedStateDamper = -1;
+		
 	}
 }
 
@@ -948,8 +989,10 @@ void AppCore::handleStageCompletion() {
 	m_currentIndexFan = 0;
 	m_currentIntervalFanDuration = 0;
 	m_prevsIntervalsDamperDuration = 0;
+	m_signedStateDamper = 0;
+	//timeoutDamperEndMode = -10;
 	m_statesWork.cntH2O = currentWorkMode.stages[currentStage].waterVolume;
-	m_stateDamper = 0;
+	//m_stateDamper = 0;
 	if (currentStage == currentWorkMode.numStage) {
 		IsEndProgramm = 1;
 		updateProgressBar(100);
@@ -975,7 +1018,6 @@ void AppCore::handleStopAndErrorState() {
 	gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
 	gpio->setPin(GpioDriver::PinH2O, GpioDriver::StatePinZero);
 //	gpio->disableYellowLed();
-	//gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinZero);
 	display->sendToDisplay(addrIconDone, 0);
 	//gpio->setPin(GpioDriver::EnableLightDoorLight, GpioDriver::StatePinZero);
 	isBreadmashineDone = false;
@@ -1021,8 +1063,6 @@ uint16_t AppCore::calculateCRC16(const uint8_t* data, size_t length) {
 void AppCore::correctTemperature(float &currentTemp, uint16_t targetTemp) {
 	static int delta = 1;
 	static uint16_t period = 0;
-
-
 
 	float target = 1.0*targetTemp;
 	static uint16_t per = PERIOD_CORRECT;

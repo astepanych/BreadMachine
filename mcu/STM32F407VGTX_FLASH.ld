@@ -165,7 +165,7 @@ SECTIONS
 
     . = ALIGN(4);
     _eccmram = .;       /* create a global symbol at ccmram end */
-  } >CCMRAM AT> ROM
+  } >CCMRAM 
 
   /* Uninitialized data section into "RAM" Ram type memory */
   . = ALIGN(4);

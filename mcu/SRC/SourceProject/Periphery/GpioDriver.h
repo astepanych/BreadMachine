@@ -25,7 +25,7 @@ public:
         PinShiberO, ///< Пин управления заслонкой O
         PinGreen, ///< Пин зеленого светодиода
         PinYellow, ///< Пин желтого светодиода
-        GlobalEnable, ///< Пин глобального разрешения
+        CirculationPump, ///< Пин глобального разрешения
         HoodVisor, ///< Вытяжка козырек
         MainHood,                   ///< вытяжка крыша
         EnableLightDoorLight,        ///< посдсветка двери
@@ -151,6 +151,7 @@ public:
     bool levelStartKey();
     bool levelStopLoadKey();
     bool levelDamperStateStart();
+
 
 private:
     static GpioDriver *ins; ///< Указатель на экземпляр драйвера (синглтон)

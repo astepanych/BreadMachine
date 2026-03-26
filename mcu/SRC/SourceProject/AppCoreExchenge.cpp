@@ -171,7 +171,7 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
                 gpio->disableYellowLed();
             break;
         case addrMainRele:
-            gpio->setPin(GpioDriver::GpioDriver::GlobalEnable, (GpioDriver::StatesPin)data[2]);
+            gpio->setPin(GpioDriver::GpioDriver::CirculationPump, (GpioDriver::StatesPin)data[2]);
             break;
         case AddrNumWater:
             currentWorkMode.stages[currentStage].waterVolume = data[2] | (data[1] << 8);
@@ -328,10 +328,12 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
     case addrIsIdleMode:
 	    m_statesWork.isModeIdleControlTemperature = ((bool)data[2]);
 	    if (m_statesWork.isModeIdleControlTemperature) {
-		    m_statesWork.cntContolDownTemperature = 30;
+		    m_statesWork.cntContolDownTemperature = 120;
+		    m_statesWork.timeoutOffDamper = 15*60;
+		    gpio->setPin(GpioDriver::CirculationPump, GpioDriver::StatePinZero);
 		    gpio->setPin(GpioDriver::PinTemperatureUp, (GpioDriver::StatePinZero));
 		    gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatePinOne));
-		    gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatePinOne));
+		    openDamper();
 		    gpio->setPin(GpioDriver::MainHood, GpioDriver::StatePinOne);
 		    gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinOne));
 	    }
@@ -346,12 +348,21 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
     }
 }
 
-void AppCore::enableMashine()
-{
+void AppCore::enableMashine() {
 	if (m_statesWork.cntContolDownTemperature) {
 		gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatePinZero));
 		m_statesWork.cntContolDownTemperature = 0;
+		gpio->setPin(GpioDriver::CirculationPump, GpioDriver::StatePinOne);
+		gpio->setPin(GpioDriver::EnableLightDoorLight, GpioDriver::StatePinOne);
+		gpio->setPin(GpioDriver::HoodVisor, GpioDriver::StatePinOne);
+		
 	}
+	if (m_statesWork.timeoutOffDamper) {
+		gpio->setPin(GpioDriver::MainHood, GpioDriver::StatePinZero);
+		gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinZero));
+		gpio->setPin(GpioDriver::HoodVisor, GpioDriver::StatePinZero);
+		closeDamper();
+    }
 	if (m_statesWork.timeoutPeriodicTask == portMAX_DELAY) {
 		m_statesWork.timeoutPeriodicTask = pdMS_TO_TICKS(1000);
 		xSemaphoreGive(xSemPeriodic);
@@ -376,7 +387,7 @@ void AppCore::keyEvent(uint16_t key) {
             else {
                 gpio->disableYellowLed();
             }
-            gpio->setPin(GpioDriver::GlobalEnable, GpioDriver::StatePinOne);
+            gpio->setPin(GpioDriver::CirculationPump, GpioDriver::StatePinOne);
             isMenuTests = false;
             break;
         case ReturnCodeKeySoundTest:
@@ -387,7 +398,6 @@ void AppCore::keyEvent(uint16_t key) {
             isMenuTests = true;
             m_stateInpinTestMenu = NoEvent;
             break;
-			
         case ReturnCodeKeyInMenuSettingsProgramms:
             p_widget = lstProgramsEdit;
             p_widget->resetWidget();
@@ -398,7 +408,6 @@ void AppCore::keyEvent(uint16_t key) {
             break;
         case ReturnCodeKeyWifiMenuExit:
             display->switchPage(currentPage);
-			
             break;
 	    case ReturnCodeKeyHideMsg2:
 	    case ReturnCodeKeyHideMsg1:

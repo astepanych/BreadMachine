@@ -83,6 +83,7 @@ Widget* WorkModeEdit::keyEvent(uint16_t key)
 			//tempWMode.stages[tempWMode.numStage].damper = 0;
 			//tempWMode.stages[tempWMode.numStage].fan = 0;
 			tempWMode.stages[tempWMode.numStage].duration = 8;
+			tempWMode.stages[tempWMode.numStage].damper[0].interval = tempWMode.stages[tempWMode.numStage].fan[0].interval = tempWMode.stages[tempWMode.numStage].duration;
 			tempWMode.stages[tempWMode.numStage].temperature = 180;
 			tempWMode.stages[tempWMode.numStage].waterVolume = 1000;
 			tempWMode.numStage++;
@@ -202,9 +203,16 @@ void WorkModeEdit::changeParams(const uint16_t id, uint8_t len, uint8_t* data)
 	case AddrNumStageE: 
 		
 	break;	
-	case AddrTimeStageE:
-		tempWMode.stages[currentStage].duration = data[1] * 60 + data[2];
-			printAllTimeMode();
+	case AddrTimeStageE: {
+		uint16_t newDuration = data[1] * 60 + data[2];
+		tempWMode.stages[currentStage].duration = newDuration;
+#ifdef EXTENDED_SETTINGS
+
+		correctInterval(newDuration, tempWMode.stages[currentStage].damper);
+		correctInterval(newDuration, tempWMode.stages[currentStage].fan);
+#endif
+		printAllTimeMode();
+		}
 	break;	
 	case AddrTempStageE: 
 		tempWMode.stages[currentStage].temperature = val;
@@ -236,6 +244,34 @@ void WorkModeEdit::changeParams(const uint16_t id, uint8_t len, uint8_t* data)
 #endif
 	}
 
+}
+
+void WorkModeEdit::correctInterval(uint16_t newDuration, SettingsFanAndDamper *damper)
+{	int i = 0;
+	for (i = 0; i < MAX_SETTINGS_FUN_AND_DAMP; i++) {
+		//если в нулевом этапе длина интервала равна 0, то тогда ему присваиваем всю продолжительность
+		if (i == 0 && damper[i].interval == 0) {
+			damper[i].interval = newDuration;
+			break;
+		}
+		//если очередной интервал равен 0, то оставшуюся продолжительность отдаем в предыдущий интервал
+		if (damper[i].interval == 0) {
+			damper[i - 1].interval += newDuration;
+			break;
+		}
+		//если продолжительность интервала больше оставшейся продолжительности этапа, то отдаем ее интервалу
+		if (newDuration <= damper[i].interval) {
+			damper[i].interval = newDuration;
+			break;
+		}
+		else {
+			newDuration -= damper[i].interval;
+		}
+	}
+	i++;
+	for (i; i < MAX_SETTINGS_FUN_AND_DAMP; i++) {
+		damper[i].interval = 0;
+	} 
 }
 
 void WorkModeEdit::paintNameWorkMode(uint16_t addrItem)

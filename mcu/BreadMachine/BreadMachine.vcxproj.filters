@@ -299,4 +299,10 @@
       <Filter>Source files\EXCHANGE</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <LinkerScript Include="..\STM32F407VGTX_FLASH.ld" />
+    <LinkerScript Include="STM32F407VGTX_FLASH.ld">
+      <Filter>Source files</Filter>
+    </LinkerScript>
+  </ItemGroup>
 </Project>

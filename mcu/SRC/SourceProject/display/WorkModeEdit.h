@@ -113,6 +113,7 @@ private:
      * @brief ¬ывод всех временных параметров режима
      */
     void printAllTimeMode();
+	void correctInterval(uint16_t newDuration, SettingsFanAndDamper *damper);
 
 	void sendSettings(const SettingsFanAndDamper *sett, uint16_t addr);
 	void applySettings(SettingsFanAndDamper  *sett, uint8_t *data);

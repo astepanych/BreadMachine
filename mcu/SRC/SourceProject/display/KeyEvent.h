@@ -43,7 +43,7 @@ enum ReturnCodeKey {
     ReturnCodeDamper3 = 0x1325,
     ReturnCodeDamper4 = 0x1327,
     ReturnCodeDamper5 = 0x1329,
-    ReturnCodeDamper6 = 0x132a,
+    ReturnCodeDamper6 = 0x132b,
 
     /// @name Команды сообщений (группа 0x2000)
     /// @{

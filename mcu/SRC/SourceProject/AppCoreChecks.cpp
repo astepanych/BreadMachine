@@ -53,7 +53,7 @@ bool AppCore::moveDamperToStartPositon()
 	bool isStart = false;
 	// Инициализация шибера - приведение в нулевое положение
 	gpio->disableIntDamperState();
-    //откроем шибер, чтобы при его закрытии определить его несиправность
+    //откроем шибер, чтобы при его закрытии определить его неиcправность
 	gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinOne);
 	vTaskDelay(600 / portTICK_PERIOD_MS);
 	gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
@@ -133,20 +133,20 @@ void AppCore::taskControlInPins(void *p)
 		}
         
 		// Обработка события загрузки хлеба
-		if (gpio->isEventLoadBread()) {
+		/*if (gpio->isEventLoadBread()) {
 			if (gpio->isDoorOpen() && !isMenuTests && !isRunLoad) {
 				gpio->setPin(GpioDriver::PinLoadBread, GpioDriver::StatePinOne);
 				isRunLoad = true; // Устанавливаем флаг выполнения процесса
 			}
-		}
+		}*/
         
 		// Обработка события выгрузки хлеба
-		if (gpio->isEventDownloadBread()) {
+		/*if (gpio->isEventDownloadBread()) {
 			if (gpio->isDoorOpen() && !isMenuTests && !isRunLoad) {
 				gpio->setPin(GpioDriver::PinDownloadBread, GpioDriver::StatePinOne);
 				isRunLoad = true; // Устанавливаем флаг выполнения процесса
 			}
-		}
+		}*/
         
 		// Обработка нажатия кнопки START
 		if (gpio->isStartKey()) {

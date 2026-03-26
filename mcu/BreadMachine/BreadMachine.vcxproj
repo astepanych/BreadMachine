@@ -159,4 +159,8 @@
     <ClInclude Include="I2C3.h" />
     <ClInclude Include="stm32f4xx_hal_conf.h" />
   </ItemGroup>
+  <ItemGroup>
+    <LinkerScript Include="..\STM32F407VGTX_FLASH.ld" />
+    <LinkerScript Include="STM32F407VGTX_FLASH.ld" />
+  </ItemGroup>
 </Project>
