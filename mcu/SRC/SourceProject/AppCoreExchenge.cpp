@@ -149,14 +149,12 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
             gpio->setPin(GpioDriver::GpioDriver::PinH2O, (GpioDriver::StatesPin)data[2]);
             break;
         case addrDamperOpen:
+            gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
             gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatesPin)data[2]);
-            /*if (data[2] == GpioDriver::StatePinOne)
-                xTimerStart(timerDamper, 0);*/
             break;
         case addrDamperClose:
+            gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
             gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatesPin)data[2]);
-          /*  if (data[2] == GpioDriver::StatePinOne)
-                xTimerStart(timerDamper, 0);*/
             break;
         case addrGreenLed:
             if (data[2])
@@ -357,12 +355,12 @@ void AppCore::enableMashine() {
 		gpio->setPin(GpioDriver::HoodVisor, GpioDriver::StatePinOne);
 		
 	}
-	if (m_statesWork.timeoutOffDamper) {
-		gpio->setPin(GpioDriver::MainHood, GpioDriver::StatePinZero);
-		gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinZero));
-		gpio->setPin(GpioDriver::HoodVisor, GpioDriver::StatePinZero);
-		closeDamper();
-    }
+
+    pushEventDamper(CloseDamper);
+
+	gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinZero));
+	gpio->setPin(GpioDriver::HoodVisor, GpioDriver::StatePinZero);
+
 	if (m_statesWork.timeoutPeriodicTask == portMAX_DELAY) {
 		m_statesWork.timeoutPeriodicTask = pdMS_TO_TICKS(1000);
 		xSemaphoreGive(xSemPeriodic);

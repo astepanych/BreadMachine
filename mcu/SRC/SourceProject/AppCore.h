@@ -28,6 +28,27 @@ constexpr uint16_t yProgresStage = 175;      //!< позиция по оси y �
 constexpr uint16_t hProgresStage = 60;       //!< высота прогресс бара выполения программы
 constexpr uint16_t wProgresStage = 568;      //!< ширина прогресс бара выполения программы
 
+#define SIZE_QUEUE_DAMPER   (16)
+
+enum EventsDamper {
+    CloseDamper,
+    MoveDamperOnePosition,
+    OpenDamper, 
+    TimeoutEventDamper
+};
+
+struct DamperControl
+{
+    DamperControl() {
+        idEvent = targetPosition = 0;
+    }
+    DamperControl( uint16_t ev,  uint16_t pos) {
+        idEvent = ev; targetPosition = pos;
+    }
+    uint16_t idEvent;
+    uint16_t targetPosition;
+};
+
 enum StatesLeds
 {
 	LedOff,
@@ -167,6 +188,9 @@ public:
     void taskControlInPins(void *p = 0);
 	void taskControlLeds(void *p = 0);
 	void taskControlSound(void *p = 0);
+    void taskControlDamper(void *p = 0);
+    void pushEventDamper(uint16_t id, uint16_t param = 0);
+
     /**
         @brief поток обработки данных от ESP
         @param p - не используется
@@ -336,6 +360,11 @@ private:
 	TaskHandle_t xHandleTaksCtrlSound = NULL;
 	xSemaphoreHandle xSemTaskCtrlSound;
 	xSemaphoreHandle xSemAccessCtrlSound;
+    
+
+    xQueueHandle queDamper;
+    xSemaphoreHandle xSemTaskCtrlDamper;
+    TaskHandle_t xHandleTaskCtrlDamper = NULL;
 
     uint8_t helperBuf[256];
 	
@@ -358,6 +387,7 @@ private:
     const float thresholdErrorTemperature = 330;
 	
     xTimerHandle timerDamper; ///< таймер отключения шибера
+    xTimerHandle timerOpenDamper; ///< таймер отключения шибера
 
 	xTimerHandle timerPeriodic; ///< таймер отключения шибера
     int16_t IsEndProgramm{0};

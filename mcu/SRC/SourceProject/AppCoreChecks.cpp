@@ -59,7 +59,7 @@ bool AppCore::moveDamperToStartPositon()
 	gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
 	vTaskDelay(100 / portTICK_PERIOD_MS);
 	//!gpio->isDamperStateStart()
-		// Активируем привод шибера
+	// Активируем привод шибера
 	gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinOne);
         
 	// Ожидаем пока шибер достигнет начального положения или сработает таймаут

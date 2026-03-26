@@ -38,9 +38,11 @@ void vTimerCallback(TimerHandle_t xTimer) {
 void AppCore::eventTimeoutDamper(TimerHandle_t timer) {
 	uint32_t id = (uint32_t)pvTimerGetTimerID(timer);
 	if (id == 2) {
-		gpio->setPin(GpioDriver::PinShiberX, (GpioDriver::StatePinZero));
-		gpio->setPin(GpioDriver::PinShiberO, (GpioDriver::StatePinZero));
-		m_signedStateDamper = 0;
+		pushEventDamper(TimeoutEventDamper);
+		return;
+	}
+	if (id == 4) {
+		pushEventDamper(CloseDamper);
 		return;
 	}
 	if (id == 3) {
@@ -64,6 +66,7 @@ AppCore::AppCore() {
 void AppCore::initOsal() {
 
 	timerDamper = xTimerCreate("timerDamp", (30000 / portTICK_PERIOD_MS), pdFALSE, (void*)2, vTimerCallback);
+	timerOpenDamper = xTimerCreate("timDamp", (2 / portTICK_PERIOD_MS), pdFALSE, (void*)4, vTimerCallback);
 	timerPeriodic = xTimerCreate("timPeriodic", (1000 / portTICK_PERIOD_MS), pdTRUE, (void*)3, vTimerCallback);
 	xTimerStart(timerPeriodic, 0);
 	initTasks();
@@ -411,36 +414,8 @@ void AppCore::handleDamperSensorEvent(bool flag) {
 		return;
 	}
     
-	// Обработка срабатывания датчика (активный низкий уровень)
-	if ((flag && m_signedStateDamper == 1) || (!flag && m_signedStateDamper == -1)) {
-
-        
-		// Обновляем текущее положение заслонки
-		m_stateDamper += m_signedStateDamper;
-        
-		// Проверяем, достигли ли целевого положения или границ
-		bool isTargetPosition = (targetDamper == m_stateDamper);
-		bool isMinPosition = (m_stateDamper == 0);
-		bool isMaxPosition = (m_stateDamper >= 120);
-        
-		if (isTargetPosition || isMinPosition || isMaxPosition) {
-			// Останавливаем движение заслонки
-			gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
-			gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
-			// Достигли целевой позиции или границы - останавливаемся
-			m_signedStateDamper = 0;
-			targetDamper = -1;
-		}
-		else {
-			// Продолжаем движение в заданном направлении
-			if (m_signedStateDamper == 1) {
-				gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinOne);
-			}
-			else {
-				gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinOne);
-			}
-		}
-	}
+	pushEventDamper(MoveDamperOnePosition, (uint16_t)flag);
+	
 }
 
 void AppCore::openDamper()
@@ -637,33 +612,17 @@ void AppCore::taskPeriodic(void *p) {
 			break;
 		}
 		controlHoodVisor();
-		controlDamperEndProgramm();
+		
 	}
 }
 
 void AppCore::controlDamperEndProgramm()
 {
-	if (m_statesWork.isModeIdleControlTemperature) 
-		return;		
-	if (commonDuration - modeDuration == gParams.timeOpenDamper && timeoutDamperEndMode == -10) {
-		gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
-		gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
-		timeoutDamperEndMode = gParams.timeOpenDamper + gParams.timeCloseDamper;
-		targetDamper = gParams.positionDamper * 12;
-		startMoveDamper();
-		gpio->setPin(GpioDriver::MainHood, GpioDriver::StatePinOne);
+	if (commonDuration - modeDuration == gParams.timeOpenDamper) {
+		pushEventDamper(OpenDamper,gParams.positionDamper * 12);
+		xTimerChangePeriod(timerOpenDamper, ((gParams.timeOpenDamper+gParams.timeCloseDamper)*1000)/portTICK_PERIOD_MS, 1);
+		xTimerStart(timerOpenDamper,0);
 		return;
-	}
-
-	if (commonDuration - modeDuration < gParams.timeOpenDamper) {
-		if (timeoutDamperEndMode > 0) {
-			timeoutDamperEndMode--;
-		}
-		else if (timeoutDamperEndMode == 0) {
-			moveDamperToStartPositon();
-			gpio->setPin(GpioDriver::MainHood, GpioDriver::StatePinZero);
-			timeoutDamperEndMode = -10;
-		}
 	}
 }
 
@@ -785,11 +744,8 @@ bool AppCore::handleStartState(float temperature) {
 	gpio->setPin(GpioDriver::EnableLightDoorLight, GpioDriver::StatePinOne);
 
 	// Обработка ошибки инициализации шибера
-	if (moveDamperToStartPositon() == false) {
-		// TODO: Вывести ошибку - шибер не достиг нулевого положения за время таймаута
-		showIconError(DamperFailure);
-		
-	}
+	pushEventDamper(CloseDamper);
+	
 	if (stateRun == StateRunStop) {
 		return true;
 	}
@@ -873,6 +829,7 @@ void AppCore::handleWorkState(float temperature) {
 	if (stageDuration >= TO_SECONDS(currentWorkMode.stages[currentStage].duration)) {
 		handleStageCompletion();
 	}
+	controlDamperEndProgramm();
     
 	uint16_t progress = static_cast<uint16_t>(stageDuration * 100.0 / TO_SECONDS(currentWorkMode.stages[currentStage].duration)) ;
 	updateProgressBar(progress);
@@ -924,7 +881,6 @@ void AppCore::startMoveDamper()
 	else if (targetDamper < m_stateDamper) {
 		closeDamper();
 		xTimerStart(timerDamper, 0);
-		
 	}
 }
 
@@ -943,6 +899,7 @@ void AppCore::handleDamperControl() {
 
 	if (m_signedStateDamper == 0) {
 		targetDamper = currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].state*12;
+
 		startMoveDamper();
 	}
 #else
