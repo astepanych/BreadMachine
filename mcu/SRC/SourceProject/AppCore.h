@@ -34,7 +34,8 @@ enum EventsDamper {
     CloseDamper,
     MoveDamperOnePosition,
     OpenDamper, 
-    TimeoutEventDamper
+    TimeoutEventDamper,
+    CloseDamperTimer,
 };
 
 struct DamperControl
@@ -558,6 +559,7 @@ private:
     int timeoutWokrHoodVisor{0};
 	int timeoutDamperEndMode{-10};
 	uint16_t stateDamper;
+	const float avgBlock = 0.5;
 };
 
 

@@ -327,7 +327,10 @@ void AppCore::parsePackDisplay(const uint16_t id, uint8_t len, uint8_t* data) {
 	    m_statesWork.isModeIdleControlTemperature = ((bool)data[2]);
 	    if (m_statesWork.isModeIdleControlTemperature) {
 		    m_statesWork.cntContolDownTemperature = 120;
-		    m_statesWork.timeoutOffDamper = 15*60;
+		    
+		    xTimerStop(timerOpenDamper, 0);
+		    xTimerChangePeriod(timerOpenDamper, ((15*60) * 1000) / portTICK_PERIOD_MS, 1);
+		    xTimerStart(timerOpenDamper, 0);
 		    gpio->setPin(GpioDriver::CirculationPump, GpioDriver::StatePinZero);
 		    gpio->setPin(GpioDriver::PinTemperatureUp, (GpioDriver::StatePinZero));
 		    gpio->setPin(GpioDriver::PinTemperatureDown, (GpioDriver::StatePinOne));
@@ -355,7 +358,7 @@ void AppCore::enableMashine() {
 		gpio->setPin(GpioDriver::HoodVisor, GpioDriver::StatePinOne);
 		
 	}
-
+	xTimerStop(timerOpenDamper, 0);
     pushEventDamper(CloseDamper);
 
 	gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinZero));

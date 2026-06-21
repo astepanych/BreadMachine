@@ -97,12 +97,22 @@ void GpioDriver::initModule()
 	
 	TIM_OCInitTypeDef timerPWM;
 	TIM_OCStructInit(&timerPWM);
+#ifdef BUILD_FOR_LOGISHIN
+	timerPWM.TIM_Pulse = 10;
+#else
 	timerPWM.TIM_Pulse = 2;
+#endif // BUILD_FOR_LOGISHIN
+
+
 	timerPWM.TIM_OCMode = TIM_OCMode_PWM1;
 	timerPWM.TIM_OutputState = TIM_OutputState_Enable;
 	timerPWM.TIM_OCPolarity = TIM_OCPolarity_High; 
 	TIM_OC1Init(TIM4, &timerPWM);
+#ifdef BUILD_FOR_LOGISHIN
+	timerPWM.TIM_Pulse = 10;
+#else
 	timerPWM.TIM_Pulse = 2;
+#endif // BUILD_FOR_LOGISHIN
 	TIM_OC2Init(TIM4, &timerPWM);
 	
 	TIM_SetCounter(TIM4, 0);
@@ -379,7 +389,7 @@ bool GpioDriver::levelStopLoadKey()
 }
 
 bool GpioDriver::isDamperStateStart() {
-    return GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_15) == Bit_RESET ? true : false;
+    return GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_0) == Bit_RESET ? true : false;
 }
 bool GpioDriver::isDoorOpen() {
     return GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_3) == Bit_RESET ? true : false;

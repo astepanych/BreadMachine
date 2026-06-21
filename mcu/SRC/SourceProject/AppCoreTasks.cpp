@@ -79,6 +79,8 @@ void AppCore::taskControlLeds(void *p)
 	int timeout = 0;
 	while (true) {
 		xSemaphoreTake(xSemTaskCtrlLeds, pdMS_TO_TICKS(1000));
+		if (isMenuTests)
+			continue;
 		switch (yellowLed) {
 			case LedOff:
 			if (gpio->isEnableYellowLed())
@@ -151,12 +153,21 @@ void AppCore::taskControlDamper(void *p)
 		xSemaphoreTake(xSemTaskCtrlDamper, pdMS_TO_TICKS(100));
 		if (xQueueReceive(queDamper, &cmd, 0) == pdTRUE) {
 			switch (cmd.idEvent) {
-				 case CloseDamper:
-					xTimerStop(timerOpenDamper,0);
+				case CloseDamperTimer:
+				xTimerStop(timerOpenDamper, 0);
+				if (m_statesWork.isModeIdleControlTemperature) {
+					gpio->setPin(GpioDriver::MainHood, GpioDriver::StatePinZero);
+					gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinZero));
+					gpio->setPin(GpioDriver::HoodVisor, GpioDriver::StatePinZero);
+				}
+
+				case CloseDamper:
+					
 					if (moveDamperToStartPositon() == false) {
 						// TODO: Вывести ошибку - шибер не достиг нулевого положения за время таймаута
 						showIconError(DamperFailure);
 					}
+					targetDamper = 0;
 					gpio->setPin(GpioDriver::MainHood, GpioDriver::StatePinZero);
 				 break;
 				 case MoveDamperOnePosition:
@@ -176,7 +187,8 @@ void AppCore::taskControlDamper(void *p)
 							 gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
 							 // Достигли целевой позиции или границы - останавливаемся
 							 m_signedStateDamper = 0;
-							 targetDamper = -1;
+							 xTimerStop(timerDamper,0);
+							 //targetDamper = -1;
 						 }
 						 if (isMinPosition) {
 							gpio->setPin(GpioDriver::MainHood, GpioDriver::StatePinZero);

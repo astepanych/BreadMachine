@@ -8,8 +8,8 @@
 #include "stm32f4xx_tim.h"
 
 
-#define ELFR_CFFT_LENGTH 256
-#define AIN_CHANNELS 2
+#define ELFR_CFFT_LENGTH 128
+#define AIN_CHANNELS 3
 
 uint16_t AdcBuffer[ELFR_CFFT_LENGTH * AIN_CHANNELS];
 uint16_t AdcBuffer1[ELFR_CFFT_LENGTH * AIN_CHANNELS];
@@ -18,6 +18,7 @@ xTaskHandle AdcDriver::xHandle;
 xSemaphoreHandle AdcDriver::xSem;
 float AdcDriver::m_value1;
 float AdcDriver::m_value2;
+float AdcDriver::m_value3;
 float AdcDriver::m_coeff;
 
 AdcDriver *AdcDriver::m_instance;
@@ -50,7 +51,7 @@ void AdcDriver::init()
 	NVIC_InitTypeDef       NVIC_InitStructure;
  
 	/* Enable ADC3, DMA2 and GPIO clocks ****************************************/
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2 | RCC_AHB1Periph_GPIOB, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2 | RCC_AHB1Periph_GPIOB | RCC_AHB1Periph_GPIOC, ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC2, ENABLE);
  
 	/* NVIC DMA interrupt setup - priority is 1, below sampling clock int. priority */
@@ -95,6 +96,11 @@ void AdcDriver::init()
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+	GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_5;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_Init(GPIOC, &GPIO_InitStructure);
  
 	/* ADC Common Init **********************************************************/
 	ADC_CommonInitStructure.ADC_Mode             = ADC_Mode_Independent;
@@ -117,6 +123,7 @@ void AdcDriver::init()
 	/* ADC3 regular channel7 configuration *************************************/
 	ADC_RegularChannelConfig(ADC2, ADC_Channel_8, 1, ADC_SampleTime_112Cycles);
 	ADC_RegularChannelConfig(ADC2, ADC_Channel_9, 2, ADC_SampleTime_112Cycles);
+	ADC_RegularChannelConfig(ADC2, ADC_Channel_15, 3, ADC_SampleTime_112Cycles);
  
 	ADC_DMARequestAfterLastTransferCmd(ADC2, ENABLE);
 	ADC_DMACmd(ADC2, ENABLE); /* Enable ADC3 DMA  */
@@ -189,28 +196,29 @@ std::vector<uint16_t> workBuf;
 
 void AdcDriver::thread(void *p)
 {
-	uint32_t v1, v2;
-	const uint32_t lenWork = ELFR_CFFT_LENGTH * 5;
-	workBuf.reserve(2*lenWork);
+	uint32_t v1, v2, v3;
+	const uint32_t lenWork = ELFR_CFFT_LENGTH * 2;
+	workBuf.reserve(AIN_CHANNELS*lenWork);
 	while (true)
 	{
 		xSemaphoreTake(xSem, portMAX_DELAY);
 
-		workBuf.insert(workBuf.end(), pWork, pWork + ELFR_CFFT_LENGTH*2);
+		workBuf.insert(workBuf.end(), pWork, pWork + ELFR_CFFT_LENGTH*AIN_CHANNELS);
 		uint32_t curLen = workBuf.size();
-		if (curLen < 2*lenWork)
+		if (curLen < AIN_CHANNELS*lenWork)
 			continue;
-		v1 = v2 = 0;
+		v1 = v2 = v3 = 0;
 		for (int i = 0; i < lenWork; i++)
 		{
-			v2 += workBuf[2*i + 1];
-			v1 += workBuf[2*i];
+			v3 += workBuf[AIN_CHANNELS*i + 2];
+			v2 += workBuf[AIN_CHANNELS*i + 1];
+			v1 += workBuf[AIN_CHANNELS*i];
 		}
-		workBuf.erase(workBuf.begin(), workBuf.begin() + ELFR_CFFT_LENGTH * 2);
-    	m_value2 = (v2) / lenWork;
-    	m_value1 = (v1) / lenWork;
+		workBuf.erase(workBuf.begin(), workBuf.begin() + ELFR_CFFT_LENGTH * AIN_CHANNELS);
+		m_value3 = (v3*1.0) / lenWork;
+		m_value2 = (v2 * 1.0) / lenWork;
+		m_value1 = (v1 * 1.0) / lenWork;
 		//m_value1 = v1 / ELFR_CFFT_LENGTH;
-		
 	}
 		
 }

@@ -42,7 +42,7 @@ void AppCore::eventTimeoutDamper(TimerHandle_t timer) {
 		return;
 	}
 	if (id == 4) {
-		pushEventDamper(CloseDamper);
+		pushEventDamper(CloseDamperTimer);
 		return;
 	}
 	if (id == 3) {
@@ -618,6 +618,9 @@ void AppCore::taskPeriodic(void *p) {
 
 void AppCore::controlDamperEndProgramm()
 {
+	if (commonDuration - modeDuration > gParams.timeOpenDamper) {
+		handleDamperControl();
+	}
 	if (commonDuration - modeDuration == gParams.timeOpenDamper) {
 		pushEventDamper(OpenDamper,gParams.positionDamper * 12);
 		xTimerChangePeriod(timerOpenDamper, ((gParams.timeOpenDamper+gParams.timeCloseDamper)*1000)/portTICK_PERIOD_MS, 1);
@@ -660,15 +663,16 @@ void AppCore::handleIdleState(float temperature) {
 				yellowLed = LedOff;
 			}
 			//контроль открытия шибера и работы вытяжкм, вентилятора
-			if (m_statesWork.timeoutOffDamper != 0) {
+			/*if (m_statesWork.timeoutOffDamper != 0) {
 				m_statesWork.timeoutOffDamper--;
 				if (m_statesWork.timeoutOffDamper == 0) {
 					gpio->setPin(GpioDriver::MainHood, GpioDriver::StatePinZero);
 					gpio->setPin(GpioDriver::PinFanFastSpeed, (GpioDriver::StatePinZero));
 					gpio->setPin(GpioDriver::HoodVisor, GpioDriver::StatePinZero);
-					closeDamper();
+					pushEventDamper(CloseDamper);
+					//closeDamper();
 				}
-			}
+			}*/
 			
 			if (m_statesWork.cntContolDownTemperature != 0) {
 				m_statesWork.cntContolDownTemperature--;
@@ -812,8 +816,8 @@ void AppCore::handleWorkState(float temperature) {
     
 	if (stageDuration >= 2) {
 		handleFanControl();
-
-		handleDamperControl();
+		controlDamperEndProgramm();
+		
 	}
     
 	addWater();
@@ -829,7 +833,7 @@ void AppCore::handleWorkState(float temperature) {
 	if (stageDuration >= TO_SECONDS(currentWorkMode.stages[currentStage].duration)) {
 		handleStageCompletion();
 	}
-	controlDamperEndProgramm();
+
     
 	uint16_t progress = static_cast<uint16_t>(stageDuration * 100.0 / TO_SECONDS(currentWorkMode.stages[currentStage].duration)) ;
 	updateProgressBar(progress);
@@ -874,6 +878,39 @@ void AppCore::handleFanControl() {
 
 void AppCore::startMoveDamper()
 {
+#ifdef BUILD_FOR_LOGISHIN
+	int cntDamperTime = 35000;
+	const int delayControlDamper = 100; // Период проверки положения шибера (мс)
+	uint16_t cntContolAvg = 0;
+	// Активируем привод шибера
+	openDamper();
+	// Ожидаем пока шибер достигнет начального положения или сработает таймаут
+	do {
+		if (cntDamperTime < 0)
+			break;
+
+		vTaskDelay(delayControlDamper / portTICK_PERIOD_MS);
+		cntDamperTime -= delayControlDamper;
+		if (adc->value3() > avgBlock) {
+			
+			cntContolAvg += delayControlDamper;
+			if (cntContolAvg > 1000)
+				break;
+		}
+		else {
+			cntContolAvg = 0;
+		}
+	} while (true) ;
+	// Отключаем привод шибера
+	gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
+	
+	if (cntContolAvg>1000) {
+		vTaskDelay(delayControlDamper / portTICK_PERIOD_MS);
+		gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinOne);
+		vTaskDelay(500 / portTICK_PERIOD_MS);
+		gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
+	}
+#else
 	if (targetDamper > m_stateDamper) {
 		openDamper();
 		xTimerStart(timerDamper, 0);
@@ -882,12 +919,22 @@ void AppCore::startMoveDamper()
 		closeDamper();
 		xTimerStart(timerDamper, 0);
 	}
+#endif
 }
 
 void AppCore::handleDamperControl() {
 #ifdef EXTENDED_SETTINGS
-	if (timeoutDamperEndMode != -10)
-		return;
+#ifdef BUILD_FOR_LOGISHIN
+	if (currentWorkMode.stages[currentStage].damper[0].state != targetDamper) {
+		targetDamper = currentWorkMode.stages[currentStage].damper[0].state;
+		if (targetDamper) {
+			pushEventDamper(OpenDamper, targetDamper);
+		}
+		else {
+			pushEventDamper(CloseDamper, targetDamper);
+		}
+	} 
+#else
 	//если текущее время больше времени , то наращиваем индекс 
 	if (currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].interval > 0 && stageDuration >= m_prevsIntervalsDamperDuration + TO_SECONDS(currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].interval)) {
 		m_prevsIntervalsDamperDuration += TO_SECONDS(currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].interval);
@@ -896,12 +943,12 @@ void AppCore::handleDamperControl() {
 		return;
 	}
 
-
-	if (m_signedStateDamper == 0) {
+	if (targetDamper != currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].state*12) {
 		targetDamper = currentWorkMode.stages[currentStage].damper[m_currentIndexDamper].state*12;
-
-		startMoveDamper();
+		pushEventDamper(OpenDamper, targetDamper);
+		//startMoveDamper();
 	}
+#endif
 #else
 	static bool isShiftDamper = false;
 	if (m_stateDamper == 0) {

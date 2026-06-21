@@ -104,8 +104,10 @@
     </AdditionalGDBSettings>
     <DebugMethod>
       <ID>com.sysprogs.arm.openocd</ID>
+      <InterfaceID>stlink-v2</InterfaceID>
+      <InterfaceSerialNumber>5&amp;B28E4D8&amp;0&amp;1</InterfaceSerialNumber>
       <Configuration xsi:type="com.visualgdb.edp.openocd.settings">
-        <CommandLine>-f interface/stlink-v2.cfg -f target/stm32f4x.cfg -c init -c "reset init"</CommandLine>
+        <CommandLine>-f interface/stlink-v2.cfg -c "transport select swd" -f target/stm32f4x.cfg -c init -c "reset init"</CommandLine>
         <ExtraParameters>
           <Frequency xsi:nil="true" />
           <BoostedFrequency xsi:nil="true" />

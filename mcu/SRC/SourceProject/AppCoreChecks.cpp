@@ -45,6 +45,7 @@ eFailSensorTemperature AppCore::checkTemperatureSensors()
 
 bool AppCore::moveDamperToStartPositon()
 {
+
 	const int delayControlDamper = 90; // Период проверки положения шибера (мс)
 	int cntDamperTime = 30000; // Таймаут инициализации шибера (30 секунд)
 	int cntAppemts = 0;
@@ -53,6 +54,39 @@ bool AppCore::moveDamperToStartPositon()
 	bool isStart = false;
 	// Инициализация шибера - приведение в нулевое положение
 	gpio->disableIntDamperState();
+#ifdef BUILD_FOR_LOGISHIN
+	cntDamperTime = 35000;
+	uint16_t cntContolAvg = 0;
+	// Активируем привод шибера
+	closeDamper();
+	// Ожидаем пока шибер достигнет начального положения или сработает таймаут
+	do {
+		if (cntDamperTime < 0)
+			break;
+
+		vTaskDelay(delayControlDamper / portTICK_PERIOD_MS);
+		cntDamperTime -= delayControlDamper;
+		float avg = adc->value3();
+		if (avg > avgBlock) {
+
+			cntContolAvg += delayControlDamper;
+			if (cntContolAvg > 1000)
+				break;
+		}
+		else {
+			cntContolAvg = 0;
+		}
+	}while (true) ;
+	// Отключаем привод шибера
+	gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
+	if (cntContolAvg > 1000) {
+		vTaskDelay(delayControlDamper / portTICK_PERIOD_MS);
+		gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinOne);
+		vTaskDelay(500 / portTICK_PERIOD_MS);
+		gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinZero);
+	}
+	return true;
+#else
     //откроем шибер, чтобы при его закрытии определить его неиcправность
 	gpio->setPin(GpioDriver::PinShiberO, GpioDriver::StatePinOne);
 	vTaskDelay(600 / portTICK_PERIOD_MS);
@@ -81,7 +115,7 @@ bool AppCore::moveDamperToStartPositon()
 		if (cntDamperTime <= 0 /*|| stateRun == StateRunStop*/)
 			break;
 	} while (true);
-        
+
 	// Отключаем привод шибера
 	gpio->setPin(GpioDriver::PinShiberX, GpioDriver::StatePinZero);
 	
@@ -90,6 +124,7 @@ bool AppCore::moveDamperToStartPositon()
 	if (cntDamperTime <= 0 && !gpio->isDamperStateStart())
 		return false;
 	return true;
+#endif
 }
 
 
@@ -112,13 +147,13 @@ void AppCore::taskControlInPins(void *p)
 	
     
 	
-    
+	pushEventDamper(CloseDamper);
 	// Обработка ошибки инициализации шибера
-	if (moveDamperToStartPositon() == false) {
+/*	if (moveDamperToStartPositon() == false) {
         
 		// TODO: Вывести ошибку - шибер не достиг нулевого положения за время таймаута
 		showIconError(DamperFailure);
-	}
+	}*/
     
 	m_stateDamper = 0; // Сброс состояния шибера
     
